@@ -1,0 +1,20 @@
+# derleme çıktıları
+build/
+*.apk
+!CanliTV.apk
+*.idsig
+*.dex
+
+# imza anahtarı (yerelde tutulur)
+debug.keystore
+
+# yerel araç/ara sonuçlar
+_build/*.png
+_build/*.txt
+_build/*.tsv
+_build/channels-before-sort.m3u
+
+# işletim sistemi
+Thumbs.db
+desktop.ini
+.DS_Store
