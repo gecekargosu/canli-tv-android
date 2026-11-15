@@ -355,7 +355,9 @@ public class MainActivity extends android.app.Activity {
                 "Kayıtlar nereye gidiyor?",
                 "📻 Radyo",
                 "ℹ️ Ne var ne yok? (yapılanlar listesi)",
-                "🗑 Gizlenenleri göster"
+                "🗑 Gizlenenleri göster",
+                (Prefs.dataSaver(this) ? "💾 Veri tasarrufu (düşük kalite): AÇIK"
+                        : "💾 Veri tasarrufu (düşük kalite): KAPALI")
         };
         new AlertDialog.Builder(this).setTitle("Ayarlar").setItems(items,
                 new DialogInterface.OnClickListener() {
@@ -398,6 +400,14 @@ public class MainActivity extends android.app.Activity {
                                 break;
                             case 9:
                                 startActivity(new Intent(MainActivity.this, StatusActivity.class));
+                                break;
+                            case 10:
+                                Prefs.setDataSaver(MainActivity.this, !Prefs.dataSaver(MainActivity.this));
+                                Toast.makeText(MainActivity.this,
+                                        !Prefs.dataSaver(MainActivity.this)
+                                                ? "Veri tasarrufu açık: yayınlar en düşük kalitede açılacak"
+                                                : "Veri tasarrufu kapalı: en iyi kalite",
+                                        Toast.LENGTH_LONG).show();
                                 break;
                             default:
                                 group = "🗑 Gizlenenler";

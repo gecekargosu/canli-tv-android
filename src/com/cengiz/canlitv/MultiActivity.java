@@ -101,11 +101,11 @@ public class MultiActivity extends android.app.Activity {
         panelLp.setMargins(dp(8), 0, dp(8), dp(10));
         root.addView(panel, panelLp);
 
-        TextView back = chip("←");
-        back.setOnClickListener(new View.OnClickListener() {
+        TextView home = chip("🏠");
+        home.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View v) { finish(); }
         });
-        panel.addView(back);
+        panel.addView(home);
 
         for (int i = 1; i <= 4; i++) {
             final int n = i;
@@ -417,6 +417,8 @@ public class MultiActivity extends android.app.Activity {
                 mp.setDataSource(q != null ? q : c.url);
                 mp.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
                     @Override public void onPrepared(MediaPlayer m) {
+                        AudioService.stop(MultiActivity.this);
+                        screenOffAudio = false;
                         m.setVolume(on ? 1f : 0f, on ? 1f : 0f);
                         m.start();
                     }

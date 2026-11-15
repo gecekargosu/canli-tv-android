@@ -49,6 +49,20 @@ public class Quality {
         }, "quality").start();
     }
 
+    /** En dusuk cozunurluklu varyant (veri tasarrufu icin). */
+    public static String lowest(List<Variant> list) {
+        if (list == null || list.isEmpty()) return null;
+        Variant best = null;
+        int bestH = Integer.MAX_VALUE;
+        for (Variant v : list) {
+            int h = Integer.MAX_VALUE;
+            try { h = Integer.parseInt(v.label.replace("p", "").trim()); }
+            catch (Exception ignored) { }
+            if (h < bestH) { bestH = h; best = v; }
+        }
+        return best == null ? list.get(list.size() - 1).url : best.url;
+    }
+
     private static String fetch(String url) {
         try {
             HttpURLConnection c = (HttpURLConnection) new URL(url).openConnection();

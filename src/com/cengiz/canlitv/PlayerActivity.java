@@ -52,7 +52,10 @@ public class PlayerActivity extends android.app.Activity {
     private boolean limitWarned = false;
     private boolean locked = false;
     private boolean screenOffAudio = false;
+    private boolean muted = false;
+    private android.media.MediaPlayer mp;
     private TextView lockHint;
+    private TextView muteBtn;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -91,6 +94,23 @@ public class PlayerActivity extends android.app.Activity {
         clp.gravity = Gravity.TOP | Gravity.START;
         clp.setMargins(dp(10), dp(54), 0, 0);
         root.addView(clockBar, clp);
+
+        // yari saydam ses dugmesi: barlar gizlense de ekranda kalir
+        muteBtn = new TextView(this);
+        muteBtn.setText("🔊");
+        muteBtn.setTextSize(17);
+        muteBtn.setGravity(Gravity.CENTER);
+        GradientDrawable mbg = new GradientDrawable();
+        mbg.setColor(Color.parseColor("#66000000"));
+        mbg.setCornerRadius(dp(24));
+        muteBtn.setBackground(mbg);
+        FrameLayout.LayoutParams mlp = new FrameLayout.LayoutParams(dp(46), dp(46));
+        mlp.gravity = Gravity.BOTTOM | Gravity.END;
+        mlp.setMargins(0, 0, dp(14), dp(74));
+        muteBtn.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) { toggleMute(); }
+        });
+        root.addView(muteBtn, mlp);
 
         // --- ust bar ---
         top = new LinearLayout(this);
@@ -273,9 +293,11 @@ public class PlayerActivity extends android.app.Activity {
         setContentView(root);
 
         video.setOnPreparedListener(new android.media.MediaPlayer.OnPreparedListener() {
-            @Override public void onPrepared(android.media.MediaPlayer mp) {
+            @Override public void onPrepared(android.media.MediaPlayer m) {
                 progress.setVisibility(View.GONE);
                 errorView.setVisibility(View.GONE);
+                mp = m;
+                if (muted) m.setVolume(0f, 0f);
                 video.start();
                 playButton.setText("⏸");
                 Prefs.clearFails(PlayerActivity.this, list.get(index).url);
@@ -469,6 +491,10 @@ public class PlayerActivity extends android.app.Activity {
             requestPermissions(new String[]{"android.permission.POST_NOTIFICATIONS"}, 11);
         }
         AudioService.start(this, c.url, c.name);
+        // ayni anda iki ses olmasin: TV goruntusunu sessize al
+        try { if (mp != null) mp.setVolume(0f, 0f); } catch (Exception ignored) { }
+        muted = true;
+        muteBtn.setText("🔇");
         Toast.makeText(this, c.name + " arka planda çalıyor. Ekranı kapatabilirsin.", Toast.LENGTH_LONG).show();
     }
 
@@ -535,16 +561,46 @@ public class PlayerActivity extends android.app.Activity {
         finish();
     }
 
-    private void playNow(Channel c) {
+    private void playNow(final Channel c) {
+        // TV acilinca arkadaki radyo sussun (tek ses kaynagi kalsin)
+        AudioService.stop(this);
+        screenOffAudio = false;
         String custom = Prefs.quality(this, c.url);
-        String url = custom != null ? custom : c.url;
+        if (custom != null) { startVideo(custom); return; }
+        if (Prefs.dataSaver(this)) {
+            progress.setVisibility(View.VISIBLE);
+            errorView.setVisibility(View.GONE);
+            Quality.load(c.url, new Quality.Callback() {
+                @Override public void onResult(final List<Quality.Variant> variants) {
+                    final String low = Quality.lowest(variants);
+                    runOnUiThread(new Runnable() {
+                        @Override public void run() { startVideo(low != null ? low : c.url); }
+                    });
+                }
+            });
+            return;
+        }
+        startVideo(c.url);
+    }
+
+    private void startVideo(String url) {
         progress.setVisibility(View.VISIBLE);
         errorView.setVisibility(View.GONE);
         try { video.stopPlayback(); } catch (Exception ignored) { }
+        mp = null;
         video.setVideoPath(url);
         video.requestFocus();
         ui.removeCallbacks(watchdog);
         ui.postDelayed(watchdog, 13000);
+    }
+
+    private void toggleMute() {
+        muted = !muted;
+        try { if (mp != null) mp.setVolume(muted ? 0f : 1f, muted ? 0f : 1f); }
+        catch (Exception ignored) { }
+        muteBtn.setText(muted ? "🔇" : "🔊");
+        Toast.makeText(this, muted ? "TV sesi kapalı (radyo/müzik dinleyebilirsin)"
+                : "TV sesi açık", Toast.LENGTH_SHORT).show();
     }
 
     /** 13 sn icinde goruntu gelmezse siyah ekran yerine aciklama goster. */

@@ -202,6 +202,15 @@ public class Prefs {
         sp(c).edit().putLong("mobileOk", v ? System.currentTimeMillis() : 0).apply();
     }
 
+    /** Veri tasarrufu: yayinlarin en dusuk cozunurlugunu kullan. */
+    public static boolean dataSaver(Context c) {
+        return sp(c).getBoolean("dataSaver", false);
+    }
+
+    public static void setDataSaver(Context c, boolean v) {
+        sp(c).edit().putBoolean("dataSaver", v).apply();
+    }
+
     /** Veri tasarrufu: mobil veride sadece ses cal. */
     public static boolean audioOnlyMobile(Context c) {
         return sp(c).getBoolean("audioOnlyMobile", false);
