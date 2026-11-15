@@ -16,10 +16,10 @@ import android.widget.TextView;
 /** İstenen özelliklerin durumu: oldu / olmadı / neden / çözüm. */
 public class StatusActivity extends Activity {
 
-    private static final int BG = Color.parseColor("#0E0F13");
-    private static final int CARD = Color.parseColor("#191C24");
-    private static final int TEXT = Color.parseColor("#F2F4F8");
-    private static final int MUTED = Color.parseColor("#8B93A7");
+    private static final int BG = Color.parseColor("#11151C");
+    private static final int CARD = Color.parseColor("#1B2230");
+    private static final int TEXT = Color.parseColor("#F5F7FA");
+    private static final int MUTED = Color.parseColor("#9AA4B2");
     private static final int OK = Color.parseColor("#4CAF50");
     private static final int NO = Color.parseColor("#FF5252");
     private static final int PART = Color.parseColor("#FFC107");
@@ -91,7 +91,7 @@ public class StatusActivity extends Activity {
         close.setGravity(Gravity.CENTER);
         close.setPadding(dp(12), dp(8), dp(12), dp(8));
         GradientDrawable cd = new GradientDrawable();
-        cd.setColor(Color.parseColor("#C2185B"));
+        cd.setColor(Color.parseColor("#FF7A18"));
         cd.setCornerRadius(dp(16));
         close.setBackground(cd);
         close.setOnClickListener(new View.OnClickListener() {

@@ -30,7 +30,7 @@ import java.util.List;
 /** 1-3 pencere canli TV. Her pencerenin sesi ayri acilip kapanabilir, istenen pencere kaydedilebilir. */
 public class MultiActivity extends android.app.Activity {
 
-    private static final int ACCENT = Color.parseColor("#C2185B");
+    private static final int ACCENT = Color.parseColor("#FF7A18");
     private static final int TEXT = Color.parseColor("#FFFFFF");
     private static final int PANEL = Color.parseColor("#CC101319");
 

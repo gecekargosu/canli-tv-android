@@ -52,6 +52,12 @@
             android:theme="@android:style/Theme.DeviceDefault.NoActionBar.Fullscreen" />
 
         <activity
+            android:name=".RadioPlayerActivity"
+            android:exported="false"
+            android:configChanges="keyboardHidden|orientation|screenSize|screenLayout|smallestScreenSize"
+            android:theme="@android:style/Theme.DeviceDefault.NoActionBar" />
+
+        <activity
             android:name=".RadioActivity"
             android:exported="false"
             android:configChanges="keyboardHidden|orientation|screenSize|screenLayout|smallestScreenSize"

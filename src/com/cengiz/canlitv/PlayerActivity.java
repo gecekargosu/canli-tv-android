@@ -32,7 +32,7 @@ import java.util.List;
 
 public class PlayerActivity extends android.app.Activity {
 
-    private static final int ACCENT = Color.parseColor("#C2185B");
+    private static final int ACCENT = Color.parseColor("#FF7A18");
     private static final int TEXT = Color.parseColor("#FFFFFF");
     private static final int MUTED = Color.parseColor("#B9C0CE");
 

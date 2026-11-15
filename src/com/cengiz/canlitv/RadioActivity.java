@@ -28,11 +28,11 @@ import java.util.List;
 /** İnternet radyosu: kilit ekranında da çalar, istenmeyen istasyonlar gizlenip geri eklenebilir. */
 public class RadioActivity extends Activity {
 
-    private static final int BG = Color.parseColor("#0E0F13");
-    private static final int CARD = Color.parseColor("#191C24");
-    private static final int ACCENT = Color.parseColor("#C2185B");
-    private static final int TEXT = Color.parseColor("#F2F4F8");
-    private static final int MUTED = Color.parseColor("#8B93A7");
+    private static final int BG = Color.parseColor("#11151C");
+    private static final int CARD = Color.parseColor("#1B2230");
+    private static final int ACCENT = Color.parseColor("#FF7A18");
+    private static final int TEXT = Color.parseColor("#F5F7FA");
+    private static final int MUTED = Color.parseColor("#9AA4B2");
 
     private static final List<String> NAMES = new ArrayList<String>();
     private static final List<String> META = new ArrayList<String>();
@@ -191,9 +191,7 @@ public class RadioActivity extends Activity {
     }
 
     private void play(int i) {
-        AudioService.start(this, URLS.get(i), NAMES.get(i));
-        Toast.makeText(this, NAMES.get(i) + " çalıyor.\nEkranı kilitleyebilirsin, ses devam eder.",
-                Toast.LENGTH_LONG).show();
+        RadioPlayerActivity.open(this, i);
     }
 
     private void menu(final int i) {
@@ -284,7 +282,7 @@ public class RadioActivity extends Activity {
         t.setGravity(Gravity.CENTER);
         t.setPadding(dp(12), dp(8), dp(12), dp(8));
         GradientDrawable d = new GradientDrawable();
-        d.setColor(Color.parseColor("#2A2F3A"));
+        d.setColor(Color.parseColor("#2A3444"));
         d.setCornerRadius(dp(16));
         t.setBackground(d);
         return t;

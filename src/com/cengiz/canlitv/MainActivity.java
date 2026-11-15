@@ -28,11 +28,11 @@ import java.util.Set;
 
 public class MainActivity extends android.app.Activity {
 
-    private static final int BG = Color.parseColor("#0E0F13");
-    private static final int CARD = Color.parseColor("#191C24");
-    private static final int ACCENT = Color.parseColor("#C2185B");
-    private static final int TEXT = Color.parseColor("#F2F4F8");
-    private static final int MUTED = Color.parseColor("#8B93A7");
+    private static final int BG = Color.parseColor("#11151C");
+    private static final int CARD = Color.parseColor("#1B2230");
+    private static final int ACCENT = Color.parseColor("#FF7A18");
+    private static final int TEXT = Color.parseColor("#F5F7FA");
+    private static final int MUTED = Color.parseColor("#9AA4B2");
 
     private final List<Channel> shown = new ArrayList<Channel>();
     private List<Channel> all;
@@ -103,7 +103,7 @@ public class MainActivity extends android.app.Activity {
         });
         topRow.addView(multi);
 
-        TextView radio = pill("📻", Color.parseColor("#2A2F3A"));
+        TextView radio = pill("📻", Color.parseColor("#2A3444"));
         radio.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View v) {
                 startActivity(new Intent(MainActivity.this, RadioActivity.class));
@@ -115,7 +115,7 @@ public class MainActivity extends android.app.Activity {
         radio.setLayoutParams(rlp);
         topRow.addView(radio);
 
-        TextView settings = pill("⚙", Color.parseColor("#2A2F3A"));
+        TextView settings = pill("⚙", Color.parseColor("#2A3444"));
         settings.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View v) { settingsDialog(); }
         });
@@ -627,7 +627,7 @@ public class MainActivity extends android.app.Activity {
             no.setTextColor(Color.WHITE);
             no.setTextSize(11);
             no.setGravity(Gravity.CENTER);
-            no.setBackground(rounded(Color.parseColor("#2A2F3A"), 10));
+            no.setBackground(rounded(Color.parseColor("#2A3444"), 10));
             LinearLayout.LayoutParams nlp = new LinearLayout.LayoutParams(dp(34), dp(28));
             nlp.setMargins(0, 0, dp(8), 0);
             no.setLayoutParams(nlp);

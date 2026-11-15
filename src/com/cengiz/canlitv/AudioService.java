@@ -38,6 +38,53 @@ public class AudioService extends Service {
     private WifiManager.WifiLock wifiLock;
     private boolean paused = false;
 
+    // --- gercek ekolayzir (AudioEffect) ---
+    private static android.media.audiofx.Equalizer eq;
+    private static final short[] LEVELS = new short[8];
+    private static AudioService INSTANCE;
+
+    public static int[] eqRange() {
+        try {
+            if (eq != null) {
+                short[] r = eq.getBandLevelRange();
+                return new int[]{r[0], r[1]};
+            }
+        } catch (Throwable ignored) { }
+        return new int[]{-1500, 1500};
+    }
+
+    public static short[] eqFreqs() {
+        try {
+            if (eq != null) {
+                short n = eq.getNumberOfBands();
+                short[] f = new short[n];
+                for (short i = 0; i < n; i++) f[i] = (short) (eq.getCenterFreq(i) / 1000);
+                return f;
+            }
+        } catch (Throwable ignored) { }
+        return new short[]{60, 230, 910, 3600, 14000};
+    }
+
+    public static short[] eqLevels() { return LEVELS.clone(); }
+
+    public static void eqSet(int band, short level) {
+        if (band < 0 || band >= LEVELS.length) return;
+        LEVELS[band] = level;
+        try {
+            if (eq != null && band < eq.getNumberOfBands()) eq.setBandLevel((short) band, level);
+        } catch (Throwable ignored) { }
+    }
+
+    public static boolean isPlayingStatic() {
+        try {
+            return INSTANCE != null && INSTANCE.player != null && INSTANCE.player.isPlaying();
+        } catch (Throwable e) { return false; }
+    }
+
+    public static void toggleStatic() {
+        if (INSTANCE != null) INSTANCE.toggle();
+    }
+
     public static void start(Context ctx, String url, String channelName) {
         Intent i = new Intent(ctx, AudioService.class);
         i.putExtra("url", url);
@@ -55,6 +102,7 @@ public class AudioService extends Service {
         if (intent == null) return START_NOT_STICKY;
         if (intent.getBooleanExtra("stop", false)) { stopSelf(); return START_NOT_STICKY; }
 
+        INSTANCE = this;
         createChannel();
         ensureSession();
         startForeground(NOTIF_ID, notification());
@@ -173,9 +221,10 @@ public class AudioService extends Service {
                 }
             }, 7000);
             player.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
-                @Override public void onPrepared(MediaPlayer mp) {
-                    mp.start();
-                    updateState();
+                                    @Override public void onPrepared(MediaPlayer mp) {
+                        attachEq(mp);
+                        mp.start();
+                        updateState();
                     try { startForeground(NOTIF_ID, notification()); } catch (Exception ignored) { }
                 }
             });
@@ -283,6 +332,18 @@ public class AudioService extends Service {
         } catch (Exception ignored) { }
     }
 
+    private void attachEq(MediaPlayer mp) {
+        try {
+            if (eq != null) { eq.release(); eq = null; }
+            eq = new android.media.audiofx.Equalizer(0, mp.getAudioSessionId());
+            eq.setEnabled(true);
+            short n = eq.getNumberOfBands();
+            for (short i = 0; i < n && i < LEVELS.length; i++) {
+                if (LEVELS[i] != 0) eq.setBandLevel(i, LEVELS[i]);
+            }
+        } catch (Throwable ignored) { }
+    }
+
     private void releasePlayer() {
         try {
             if (player != null) { player.reset(); player.release(); player = null; }
@@ -291,6 +352,8 @@ public class AudioService extends Service {
 
     @Override
     public void onDestroy() {
+        INSTANCE = null;
+        try { if (eq != null) { eq.release(); eq = null; } } catch (Throwable ignored) { }
         releasePlayer();
         try { if (session != null) { session.setActive(false); session.release(); session = null; } } catch (Exception ignored) { }
         try { if (wakeLock != null) { wakeLock.release(); wakeLock = null; } } catch (Exception ignored) { }
