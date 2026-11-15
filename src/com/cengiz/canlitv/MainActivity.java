@@ -41,6 +41,9 @@ public class MainActivity extends android.app.Activity {
     private String query = "";
     private LinearLayout chipsRow;
     private TextView dataBar;
+    private TextView emptyView;
+    private ListView listView;
+    private boolean onlyHidden = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -61,10 +64,19 @@ public class MainActivity extends android.app.Activity {
         topRow.setOrientation(LinearLayout.HORIZONTAL);
         topRow.setGravity(Gravity.CENTER_VERTICAL);
 
+        ImageView brand = new ImageView(this);
+        LinearLayout.LayoutParams blp = new LinearLayout.LayoutParams(dp(42), dp(42));
+        blp.setMargins(0, 0, dp(10), 0);
+        brand.setLayoutParams(blp);
+        brand.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        try { brand.setImageDrawable(getPackageManager().getApplicationIcon(getPackageName())); }
+        catch (Exception ignored) { }
+        topRow.addView(brand);
+
         LinearLayout titleCol = new LinearLayout(this);
         titleCol.setOrientation(LinearLayout.VERTICAL);
         TextView title = new TextView(this);
-        title.setText("Canlı TV");
+        title.setText("UMAY Multi TV");
         title.setTextColor(TEXT);
         title.setTextSize(23);
         title.setTypeface(title.getTypeface(), android.graphics.Typeface.BOLD);
@@ -90,6 +102,18 @@ public class MainActivity extends android.app.Activity {
             }
         });
         topRow.addView(multi);
+
+        TextView radio = pill("📻", Color.parseColor("#2A2F3A"));
+        radio.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) {
+                startActivity(new Intent(MainActivity.this, RadioActivity.class));
+            }
+        });
+        LinearLayout.LayoutParams rlp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        rlp.setMargins(dp(6), 0, 0, 0);
+        radio.setLayoutParams(rlp);
+        topRow.addView(radio);
 
         TextView settings = pill("⚙", Color.parseColor("#2A2F3A"));
         settings.setOnClickListener(new View.OnClickListener() {
@@ -181,6 +205,7 @@ public class MainActivity extends android.app.Activity {
 
         // --- liste ---
         ListView list = new ListView(this);
+        listView = list;
         list.setDivider(null);
         list.setDividerHeight(dp(6));
         list.setPadding(dp(12), dp(4), dp(12), dp(12));
@@ -190,9 +215,26 @@ public class MainActivity extends android.app.Activity {
         list.setAdapter(adapter);
         list.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override public void onItemClick(AdapterView<?> p, View v, int pos, long id) {
-                open(shown.get(pos));
+                final Channel c = shown.get(pos);
+                if (onlyHidden) { channelMenu(c); return; }
+                open(c);
             }
         });
+        list.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
+            @Override public boolean onItemLongClick(AdapterView<?> p, View v, int pos, long id) {
+                channelMenu(shown.get(pos));
+                return true;
+            }
+        });
+
+        emptyView = new TextView(this);
+        emptyView.setTextColor(MUTED);
+        emptyView.setTextSize(13);
+        emptyView.setGravity(Gravity.CENTER);
+        emptyView.setPadding(dp(24), dp(40), dp(24), dp(24));
+        emptyView.setVisibility(View.GONE);
+        root.addView(emptyView, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
         root.addView(list, new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
 
@@ -208,6 +250,7 @@ public class MainActivity extends android.app.Activity {
         cats.add("🇹🇷 Türkçe");
         cats.add("🌐 Yabancı");
         cats.add("🕘 Son");
+        cats.add("🗑 Gizlenenler");
         cats.addAll(ChannelRepo.groups(this));
         for (final String c : cats) {
             TextView chip = new TextView(this);
@@ -218,6 +261,7 @@ public class MainActivity extends android.app.Activity {
             chip.setOnClickListener(new View.OnClickListener() {
                 @Override public void onClick(View v) {
                     group = c;
+                    onlyHidden = "🗑 Gizlenenler".equals(c);
                     styleChips();
                     refresh();
                 }
@@ -308,7 +352,10 @@ public class MainActivity extends android.app.Activity {
                 "🩺 Tüm kanalları test et (sağlık taraması)",
                 "Bugünün verisini sıfırla",
                 "Tüm veri sayaçlarını sıfırla",
-                audioOnly ? "Kayıtlar nereye gidiyor?" : "Kayıtlar nereye gidiyor?"
+                "Kayıtlar nereye gidiyor?",
+                "📻 Radyo",
+                "ℹ️ Ne var ne yok? (yapılanlar listesi)",
+                "🗑 Gizlenenleri göster"
         };
         new AlertDialog.Builder(this).setTitle("Ayarlar").setItems(items,
                 new DialogInterface.OnClickListener() {
@@ -339,12 +386,24 @@ public class MainActivity extends android.app.Activity {
                             case 6:
                                 Prefs.resetAllUsage(MainActivity.this);
                                 break;
-                            default:
+                            case 7:
                                 new AlertDialog.Builder(MainActivity.this).setTitle("Kayıtlar")
                                         .setMessage("Kayıtlar galeride:\n\nMovies / TV-Kayitlari\n\n"
                                                 + "Dosya biçimi .ts (ses + görüntü birlikte).\n"
                                                 + "Uygulama içinden: Ayarlar → Kayıtlarım")
                                         .setPositiveButton("Tamam", null).show();
+                                break;
+                            case 8:
+                                startActivity(new Intent(MainActivity.this, RadioActivity.class));
+                                break;
+                            case 9:
+                                startActivity(new Intent(MainActivity.this, StatusActivity.class));
+                                break;
+                            default:
+                                group = "🗑 Gizlenenler";
+                                onlyHidden = true;
+                                styleChips();
+                                break;
                         }
                         refresh();
                     }
@@ -415,6 +474,32 @@ public class MainActivity extends android.app.Activity {
         }
     }
 
+    private void channelMenu(final Channel c) {
+        final boolean hidden = Prefs.hiddenChannels(this).contains(c.url);
+        final boolean fav = Prefs.favs(this).contains(c.url);
+        String[] items = hidden
+                ? new String[]{"\u2795 Listeye geri ekle", "Aç"}
+                : new String[]{"Aç", fav ? "★ Favoriden çıkar" : "★ Favorilere ekle", "\ud83d\uddd1 Listeden gizle"};
+        new AlertDialog.Builder(this)
+                .setTitle("№" + c.no + "  " + c.flag() + "  " + c.name)
+                .setItems(items, new DialogInterface.OnClickListener() {
+                    @Override public void onClick(DialogInterface d, int which) {
+                        if (hidden) {
+                            if (which == 0) { Prefs.unhideChannel(MainActivity.this, c.url); refresh(); }
+                            else open(c);
+                            return;
+                        }
+                        if (which == 0) { open(c); return; }
+                        if (which == 1) { Prefs.toggleFav(MainActivity.this, c.url); refresh(); return; }
+                        Prefs.hideChannel(MainActivity.this, c.url);
+                        refresh();
+                        Toast.makeText(MainActivity.this,
+                                c.name + " listeden gizlendi.\nGeri eklemek: \ud83d\uddd1 Gizlenenler",
+                                Toast.LENGTH_LONG).show();
+                    }
+                }).show();
+    }
+
     private void open(Channel c) {
         Intent i = new Intent(this, PlayerActivity.class);
         i.putExtra("index", ChannelRepo.indexOfUrl(c.url));
@@ -425,8 +510,10 @@ public class MainActivity extends android.app.Activity {
         shown.clear();
         Set<String> favs = Prefs.favs(this);
         List<String> recent = Prefs.recent(this);
+        java.util.Set<String> hidden = Prefs.hiddenChannels(this);
         for (Channel c : all) {
-            if (Prefs.hideDead(this) && Prefs.fails(this, c.url) >= 3) continue;
+            if (onlyHidden != hidden.contains(c.url)) continue;
+            if (!onlyHidden && Prefs.hideDead(this) && Prefs.fails(this, c.url) >= 3) continue;
             if (!"Tümü".equals(group)) {
                 if ("★ Favoriler".equals(group)) {
                     if (!favs.contains(c.url)) continue;
@@ -454,6 +541,16 @@ public class MainActivity extends android.app.Activity {
             shown.addAll(ordered);
         }
         adapter.notifyDataSetChanged();
+        if (shown.isEmpty()) {
+            emptyView.setVisibility(View.VISIBLE);
+            emptyView.setText(onlyHidden
+                    ? "Gizlenen kanal yok.\n\nBir kanala uzun basıp \"Listeden gizle\" dersen burada birikir."
+                    : "Bu filtrede kanal yok.\n\nAramayı temizle veya başka bir sekme dene.");
+            if (listView != null) listView.setVisibility(View.GONE);
+        } else {
+            emptyView.setVisibility(View.GONE);
+            if (listView != null) listView.setVisibility(View.VISIBLE);
+        }
         updateDataBar();
     }
 

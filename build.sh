@@ -25,7 +25,7 @@ echo "[2/7] manifest + kaynaklar baglaniyor (aapt2 link)"
 
 echo "[3/7] java derleniyor"
 find src "$OUT/gen" -name "*.java" > "$OUT/sources.txt"
-javac --release 11 -nowarn -classpath "$PLATFORM" -d "$OUT/classes" @"$OUT/sources.txt" 2>&1 | grep -v "^Note:" || true
+javac --release 11 -nowarn -classpath "$PLATFORM" -d "$OUT/classes" @"$OUT/sources.txt" > "$OUT/javac.log" 2>&1 || { grep -v "^Note:" "$OUT/javac.log"; echo "JAVA DERLEME HATASI"; exit 1; }
 
 echo "[4/7] dex olusturuluyor (d8)"
 find "$OUT/classes" -name "*.class" > "$OUT/classes.txt"

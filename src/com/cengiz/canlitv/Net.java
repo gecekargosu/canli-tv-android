@@ -50,6 +50,13 @@ public class Net {
         if (sessionStart == 0) sessionStart = -1;
     }
 
+    /** Devam eden oturumda simdiye kadar harcanan bayt. */
+    public static long sessionSoFar() {
+        if (sessionStart <= 0) return 0;
+        long used = rx() - sessionStart;
+        return used > 0 ? used : 0;
+    }
+
     /** Izleme bitince: bu oturumda harcanan bayt. */
     public static long end() {
         if (sessionStart == -1) return 0;

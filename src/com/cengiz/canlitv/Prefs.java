@@ -109,6 +109,39 @@ public class Prefs {
         return sp(c).getInt("lastIndex", 0);
     }
 
+    // --- listeden gizlenen kanallar / radyolar ---
+    public static Set<String> hiddenChannels(Context c) {
+        return new HashSet<String>(sp(c).getStringSet("hiddenCh", new HashSet<String>()));
+    }
+
+    public static void hideChannel(Context c, String url) {
+        Set<String> s = hiddenChannels(c);
+        s.add(url);
+        sp(c).edit().putStringSet("hiddenCh", s).apply();
+    }
+
+    public static void unhideChannel(Context c, String url) {
+        Set<String> s = hiddenChannels(c);
+        s.remove(url);
+        sp(c).edit().putStringSet("hiddenCh", s).apply();
+    }
+
+    public static Set<String> hiddenRadios(Context c) {
+        return new HashSet<String>(sp(c).getStringSet("hiddenRd", new HashSet<String>()));
+    }
+
+    public static void hideRadio(Context c, String url) {
+        Set<String> s = hiddenRadios(c);
+        s.add(url);
+        sp(c).edit().putStringSet("hiddenRd", s).apply();
+    }
+
+    public static void unhideRadio(Context c, String url) {
+        Set<String> s = hiddenRadios(c);
+        s.remove(url);
+        sp(c).edit().putStringSet("hiddenRd", s).apply();
+    }
+
     // --- internet kullanimi ---
     private static String today() {
         return new java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US)

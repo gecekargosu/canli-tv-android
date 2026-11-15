@@ -49,6 +49,7 @@ public class PlayerActivity extends android.app.Activity {
     private AudioManager audio;
     private boolean tracking = false;
     private long openedAt = 0;
+    private boolean limitWarned = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -281,9 +282,36 @@ public class PlayerActivity extends android.app.Activity {
                 s = saat + "   ⏰ " + String.format(java.util.Locale.getDefault(), "%d:%02d", s2 / 60, s2 % 60);
             }
             clockBar.setText(s);
+            checkLimit();
             ui.postDelayed(this, 1000);
         }
     };
+
+    /** Limit dolduysa sorar: devam edilsin mi? */
+    private void checkLimit() {
+        final int lim = Prefs.limitMb(this);
+        if (lim <= 0 || limitWarned) return;
+        long used = Prefs.todayBytes(this) + Net.sessionSoFar();
+        if (used < lim * 1048576L) return;
+        limitWarned = true;
+        new AlertDialog.Builder(this)
+                .setTitle("Günlük veri limiti doldu")
+                .setMessage("Limit: " + lim + " MB\nKullanılan: " + Net.mb(used)
+                        + "\n\nDevam edilsin mi? (mobil veridesin)")
+                .setCancelable(false)
+                .setPositiveButton("Devam et", new DialogInterface.OnClickListener() {
+                    @Override public void onClick(DialogInterface d, int w) { }
+                })
+                .setNegativeButton("Durdur", new DialogInterface.OnClickListener() {
+                    @Override public void onClick(DialogInterface d, int w) {
+                        Toast.makeText(PlayerActivity.this, "Limit doldu, yayın durduruldu",
+                                Toast.LENGTH_LONG).show();
+                        finishUsage();
+                        finish();
+                    }
+                })
+                .show();
+    }
 
     // ---------- uyku zamanlayicisi ----------
     private void sleepDialog() {

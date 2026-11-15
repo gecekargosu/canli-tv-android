@@ -1,13 +1,15 @@
-# Canlı TV (Android)
+# UMAY Multi TV (Android)
 
-Reklamsız, hesapsız, **ücretsiz** canlı TV uygulaması. 302 kanal tek listede; kanallar uygulamanın
-içine gömülü olduğu için hiçbir siteye yönlendirme yapmaz, tarayıcı açılmaz.
+Reklamsız, hesapsız, **ücretsiz** canlı TV + radyo uygulaması. 300+ kanal ve 49 radyo tek listede;
+yayınlar uygulamanın içine gömülü olduğu için hiçbir siteye yönlendirme yapmaz, tarayıcı açılmaz.
 
 Tek dosya APK: [`CanliTV.apk`](CanliTV.apk) (Android 8.0+, imzalı)
 
 ## Özellikler
 
 - **Numaralı kanallar** – kumanda gibi: üstteki *No* kutusuna numarayı yaz → **Git** → onay → açılır.
+- **📻 Radyo** – 49 internet radyosu (TRT, Kral, Power, Süper, Metro, Joy, Radyo 7, Karadeniz FM, TRT Trabzon…); üstteki radyo düğmesinden açılır, **ekran kilitliyken de çalar** (ön plan servisi + wake/Wi-Fi lock).
+- **Liste yönetimi** – bir kanala/radyoya uzun bas → *Listeden gizle*; "🗑 Gizlenenler" sekmesinden geri ekle. Böylece 300 kanalı kendi zevkine göre 50'ye indirebilirsin.
 - **Kanal sırası** – büyük Türk kanalları en üstte (TRT 1, TRT 2, TV8, ATV, Star TV, Kanal D, Haber Global, NTV, A Haber, Halk TV, Kanal 7, TRT Spor…) sonra diğer TR kanalları, en sonda yabancılar.
 - **Ülke bayrağı** ve **🇹🇷 Türkçe / 🌐 Yabancı / 🕘 Son izlenenler / ★ Favoriler** filtreleri.
 - **Arama** – kanal adı, grup veya numara.
