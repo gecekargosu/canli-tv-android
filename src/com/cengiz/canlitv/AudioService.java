@@ -130,7 +130,19 @@ public class AudioService extends Service {
         } catch (Exception ignored) { }
     }
 
+    private int attempt = 0;
+
     private void playUrl(String url) {
+        attempt = 0;
+        attemptPlay(url);
+    }
+
+    /**
+     * Bazi cihazlarda MediaPlayer https radyo akisinda takilip kaliyor;
+     * 7 saniyede acilmazsa ayni adres http:// ile tekrar denenir.
+     */
+    private void attemptPlay(final String url) {
+        final String candidate = attempt == 0 ? url : url.replace("https://", "http://");
         releasePlayer();
         paused = false;
         try {
@@ -138,9 +150,28 @@ public class AudioService extends Service {
             player.setAudioAttributes(new AudioAttributes.Builder()
                     .setUsage(AudioAttributes.USAGE_MEDIA)
                     .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC).build());
-            player.setWakeMode(this, PowerManager.PARTIAL_WAKE_LOCK);
-            player.setDataSource(url);
+            player.setDataSource(candidate);
             player.prepareAsync();
+            android.util.Log.i("UmayRadio", "deneme " + attempt + ": " + candidate);
+            final MediaPlayer p = player;
+            new android.os.Handler(getMainLooper()).postDelayed(new Runnable() {
+                @Override public void run() {
+                    try {
+                        if (p != player) return;
+                        boolean playing = false;
+                        try { playing = p.isPlaying(); } catch (Exception ignored) { }
+                        if (playing) return;
+                        if (attempt == 0 && candidate.startsWith("https://")) {
+                            attempt = 1;
+                            android.util.Log.w("UmayRadio", "https takildi, http deneniyor");
+                            attemptPlay(currentUrl);
+                        } else {
+                            android.util.Log.w("UmayRadio", "yayin acilmadi: " + candidate);
+                            notifyText("Yayın açılamadı · başka istasyon dene");
+                        }
+                    } catch (Exception ignored) { }
+                }
+            }, 7000);
             player.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
                 @Override public void onPrepared(MediaPlayer mp) {
                     mp.start();
@@ -148,20 +179,14 @@ public class AudioService extends Service {
                     try { startForeground(NOTIF_ID, notification()); } catch (Exception ignored) { }
                 }
             });
-            player.setOnErrorListener(new MediaPlayer.OnErrorListener() {
-                @Override public boolean onError(MediaPlayer mp, int w, int e) {
-                    try {
-                        NotificationManager nm = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-                        Notification.Builder b = Build.VERSION.SDK_INT >= 26
-                                ? new Notification.Builder(AudioService.this, CHANNEL_ID)
-                                : new Notification.Builder(AudioService.this);
-                        nm.notify(NOTIF_ID, b.setContentTitle(name)
-                                .setContentText("Yayın açılamadı · sonraki kanal için ⏭")
-                                .setSmallIcon(android.R.drawable.ic_media_play).build());
-                    } catch (Exception ignored) { }
-                    return true;
-                }
-            });
+                            player.setOnErrorListener(new MediaPlayer.OnErrorListener() {
+                    @Override public boolean onError(MediaPlayer mp, int w, int e) {
+                        android.util.Log.e("UmayRadio", "hata what=" + w + " extra=" + e + " " + currentUrl);
+                        notifyText("Yayın açılamadı · sonraki kanal için ⏭");
+                        return true;
+                    }
+                });
+                android.util.Log.i("UmayRadio", "setDataSource tamam: " + candidate);
         } catch (Exception e) {
             stopSelf();
         }
@@ -244,6 +269,18 @@ public class AudioService extends Service {
                 .setOngoing(true)
                 .setVisibility(Notification.VISIBILITY_PUBLIC);
         return b.build();
+    }
+
+    private void notifyText(String text) {
+        try {
+            NotificationManager nm = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+            Notification.Builder b = Build.VERSION.SDK_INT >= 26
+                    ? new Notification.Builder(AudioService.this, CHANNEL_ID)
+                    : new Notification.Builder(AudioService.this);
+            nm.notify(NOTIF_ID, b.setContentTitle(name)
+                    .setContentText(text)
+                    .setSmallIcon(android.R.drawable.ic_media_play).build());
+        } catch (Exception ignored) { }
     }
 
     private void releasePlayer() {
