@@ -50,6 +50,9 @@ public class PlayerActivity extends android.app.Activity {
     private boolean tracking = false;
     private long openedAt = 0;
     private boolean limitWarned = false;
+    private boolean locked = false;
+    private boolean screenOffAudio = false;
+    private TextView lockHint;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -122,6 +125,12 @@ public class PlayerActivity extends android.app.Activity {
             @Override public void onClick(View v) { listenInBackground(); }
         });
         top.addView(audioBtn);
+
+        TextView lockBtn = iconButton("🔒");
+        lockBtn.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) { setLocked(!locked); }
+        });
+        top.addView(lockBtn);
 
         TextView pipBtn = iconButton("⧉");
         pipBtn.setOnClickListener(new View.OnClickListener() {
@@ -233,8 +242,33 @@ public class PlayerActivity extends android.app.Activity {
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
 
         video.setOnClickListener(new View.OnClickListener() {
-            @Override public void onClick(View v) { toggleBars(); }
+            @Override public void onClick(View v) {
+                if (locked) {
+                    Toast.makeText(PlayerActivity.this,
+                            "Dokunma kilidi açık · açmak için ekrana uzun bas", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                toggleBars();
+            }
         });
+        video.setOnLongClickListener(new View.OnLongClickListener() {
+            @Override public boolean onLongClick(View v) {
+                if (locked) setLocked(false);
+                return true;
+            }
+        });
+
+        lockHint = new TextView(this);
+        lockHint.setText("🔒 dokunma kilidi · açmak için uzun bas");
+        lockHint.setTextColor(Color.parseColor("#CCFFFFFF"));
+        lockHint.setTextSize(11);
+        lockHint.setPadding(dp(10), dp(4), dp(10), dp(4));
+        FrameLayout.LayoutParams lhlp = new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        lhlp.gravity = Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL;
+        lhlp.setMargins(0, 0, 0, dp(16));
+        lockHint.setVisibility(View.GONE);
+        root.addView(lockHint, lhlp);
 
         setContentView(root);
 
@@ -281,7 +315,8 @@ public class PlayerActivity extends android.app.Activity {
                 long s2 = kalan / 1000;
                 s = saat + "   ⏰ " + String.format(java.util.Locale.getDefault(), "%d:%02d", s2 / 60, s2 % 60);
             }
-            clockBar.setText(s);
+            clockBar.setText(s + "\n📶 " + Net.mb(Prefs.todayBytes(PlayerActivity.this)
+                    + Net.sessionSoFar()) + " bugün");
             checkLimit();
             ui.postDelayed(this, 1000);
         }
@@ -659,9 +694,40 @@ public class PlayerActivity extends android.app.Activity {
     protected void onPause() {
         super.onPause();
         finishUsage();
-        if (Build.VERSION.SDK_INT < 26 || !isInPictureInPictureMode()) {
-            try { video.pause(); } catch (Exception ignored) { }
+        if (Build.VERSION.SDK_INT >= 26 && isInPictureInPictureMode()) return;
+        // ekran kapaninca / uygulamadan cikinca ses devam etsin (kilit ekrani dinleme)
+        try {
+            if (video.isPlaying() && index >= 0 && index < list.size()) {
+                Channel c = list.get(index);
+                String q = Prefs.quality(this, c.url);
+                AudioService.start(this, q != null ? q : c.url, c.name);
+                screenOffAudio = true;
+            }
+        } catch (Exception ignored) { }
+        try { video.pause(); } catch (Exception ignored) { }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (screenOffAudio) {
+            screenOffAudio = false;
+            AudioService.stop(this);
+            try { video.start(); } catch (Exception ignored) { }
         }
+    }
+
+    private void setLocked(boolean v) {
+        locked = v;
+        lockHint.setVisibility(v ? View.VISIBLE : View.GONE);
+        if (v) {
+            hideBars();
+        } else {
+            showBars();
+            scheduleHide();
+        }
+        Toast.makeText(this, v ? "Ekran kilitli: yanlışlıkla dokunmak bir şey bozmaz"
+                : "Kilit açıldı", Toast.LENGTH_SHORT).show();
     }
 
     @Override

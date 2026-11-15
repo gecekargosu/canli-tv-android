@@ -603,3 +603,9 @@ http://85.237.89.159:3342/ar-s/STAR-Action-HD/index.m3u8
 https://cdn.whiplash.cc/whiplash-cinema/index.m3u8
 #EXTINF:-1 tvg-logo="https://i.ibb.co/JjVvkMsf/cantho2-2025.png" tvg-country="vn" group-title="Bilim",Can Tho TV 2
 https://live.canthotv.vn/cs2/live.stream/playlist.m3u8
+#EXTINF:-1 tvg-country="sa" group-title="Dini",Mekke Canlı (Kabe)
+https://media2.streambrothers.com:1936/8122/8122/playlist.m3u8
+#EXTINF:-1 tvg-country="sa" group-title="Dini",Kuran TV (Kabe)
+http://m.live.net.sa:1935/live/quran/gmswf.m3u8
+#EXTINF:-1 tvg-country="sa" group-title="Dini",Katar Kuran TV
+https://qatartv.akamaized.net/hls/live/20000612/qtvquran/master.m3u8

@@ -40,6 +40,10 @@ public class MultiActivity extends android.app.Activity {
     private int paneCount = 3;
     private boolean tracking = false;
     private long openedAt = 0;
+    private LinearLayout panelRef;
+    private boolean screenOffAudio = false;
+    private boolean controlsVisible = true;
+    private TextView dataRef;
     private LinearLayout col;
     private TextView clock;
     private HlsRecorder recorder = new HlsRecorder();
@@ -90,6 +94,7 @@ public class MultiActivity extends android.app.Activity {
         pb.setColor(PANEL);
         pb.setCornerRadius(dp(14));
         panel.setBackground(pb);
+        panelRef = panel;
         FrameLayout.LayoutParams panelLp = new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         panelLp.gravity = Gravity.BOTTOM;
@@ -141,6 +146,12 @@ public class MultiActivity extends android.app.Activity {
         });
         panel.addView(saveSet);
 
+        dataRef = new TextView(this);
+        dataRef.setTextColor(Color.parseColor("#CCFFFFFF"));
+        dataRef.setTextSize(10);
+        dataRef.setPadding(dp(4), 0, dp(4), 0);
+        panel.addView(dataRef);
+
         clock = new TextView(this);
         clock.setTextColor(Color.parseColor("#CCFFFFFF"));
         clock.setTextSize(12);
@@ -158,6 +169,7 @@ public class MultiActivity extends android.app.Activity {
         openedAt = System.currentTimeMillis();
         Net.begin();
         ui.post(tick);
+        hideControlsSoon();
         if (Net.mobile(this) && !Prefs.mobileOk(this)) {
             new AlertDialog.Builder(this).setTitle("Mobil veri uyarısı")
                     .setMessage("Wi-Fi yok. Çoklu ekran mobil veride hızlı tüketir.\n\nBugün: "
@@ -182,9 +194,37 @@ public class MultiActivity extends android.app.Activity {
         @Override public void run() {
             clock.setText(new java.text.SimpleDateFormat("HH:mm:ss", java.util.Locale.getDefault())
                     .format(new java.util.Date()));
+            if (dataRef != null) dataRef.setText("📶 " + Net.mb(Prefs.todayBytes(MultiActivity.this)
+                    + Net.sessionSoFar()));
             ui.postDelayed(this, 1000);
         }
     };
+
+    /** Ekrana dokununca kontrol paneli alttan gelir, 4 sniye sonra kendini gizler. */
+    private void toggleControls() {
+        controlsVisible = !controlsVisible;
+        applyControls();
+        if (controlsVisible) hideControlsSoon();
+    }
+
+    private void applyControls() {
+        if (panelRef != null)
+            panelRef.setVisibility(controlsVisible ? View.VISIBLE : View.GONE);
+        for (Slot s : slots) if (s != null)
+            s.speaker.setVisibility(controlsVisible ? View.VISIBLE : View.GONE);
+    }
+
+    private final Runnable hideControls = new Runnable() {
+        @Override public void run() {
+            controlsVisible = false;
+            applyControls();
+        }
+    };
+
+    private void hideControlsSoon() {
+        ui.removeCallbacks(hideControls);
+        ui.postDelayed(hideControls, 4500);
+    }
 
     private void setPaneCount(int n) {
         paneCount = n;
@@ -307,6 +347,7 @@ public class MultiActivity extends android.app.Activity {
             label.setPadding(dp(42), dp(5), dp(8), dp(5));
             label.setBackground(new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,
                     new int[]{Color.parseColor("#AA000000"), Color.parseColor("#00000000")}));
+            label.setVisibility(View.GONE);
             FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
             lp.gravity = Gravity.TOP;
@@ -332,12 +373,18 @@ public class MultiActivity extends android.app.Activity {
                 }
             });
 
-            setOnClickListener(new View.OnClickListener() {
-                @Override public void onClick(View v) {
+            speaker.setOnLongClickListener(new View.OnLongClickListener() {
+                @Override public boolean onLongClick(View v) {
                     for (int i = 0; i < 4; i++) audible[i] = (i == slotIndex);
                     applyAudio();
                     saveState();
+                    Toast.makeText(MultiActivity.this,
+                            (slotIndex + 1) + ". ekranın sesi öne alındı", Toast.LENGTH_SHORT).show();
+                    return true;
                 }
+            });
+            setOnClickListener(new View.OnClickListener() {
+                @Override public void onClick(View v) { toggleControls(); }
             });
             setOnLongClickListener(new View.OnLongClickListener() {
                 @Override public boolean onLongClick(View v) {
@@ -356,14 +403,12 @@ public class MultiActivity extends android.app.Activity {
             on = b;
             try { if (mp != null) mp.setVolume(b ? 1f : 0f, b ? 1f : 0f); } catch (Exception ignored) { }
             speaker.setText(b ? "🔊" : "🔇");
-            Channel c = list.get(chan);
-            label.setText("№" + c.no + " " + c.flag() + " " + c.name);
         }
 
         void reload() {
             release();
             Channel c = list.get(chan);
-            label.setText("№" + c.no + " " + c.flag() + " " + c.name);
+            label.setVisibility(View.GONE);
             if (!surfaceReady) return;
             try {
                 mp = new MediaPlayer();
@@ -378,7 +423,8 @@ public class MultiActivity extends android.app.Activity {
                 });
                 mp.setOnErrorListener(new MediaPlayer.OnErrorListener() {
                     @Override public boolean onError(MediaPlayer m, int w, int e) {
-                        label.setText("açılamadı · №" + list.get(chan).no + " " + list.get(chan).name);
+                        label.setText("açılamadı · uzun bas → kanal seç");
+                        label.setVisibility(View.VISIBLE);
                         return true;
                     }
                 });
@@ -491,6 +537,19 @@ public class MultiActivity extends android.app.Activity {
                     Prefs.addUsage(this, list.get(slots[i].chan).url, per, sec);
             }
         }
+        // ekran kapaninca / uygulamadan cikinca sesli devam: sesi acik pencerenin akisi servise devredilir
+        boolean wasPlaying = false;
+        for (Slot s : slots) {
+            try { if (s.mp != null && s.mp.isPlaying()) wasPlaying = true; } catch (Exception ignored) { }
+        }
+        if (wasPlaying) {
+            int pick = 0;
+            for (int i = 0; i < 4; i++) if (audible[i]) { pick = i; break; }
+            Channel c = list.get(slots[pick].chan);
+            String q = Prefs.quality(this, c.url);
+            AudioService.start(this, q != null ? q : c.url, c.name);
+            screenOffAudio = true;
+        }
         for (Slot s : slots) {
             try { if (s.mp != null && s.mp.isPlaying()) s.mp.pause(); } catch (Exception ignored) { }
         }
@@ -501,6 +560,10 @@ public class MultiActivity extends android.app.Activity {
         super.onResume();
         for (Slot s : slots) {
             try { if (s.mp != null && !s.mp.isPlaying()) s.mp.start(); } catch (Exception ignored) { }
+        }
+        if (screenOffAudio) {
+            screenOffAudio = false;
+            AudioService.stop(this);
         }
         if (!tracking) { tracking = true; openedAt = System.currentTimeMillis(); Net.begin(); }
     }
