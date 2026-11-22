@@ -1,7 +1,10 @@
 package com.cengiz.canlitv;
 
 public class Channel {
-    public final int no;
+    /** Kullanicinin degistirebildigi kumanda numarasi. */
+    public int no;
+    /** Listeye gomulu asil numara (sifirlama icin). */
+    public final int baseNo;
     public final String name;
     public final String group;
     public final String country;
@@ -10,6 +13,7 @@ public class Channel {
 
     public Channel(int no, String name, String group, String country, String logo, String url) {
         this.no = no;
+        this.baseNo = no;
         this.name = name;
         this.group = group;
         this.country = country == null ? "" : country.toLowerCase();

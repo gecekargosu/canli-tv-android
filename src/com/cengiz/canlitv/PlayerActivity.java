@@ -21,6 +21,7 @@ import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.EditText;
 import android.widget.FrameLayout;
+import android.widget.HorizontalScrollView;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.SeekBar;
@@ -56,6 +57,7 @@ public class PlayerActivity extends android.app.Activity {
     private android.media.MediaPlayer mp;
     private TextView lockHint;
     private TextView muteBtn;
+    private TextView qualityBtn;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -91,8 +93,8 @@ public class PlayerActivity extends android.app.Activity {
         clockBar.setPadding(dp(8), dp(4), dp(8), dp(4));
         FrameLayout.LayoutParams clp = new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        clp.gravity = Gravity.TOP | Gravity.START;
-        clp.setMargins(dp(10), dp(54), 0, 0);
+        clp.gravity = Gravity.BOTTOM | Gravity.START;
+        clp.setMargins(dp(10), 0, 0, dp(78));
         root.addView(clockBar, clp);
 
         // yari saydam ses dugmesi: barlar gizlense de ekranda kalir
@@ -112,13 +114,16 @@ public class PlayerActivity extends android.app.Activity {
         });
         root.addView(muteBtn, mlp);
 
-        // --- ust bar ---
+        // --- ust bar: buyuk, yazili dugmeler ---
         top = new LinearLayout(this);
-        top.setOrientation(LinearLayout.HORIZONTAL);
-        top.setGravity(Gravity.CENTER_VERTICAL);
-        top.setPadding(dp(10), dp(8), dp(4), dp(8));
+        top.setOrientation(LinearLayout.VERTICAL);
+        top.setPadding(dp(8), dp(6), dp(8), dp(4));
         top.setBackground(new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,
-                new int[]{Color.parseColor("#CC000000"), Color.parseColor("#00000000")}));
+                new int[]{Color.parseColor("#E6000000"), Color.parseColor("#00000000")}));
+
+        LinearLayout titleRow = new LinearLayout(this);
+        titleRow.setOrientation(LinearLayout.HORIZONTAL);
+        titleRow.setGravity(Gravity.CENTER_VERTICAL);
 
         nameView = new TextView(this);
         nameView.setTextColor(TEXT);
@@ -126,42 +131,70 @@ public class PlayerActivity extends android.app.Activity {
         nameView.setTypeface(nameView.getTypeface(), android.graphics.Typeface.BOLD);
         nameView.setLayoutParams(new LinearLayout.LayoutParams(0,
                 ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
-        top.addView(nameView);
+        titleRow.addView(nameView);
 
-        recButton = iconButton("⏺");
-        recButton.setOnClickListener(new View.OnClickListener() {
-            @Override public void onClick(View v) { toggleRecording(); }
+        TextView close = barButton("✕", "Kapat");
+        close.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) { finish(); }
         });
-        top.addView(recButton);
+        titleRow.addView(close);
+        top.addView(titleRow);
 
-        TextView qualityBtn = iconButton("HD");
+        HorizontalScrollView barScroll = new HorizontalScrollView(this);
+        barScroll.setHorizontalScrollBarEnabled(false);
+        LinearLayout barRow = new LinearLayout(this);
+        barRow.setOrientation(LinearLayout.HORIZONTAL);
+        barRow.setPadding(0, dp(4), 0, dp(2));
+        barScroll.addView(barRow);
+        top.addView(barScroll);
+
+        TextView homeBtn = barButton("🏠", "Ana sayfa");
+        hint(homeBtn, "Ana sayfa: kanal listesine dön");
+        homeBtn.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) { goHome(); }
+        });
+        barRow.addView(homeBtn);
+
+        favButton = barButton("★", "Favori");
+        hint(favButton, "Favorilere ekle / çıkar");
+        favButton.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) { toggleFav(); }
+        });
+        barRow.addView(favButton);
+
+        qualityBtn = barButton("🎚", QualityDialog.label(this));
+        hint(qualityBtn, "Yayın kalitesi: 360p / 480p / 720p · veri tasarrufu");
         qualityBtn.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View v) { chooseQuality(); }
         });
-        top.addView(qualityBtn);
+        barRow.addView(qualityBtn);
 
-        TextView audioBtn = iconButton("🎧");
+        recButton = barButton("⏺", "Kayıt");
+        hint(recButton, "Yayını telefona kaydet (Movies/TV-Kayitlari)");
+        recButton.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) { toggleRecording(); }
+        });
+        barRow.addView(recButton);
+
+        TextView audioBtn = barButton("🎧", "Sadece ses");
+        hint(audioBtn, "Arka planda ses: ekran kapalıyken dinle");
         audioBtn.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View v) { listenInBackground(); }
         });
-        top.addView(audioBtn);
+        barRow.addView(audioBtn);
 
-        TextView lockBtn = iconButton("🔒");
-        lockBtn.setOnClickListener(new View.OnClickListener() {
-            @Override public void onClick(View v) { setLocked(!locked); }
-        });
-        top.addView(lockBtn);
-
-        TextView pipBtn = iconButton("⧉");
+        TextView pipBtn = barButton("⧉", "PiP");
+        hint(pipBtn, "Küçük pencere: başka uygulamanın üstünde izle");
         pipBtn.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View v) {
                 if (!enterPip()) Toast.makeText(PlayerActivity.this,
                         "Küçük pencere için önce kanal açılmalı", Toast.LENGTH_SHORT).show();
             }
         });
-        top.addView(pipBtn);
+        barRow.addView(pipBtn);
 
-        TextView multiBtn = iconButton("▦");
+        TextView multiBtn = barButton("▦", "Çoklu");
+        hint(multiBtn, "Çoklu ekran: 2-4 kanalı aynı anda izle");
         multiBtn.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View v) {
                 Intent i = new Intent(PlayerActivity.this, MultiActivity.class);
@@ -169,19 +202,14 @@ public class PlayerActivity extends android.app.Activity {
                 startActivity(i);
             }
         });
-        top.addView(multiBtn);
+        barRow.addView(multiBtn);
 
-        favButton = iconButton("★");
-        favButton.setOnClickListener(new View.OnClickListener() {
-            @Override public void onClick(View v) { toggleFav(); }
+        TextView lockBtn = barButton("🔒", "Kilit");
+        hint(lockBtn, "Dokunma kilidi: yanlış dokunuşları engeller");
+        lockBtn.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) { setLocked(!locked); }
         });
-        top.addView(favButton);
-
-        TextView close = iconButton("✕");
-        close.setOnClickListener(new View.OnClickListener() {
-            @Override public void onClick(View v) { finish(); }
-        });
-        top.addView(close);
+        barRow.addView(lockBtn);
 
         FrameLayout.LayoutParams toplp = new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
@@ -417,31 +445,10 @@ public class PlayerActivity extends android.app.Activity {
 
     // ---------- kalite ----------
     private void chooseQuality() {
-        final Channel c = list.get(index);
-        Toast.makeText(this, "Kaliteler aranıyor...", Toast.LENGTH_SHORT).show();
-        Quality.load(c.url, new Quality.Callback() {
-            @Override public void onResult(final List<Quality.Variant> variants) {
-                runOnUiThread(new Runnable() {
-                    @Override public void run() {
-                        if (variants.isEmpty()) {
-                            Toast.makeText(PlayerActivity.this, "Bu kanal tek kalitede yayın yapıyor",
-                                    Toast.LENGTH_SHORT).show();
-                            return;
-                        }
-                        String[] labels = new String[variants.size() + 1];
-                        labels[0] = "Otomatik (en iyi)";
-                        for (int i = 0; i < variants.size(); i++) labels[i + 1] = variants.get(i).label;
-                        new AlertDialog.Builder(PlayerActivity.this)
-                                .setTitle("Yayın kalitesi")
-                                .setItems(labels, new DialogInterface.OnClickListener() {
-                                    @Override public void onClick(DialogInterface d, int which) {
-                                        String url = which == 0 ? null : variants.get(which - 1).url;
-                                        Prefs.setQuality(PlayerActivity.this, c.url, url);
-                                        play();
-                                    }
-                                }).show();
-                    }
-                });
+        QualityDialog.show(this, new Runnable() {
+            @Override public void run() {
+                updateQualityLabel();
+                play();
             }
         });
     }
@@ -503,6 +510,7 @@ public class PlayerActivity extends android.app.Activity {
         nameView.setText("№" + c.no + "  " + c.flag() + "  " + c.name);
         counter.setText((index + 1) + "/" + list.size());
         favButton.setTextColor(Prefs.favs(this).contains(c.url) ? Color.parseColor("#FFC107") : MUTED);
+        updateQualityLabel();
         if (recorder.isRunning()) { recorder.stop(); recButton.setTextColor(TEXT); }
         Prefs.addRecent(this, c.url);
         Prefs.setLastIndex(this, index);
@@ -554,33 +562,36 @@ public class PlayerActivity extends android.app.Activity {
                 .show();
     }
 
-    private void startAudioOnly(Channel c) {
-        AudioService.start(this, c.url, c.name);
-        Toast.makeText(this, c.name + ": ses olarak çalıyor (veri tasarrufu).\n"
-                + "Ekranı kapatabilirsin.", Toast.LENGTH_LONG).show();
-        finish();
+    private void startAudioOnly(final Channel c) {
+        Toast.makeText(this, c.name + ": ses olarak başlatılıyor…", Toast.LENGTH_SHORT).show();
+        Quality.resolveLowest(this, c.url, new Quality.UrlCallback() {
+            @Override public void onUrl(final String url) {
+                runOnUiThread(new Runnable() {
+                    @Override public void run() {
+                        AudioService.start(PlayerActivity.this, url, c.name);
+                        Toast.makeText(PlayerActivity.this, c.name
+                                + ": ses olarak çalıyor (en düşük kalite, en az veri).\n"
+                                + "Ekranı kapatabilirsin.", Toast.LENGTH_LONG).show();
+                        finish();
+                    }
+                });
+            }
+        });
     }
 
     private void playNow(final Channel c) {
         // TV acilinca arkadaki radyo sussun (tek ses kaynagi kalsin)
         AudioService.stop(this);
         screenOffAudio = false;
-        String custom = Prefs.quality(this, c.url);
-        if (custom != null) { startVideo(custom); return; }
-        if (Prefs.dataSaver(this)) {
-            progress.setVisibility(View.VISIBLE);
-            errorView.setVisibility(View.GONE);
-            Quality.load(c.url, new Quality.Callback() {
-                @Override public void onResult(final List<Quality.Variant> variants) {
-                    final String low = Quality.lowest(variants);
-                    runOnUiThread(new Runnable() {
-                        @Override public void run() { startVideo(low != null ? low : c.url); }
-                    });
-                }
-            });
-            return;
-        }
-        startVideo(c.url);
+        progress.setVisibility(View.VISIBLE);
+        errorView.setVisibility(View.GONE);
+        Quality.resolve(this, c.url, new Quality.UrlCallback() {
+            @Override public void onUrl(final String url) {
+                runOnUiThread(new Runnable() {
+                    @Override public void run() { startVideo(url); }
+                });
+            }
+        });
     }
 
     private void startVideo(String url) {
@@ -716,6 +727,54 @@ public class PlayerActivity extends android.app.Activity {
             showBars();
             clockBar.setVisibility(View.VISIBLE);
         }
+    }
+
+    // ---------- ana sayfa / buyuk dugmeler ----------
+    private void goHome() {
+        AudioService.stop(this);
+        Intent i = new Intent(this, MainActivity.class);
+        i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        startActivity(i);
+        finish();
+    }
+
+    private void hint(View v, final String text) {
+        v.setOnLongClickListener(new View.OnLongClickListener() {
+            @Override public boolean onLongClick(View x) {
+                Toast.makeText(PlayerActivity.this, text, Toast.LENGTH_SHORT).show();
+                return true;
+            }
+        });
+    }
+
+    private void updateQualityLabel() {
+        if (qualityBtn != null) setBarText(qualityBtn, "🎚", QualityDialog.label(this));
+    }
+
+    private void setBarText(TextView t, String icon, String label) {
+        android.text.SpannableStringBuilder sb = new android.text.SpannableStringBuilder(
+                icon + "\n" + label);
+        sb.setSpan(new android.text.style.RelativeSizeSpan(1.6f), 0, icon.length(),
+                android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        t.setText(sb);
+    }
+
+    /** Ust bardaki buyuk dugme: ikon ustte, ad altta. */
+    private TextView barButton(String icon, String label) {
+        TextView t = new TextView(this);
+        t.setTextColor(TEXT);
+        t.setTextSize(9);
+        t.setGravity(Gravity.CENTER);
+        setBarText(t, icon, label);
+        GradientDrawable d = new GradientDrawable();
+        d.setColor(Color.parseColor("#66000000"));
+        d.setCornerRadius(dp(12));
+        t.setBackground(d);
+        t.setPadding(dp(2), dp(5), dp(2), dp(5));
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(dp(62), dp(50));
+        lp.setMargins(dp(3), 0, dp(3), 0);
+        t.setLayoutParams(lp);
+        return t;
     }
 
     private TextView iconButton(String s) {

@@ -20,7 +20,7 @@ echo "[2/7] manifest + kaynaklar baglaniyor (aapt2 link)"
     -A assets \
     -R "$OUT/res.zip" \
     --java "$OUT/gen" \
-    --min-sdk-version 26 --target-sdk-version 34 \
+    --min-sdk-version 26 --target-sdk-version 36 \
     --auto-add-overlay
 
 echo "[3/7] java derleniyor"

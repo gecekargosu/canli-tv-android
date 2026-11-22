@@ -2,6 +2,7 @@ package com.cengiz.canlitv;
 
 import android.app.AlertDialog;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.drawable.GradientDrawable;
 import android.media.MediaPlayer;
@@ -48,6 +49,7 @@ public class MultiActivity extends android.app.Activity {
     private TextView clock;
     private HlsRecorder recorder = new HlsRecorder();
     private int recSlot = 1;
+    private int reloadGen = 0;
     private final Handler ui = new Handler();
 
     @Override
@@ -103,9 +105,29 @@ public class MultiActivity extends android.app.Activity {
 
         TextView home = chip("🏠");
         home.setOnClickListener(new View.OnClickListener() {
-            @Override public void onClick(View v) { finish(); }
+            @Override public void onClick(View v) { goHome(); }
+        });
+        home.setOnLongClickListener(new View.OnLongClickListener() {
+            @Override public boolean onLongClick(View v) {
+                Toast.makeText(MultiActivity.this, "Ana sayfa: kanal listesine dön",
+                        Toast.LENGTH_SHORT).show();
+                return true;
+            }
         });
         panel.addView(home);
+
+        TextView stopAll = chip("⏹");
+        stopAll.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) { stopAllAndClose(); }
+        });
+        stopAll.setOnLongClickListener(new View.OnLongClickListener() {
+            @Override public boolean onLongClick(View v) {
+                Toast.makeText(MultiActivity.this, "TV'yi kapat: yayını durdurup listeye dön",
+                        Toast.LENGTH_SHORT).show();
+                return true;
+            }
+        });
+        panel.addView(stopAll);
 
         for (int i = 1; i <= 4; i++) {
             final int n = i;
@@ -407,36 +429,53 @@ public class MultiActivity extends android.app.Activity {
 
         void reload() {
             release();
-            Channel c = list.get(chan);
+            final Channel c = list.get(chan);
             label.setVisibility(View.GONE);
             if (!surfaceReady) return;
+            final int gen = ++reloadGen;
             try {
-                mp = new MediaPlayer();
-                mp.setDisplay(surface.getHolder());
-                String q = Prefs.quality(MultiActivity.this, c.url);
-                mp.setDataSource(q != null ? q : c.url);
-                mp.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
+                final MediaPlayer player = new MediaPlayer();
+                mp = player;
+                player.setDisplay(surface.getHolder());
+                player.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
                     @Override public void onPrepared(MediaPlayer m) {
+                        if (player != mp) return;
                         AudioService.stop(MultiActivity.this);
                         screenOffAudio = false;
                         m.setVolume(on ? 1f : 0f, on ? 1f : 0f);
                         m.start();
                     }
                 });
-                mp.setOnErrorListener(new MediaPlayer.OnErrorListener() {
+                player.setOnErrorListener(new MediaPlayer.OnErrorListener() {
                     @Override public boolean onError(MediaPlayer m, int w, int e) {
                         label.setText("açılamadı · uzun bas → kanal seç");
                         label.setVisibility(View.VISIBLE);
                         return true;
                     }
                 });
-                mp.prepareAsync();
+                Quality.resolve(MultiActivity.this, c.url, new Quality.UrlCallback() {
+                    @Override public void onUrl(final String url) {
+                        runOnUiThread(new Runnable() {
+                            @Override public void run() {
+                                if (gen != reloadGen || player != mp) return;
+                                try {
+                                    player.setDataSource(url);
+                                    player.prepareAsync();
+                                } catch (Exception e) {
+                                    label.setText("açılamadı · №" + c.no + " " + c.name);
+                                    label.setVisibility(View.VISIBLE);
+                                }
+                            }
+                        });
+                    }
+                });
             } catch (Exception e) {
                 label.setText("açılamadı · №" + c.no + " " + c.name);
             }
         }
 
         void release() {
+            reloadGen++;
             try { if (mp != null) { mp.reset(); mp.release(); mp = null; } } catch (Exception ignored) { }
         }
 
@@ -504,6 +543,20 @@ public class MultiActivity extends android.app.Activity {
         });
 
         dlg.show();
+    }
+
+    private void goHome() {
+        stopAllAndClose();
+        Intent i = new Intent(this, MainActivity.class);
+        i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        startActivity(i);
+    }
+
+    /** Butun pencereleri ve arkadaki sesi kapatir, kanal listesine doner. */
+    private void stopAllAndClose() {
+        for (Slot s : slots) if (s != null) s.release();
+        AudioService.stop(this);
+        finish();
     }
 
     private TextView chip(String s) {

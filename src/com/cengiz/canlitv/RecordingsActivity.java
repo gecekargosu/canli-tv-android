@@ -85,11 +85,16 @@ public class RecordingsActivity extends Activity {
         load();
     }
 
+    /**
+     * Kayitlar uygulamanin kendi olusturdugu medya ogeleri (MediaStore, IS_PENDING ile eklenir).
+     * Android 10+ sürümlerde uygulama kendi dosyalarini izinsiz okuyabilir; bu yüzden izin yok.
+     * Sadece Android 9 ve altinda READ_EXTERNAL_STORAGE gerekir.
+     */
     private void askPermission() {
-        String p = Build.VERSION.SDK_INT >= 33 ? "android.permission.READ_MEDIA_VIDEO"
-                : "android.permission.READ_EXTERNAL_STORAGE";
+        if (Build.VERSION.SDK_INT >= 29) return;
+        String p = "android.permission.READ_EXTERNAL_STORAGE";
         if (checkSelfPermission(p) != PackageManager.PERMISSION_GRANTED) {
-            if (Build.VERSION.SDK_INT >= 23) requestPermissions(new String[]{p}, 21);
+            requestPermissions(new String[]{p}, 21);
         }
     }
 

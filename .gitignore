@@ -7,11 +7,28 @@ build/
 
 # imza anahtarı (yerelde tutulur)
 debug.keystore
+upload-keystore.jks
+
+# Play yükleme çıktıları
+*.aab
+build_aab/
+
+# sürüm arşivi (releases/vX.Y) repoda kalsın
+!releases/**/*.apk
+!releases/**/*.aab
 
 # yerel araç/ara sonuçlar
 _build/*.png
 _build/*.txt
 _build/*.tsv
+_build/*.xml
+_build/*.log
+_build/*.jar
+_build/*.apks
+_build/dex/
+_build/classes/
+_build/gen/
+_build/all.m3u
 _build/channels-before-sort.m3u
 
 # işletim sistemi

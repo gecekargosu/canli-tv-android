@@ -33,6 +33,7 @@ public class MainActivity extends android.app.Activity {
     private static final int ACCENT = Color.parseColor("#FF7A18");
     private static final int TEXT = Color.parseColor("#F5F7FA");
     private static final int MUTED = Color.parseColor("#9AA4B2");
+    private static final int SOFT = Color.parseColor("#2A3444");
 
     private final List<Channel> shown = new ArrayList<Channel>();
     private List<Channel> all;
@@ -44,11 +45,21 @@ public class MainActivity extends android.app.Activity {
     private TextView emptyView;
     private ListView listView;
     private boolean onlyHidden = false;
+    private String shownCountry = "";
+    private String shownLang = "";
+
+    // --- liste duzenleme ---
+    private boolean editMode = false;
+    private final java.util.LinkedHashSet<String> selected = new java.util.LinkedHashSet<String>();
+    private LinearLayout editBar;
+    private TextView editBtn, selCount;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         all = ChannelRepo.all(this);
+        shownCountry = Prefs.country(this);
+        shownLang = Prefs.uiLang(this);
 
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
@@ -78,12 +89,16 @@ public class MainActivity extends android.app.Activity {
         TextView title = new TextView(this);
         title.setText("UMAY Multi TV");
         title.setTextColor(TEXT);
-        title.setTextSize(23);
+        title.setTextSize(17);
+        title.setSingleLine(true);
+        title.setEllipsize(android.text.TextUtils.TruncateAt.END);
         title.setTypeface(title.getTypeface(), android.graphics.Typeface.BOLD);
         TextView sub = new TextView(this);
-        sub.setText(all.size() + " kanal · no ile aç, 3'lü izle, kayıt");
+        sub.setText(Lang.subtitle(this, all.size()));
         sub.setTextColor(MUTED);
-        sub.setTextSize(11);
+        sub.setTextSize(10);
+        sub.setSingleLine(true);
+        sub.setEllipsize(android.text.TextUtils.TruncateAt.END);
         titleCol.addView(title);
         titleCol.addView(sub);
         topRow.addView(titleCol, new LinearLayout.LayoutParams(0,
@@ -103,7 +118,7 @@ public class MainActivity extends android.app.Activity {
         });
         topRow.addView(multi);
 
-        TextView radio = pill("📻", Color.parseColor("#2A3444"));
+        TextView radio = pill("📻", SOFT);
         radio.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View v) {
                 startActivity(new Intent(MainActivity.this, RadioActivity.class));
@@ -115,9 +130,24 @@ public class MainActivity extends android.app.Activity {
         radio.setLayoutParams(rlp);
         topRow.addView(radio);
 
-        TextView settings = pill("⚙", Color.parseColor("#2A3444"));
+        // --- ulke secimi: secilen ulkenin kanallari listeye gelir ---
+        TextView countryBtn = pill(Countries.flag(shownCountry), SOFT);
+        countryBtn.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) {
+                startActivity(new Intent(MainActivity.this, CountryActivity.class));
+            }
+        });
+        LinearLayout.LayoutParams cblp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        cblp.setMargins(dp(6), 0, 0, 0);
+        countryBtn.setLayoutParams(cblp);
+        topRow.addView(countryBtn);
+
+        TextView settings = pill("⚙", SOFT);
         settings.setOnClickListener(new View.OnClickListener() {
-            @Override public void onClick(View v) { settingsDialog(); }
+            @Override public void onClick(View v) {
+                startActivity(new Intent(MainActivity.this, SettingsActivity.class));
+            }
         });
         LinearLayout.LayoutParams slp = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
@@ -145,7 +175,7 @@ public class MainActivity extends android.app.Activity {
         searchRow.setLayoutParams(srlp);
 
         EditText search = new EditText(this);
-        search.setHint("Kanal ara...");
+        search.setHint(Lang.t(this, "search"));
         search.setHintTextColor(MUTED);
         search.setTextColor(TEXT);
         search.setTextSize(14);
@@ -203,6 +233,84 @@ public class MainActivity extends android.app.Activity {
         root.addView(chipsScroll);
         buildChips();
 
+        // --- liste araclari: duzenle / sirala ---
+        LinearLayout tools = new LinearLayout(this);
+        tools.setOrientation(LinearLayout.HORIZONTAL);
+        tools.setGravity(Gravity.CENTER_VERTICAL);
+        tools.setPadding(dp(14), dp(2), dp(14), dp(2));
+
+        editBtn = pill(Lang.t(this, "edit"), SOFT);
+        editBtn.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) { setEditMode(!editMode); }
+        });
+        tools.addView(editBtn);
+
+        TextView sortBtn = pill(Lang.t(this, "sort"), SOFT);
+        sortBtn.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) { sortDialog(); }
+        });
+        LinearLayout.LayoutParams sortLp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        sortLp.setMargins(dp(6), 0, 0, 0);
+        sortBtn.setLayoutParams(sortLp);
+        tools.addView(sortBtn);
+
+        root.addView(tools);
+
+        // --- duzenleme cubugu ---
+        editBar = new LinearLayout(this);
+        editBar.setOrientation(LinearLayout.HORIZONTAL);
+        editBar.setGravity(Gravity.CENTER_VERTICAL);
+        editBar.setPadding(dp(14), dp(2), dp(14), dp(6));
+        editBar.setVisibility(View.GONE);
+
+        TextView doneBtn = mini("✓ Bitti");
+        doneBtn.setBackground(rounded(ACCENT, 14));
+        doneBtn.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) { setEditMode(false); }
+        });
+        editBar.addView(doneBtn);
+
+        selCount = new TextView(this);
+        selCount.setTextColor(MUTED);
+        selCount.setTextSize(10);
+        LinearLayout.LayoutParams sclp = new LinearLayout.LayoutParams(0,
+                ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
+        sclp.setMargins(dp(8), 0, dp(4), 0);
+        editBar.addView(selCount, sclp);
+
+        TextView upBtn = mini("▲");
+        upBtn.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) { moveSelected(-1); }
+        });
+        editBar.addView(upBtn);
+
+        TextView downBtn = mini("▼");
+        downBtn.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) { moveSelected(1); }
+        });
+        editBar.addView(downBtn);
+
+        TextView topBtn = mini("⤒");
+        topBtn.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) { moveSelectedToEdge(true); }
+        });
+        editBar.addView(topBtn);
+
+        TextView bottomBtn = mini("⤓");
+        bottomBtn.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) { moveSelectedToEdge(false); }
+        });
+        editBar.addView(bottomBtn);
+
+        TextView delBtn = mini("🗑");
+        delBtn.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) { deleteSelected(); }
+        });
+        editBar.addView(delBtn);
+
+        root.addView(editBar);
+
         // --- liste ---
         ListView list = new ListView(this);
         listView = list;
@@ -215,7 +323,8 @@ public class MainActivity extends android.app.Activity {
         list.setAdapter(adapter);
         list.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override public void onItemClick(AdapterView<?> p, View v, int pos, long id) {
-                final Channel c = shown.get(pos);
+                Channel c = shown.get(pos);
+                if (editMode) { toggleSelect(c); return; }
                 if (onlyHidden) { channelMenu(c); return; }
                 open(c);
             }
@@ -239,6 +348,7 @@ public class MainActivity extends android.app.Activity {
                 ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
 
         setContentView(root);
+        handleExtras(getIntent());
         refresh();
     }
 
@@ -247,14 +357,16 @@ public class MainActivity extends android.app.Activity {
         List<String> cats = new ArrayList<String>();
         cats.add("Tümü");
         cats.add("★ Favoriler");
-        cats.add("🇹🇷 Türkçe");
-        cats.add("🌐 Yabancı");
+        if ("tr".equals(Prefs.country(this))) {
+            cats.add("🇹🇷 Türkçe");
+            cats.add("🌐 Yabancı");
+        }
         cats.add("🕘 Son");
         cats.add("🗑 Gizlenenler");
         cats.addAll(ChannelRepo.groups(this));
         for (final String c : cats) {
             TextView chip = new TextView(this);
-            chip.setText(c);
+            chip.setText(Lang.tab(this, c));
             chip.setTextSize(12);
             chip.setPadding(dp(12), dp(7), dp(12), dp(7));
             chip.setTag(c);
@@ -262,6 +374,7 @@ public class MainActivity extends android.app.Activity {
                 @Override public void onClick(View v) {
                     group = c;
                     onlyHidden = "🗑 Gizlenenler".equals(c);
+                    selected.clear();
                     styleChips();
                     refresh();
                 }
@@ -287,7 +400,8 @@ public class MainActivity extends android.app.Activity {
     private void gotoNumber(int no) {
         final Channel c = ChannelRepo.byNumber(this, no);
         if (c == null) {
-            Toast.makeText(this, "№" + no + " diye kanal yok (1-" + all.size() + ")", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "№" + no + " diye kanal yok (1-" + all.size() + ")",
+                    Toast.LENGTH_SHORT).show();
             return;
         }
         new AlertDialog.Builder(this)
@@ -340,172 +454,264 @@ public class MainActivity extends android.app.Activity {
                 }).show();
     }
 
-    private void settingsDialog() {
-        final boolean hide = Prefs.hideDead(this);
-        final boolean audioOnly = Prefs.audioOnlyMobile(this);
-        int lim = Prefs.limitMb(this);
-        String[] items = {
-                "📁 Kayıtlarım",
-                "📶 Veri limiti: " + (lim == 0 ? "yok (sınırsız)" : lim + " MB/gün"),
-                audioOnly ? "🎧 Mobil veride sadece ses: AÇIK" : "🎧 Mobil veride sadece ses: KAPALI",
-                hide ? "Ölü kanalları gizle: AÇIK" : "Ölü kanalları gizle: KAPALI",
-                "🩺 Tüm kanalları test et (sağlık taraması)",
-                "Bugünün verisini sıfırla",
-                "Tüm veri sayaçlarını sıfırla",
-                "Kayıtlar nereye gidiyor?",
-                "📻 Radyo",
-                "ℹ️ Ne var ne yok? (yapılanlar listesi)",
-                "🗑 Gizlenenleri göster",
-                (Prefs.dataSaver(this) ? "💾 Veri tasarrufu (düşük kalite): AÇIK"
-                        : "💾 Veri tasarrufu (düşük kalite): KAPALI")
-        };
-        new AlertDialog.Builder(this).setTitle("Ayarlar").setItems(items,
-                new DialogInterface.OnClickListener() {
-                    @Override public void onClick(DialogInterface d, int which) {
-                        switch (which) {
-                            case 0:
-                                startActivity(new Intent(MainActivity.this, RecordingsActivity.class));
-                                break;
-                            case 1:
-                                askLimit();
-                                break;
-                            case 2:
-                                Prefs.setAudioOnlyMobile(MainActivity.this, !audioOnly);
-                                Toast.makeText(MainActivity.this,
-                                        !audioOnly ? "Mobil veride artık sadece ses çalacak"
-                                                : "Mobil veride görüntü de açılacak (onay ister)",
-                                        Toast.LENGTH_SHORT).show();
-                                break;
-                            case 3:
-                                Prefs.setHideDead(MainActivity.this, !hide);
-                                break;
-                            case 4:
-                                healthScan();
-                                break;
-                            case 5:
-                                Prefs.resetToday(MainActivity.this);
-                                break;
-                            case 6:
-                                Prefs.resetAllUsage(MainActivity.this);
-                                break;
-                            case 7:
-                                new AlertDialog.Builder(MainActivity.this).setTitle("Kayıtlar")
-                                        .setMessage("Kayıtlar galeride:\n\nMovies / TV-Kayitlari\n\n"
-                                                + "Dosya biçimi .ts (ses + görüntü birlikte).\n"
-                                                + "Uygulama içinden: Ayarlar → Kayıtlarım")
-                                        .setPositiveButton("Tamam", null).show();
-                                break;
-                            case 8:
-                                startActivity(new Intent(MainActivity.this, RadioActivity.class));
-                                break;
-                            case 9:
-                                startActivity(new Intent(MainActivity.this, StatusActivity.class));
-                                break;
-                            case 10:
-                                Prefs.setDataSaver(MainActivity.this, !Prefs.dataSaver(MainActivity.this));
-                                Toast.makeText(MainActivity.this,
-                                        !Prefs.dataSaver(MainActivity.this)
-                                                ? "Veri tasarrufu açık: yayınlar en düşük kalitede açılacak"
-                                                : "Veri tasarrufu kapalı: en iyi kalite",
-                                        Toast.LENGTH_LONG).show();
-                                break;
-                            default:
-                                group = "🗑 Gizlenenler";
-                                onlyHidden = true;
-                                styleChips();
-                                break;
-                        }
-                        refresh();
-                    }
-                }).show();
+    // ---------- duzenleme modu ----------
+    private void setEditMode(boolean on) {
+        editMode = on;
+        if (!on) selected.clear();
+        if (editBar != null) editBar.setVisibility(on ? View.VISIBLE : View.GONE);
+        if (editBtn != null) {
+            editBtn.setText(on ? "✏️ Düzenleniyor" : "✏️ Düzenle");
+            editBtn.setBackground(rounded(on ? ACCENT : SOFT, 18));
+        }
+        updateSelCount();
+        if (adapter != null) adapter.notifyDataSetChanged();
     }
 
-    private void askLimit() {
+    private void toggleSelect(Channel c) {
+        if (selected.contains(c.url)) selected.remove(c.url);
+        else selected.add(c.url);
+        updateSelCount();
+        adapter.notifyDataSetChanged();
+    }
+
+    private void updateSelCount() {
+        if (selCount != null) {
+            selCount.setText(selected.size() == 0
+                    ? "kanala dokun → seç"
+                    : selected.size() + " kanal seçili");
+        }
+        if (editBar != null) editBar.setVisibility(editMode ? View.VISIBLE : View.GONE);
+    }
+
+    private List<Channel> selectedChannels() {
+        List<Channel> out = new ArrayList<Channel>();
+        for (Channel c : shown) if (selected.contains(c.url)) out.add(c);
+        return out;
+    }
+
+    private void moveSelected(int delta) {
+        if (!canReorder()) return;
+        List<Channel> sel = selectedChannels();
+        if (sel.isEmpty()) {
+            Toast.makeText(this, "Önce kanallara dokunup seç", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        if (delta < 0) {
+            for (Channel c : sel) {
+                int i = shown.indexOf(c);
+                if (i > 0) { shown.remove(i); shown.add(i - 1, c); }
+            }
+        } else {
+            for (int k = sel.size() - 1; k >= 0; k--) {
+                Channel c = sel.get(k);
+                int i = shown.indexOf(c);
+                if (i >= 0 && i < shown.size() - 1) { shown.remove(i); shown.add(i + 1, c); }
+            }
+        }
+        saveOrder();
+        adapter.notifyDataSetChanged();
+    }
+
+    private void moveSelectedToEdge(boolean top) {
+        if (!canReorder()) return;
+        List<Channel> sel = selectedChannels();
+        if (sel.isEmpty()) {
+            Toast.makeText(this, "Önce kanallara dokunup seç", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        shown.removeAll(sel);
+        if (top) shown.addAll(0, sel);
+        else shown.addAll(sel);
+        saveOrder();
+        adapter.notifyDataSetChanged();
+        Toast.makeText(this, top ? "En üste alındı" : "En alta alındı", Toast.LENGTH_SHORT).show();
+    }
+
+    private void deleteSelected() {
+        if (!canReorder()) return;
+        List<Channel> sel = selectedChannels();
+        if (sel.isEmpty()) {
+            Toast.makeText(this, "Silmek için kanal seç", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        for (Channel c : sel) {
+            if (onlyHidden) Prefs.unhideChannel(this, c.url);
+            else Prefs.hideChannel(this, c.url);
+        }
+        shown.removeAll(sel);
+        for (Channel c : sel) selected.remove(c.url);
+        saveOrder();
+        refresh();
+        Toast.makeText(this, onlyHidden
+                        ? sel.size() + " kanal listeye geri eklendi"
+                        : sel.size() + " kanal listeden silindi · 🗑 Gizlenenler'den geri alabilirsin",
+                Toast.LENGTH_LONG).show();
+    }
+
+    private boolean canReorder() {
+        if (query.length() > 0) {
+            Toast.makeText(this, "Sıralamak için arama kutusunu temizle", Toast.LENGTH_SHORT).show();
+            return false;
+        }
+        return true;
+    }
+
+    private void saveOrder() {
+        if ("🕘 Son".equals(group)) return;
+        List<String> urls = new ArrayList<String>();
+        for (Channel c : shown) urls.add(c.url);
+        Prefs.setOrder(this, group, urls);
+    }
+
+    /** Tek bir kanali bir adim yukari/asagi tasi (satirdaki oklar). */
+    private void moveItem(int pos, int delta) {
+        if (!canReorder()) return;
+        int j = pos + delta;
+        if (pos < 0 || pos >= shown.size() || j < 0 || j >= shown.size()) return;
+        Channel c = shown.remove(pos);
+        shown.add(j, c);
+        saveOrder();
+        adapter.notifyDataSetChanged();
+    }
+
+    private void askNumber(final Channel c) {
+        final boolean filtered = query.length() > 0;
         final EditText et = new EditText(this);
         et.setInputType(InputType.TYPE_CLASS_NUMBER);
-        et.setHint("örn: 2000 (0 = sınırsız)");
-        et.setText(String.valueOf(Prefs.limitMb(this)));
+        et.setText(String.valueOf(c.no));
         new AlertDialog.Builder(this)
-                .setTitle("Günlük mobil veri limiti (MB)")
-                .setMessage("Limit dolunca kanal açmadan önce uyarı verir.")
+                .setTitle("Kumanda numarası")
+                .setMessage("Yeni numara hem kumanda numarasını hem listedeki sırasını değiştirir.\n\nDolu bir numara yazarsan o kanalla numaralar yer değiştirir.")
                 .setView(et)
                 .setPositiveButton("Kaydet", new DialogInterface.OnClickListener() {
                     @Override public void onClick(DialogInterface d, int w) {
-                        try {
-                            Prefs.setLimitMb(MainActivity.this, Integer.parseInt(et.getText().toString().trim()));
-                        } catch (Exception e) {
-                            Prefs.setLimitMb(MainActivity.this, 0);
+                        int no;
+                        try { no = Integer.parseInt(et.getText().toString().trim()); }
+                        catch (Exception e) {
+                            Toast.makeText(MainActivity.this, "Sadece sayı yaz", Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+                        if (no < 1 || no > all.size()) {
+                            Toast.makeText(MainActivity.this, "1 ile " + all.size() + " arasında bir numara seç",
+                                    Toast.LENGTH_LONG).show();
+                            return;
+                        }
+                        Channel other = ChannelRepo.byNumber(MainActivity.this, no);
+                        int oldNo = c.no;
+                        if (other != null && !other.url.equals(c.url)) {
+                            // Numara dolu: iki kanal numaralarini degistirir (kumanda sirasi)
+                            Prefs.setNoOverride(MainActivity.this, other.url, oldNo);
+                        }
+                        Prefs.setNoOverride(MainActivity.this, c.url, no);
+                        ChannelRepo.applyNumbers(MainActivity.this);
+                        if (!filtered) {
+                            // Numara = kumanda sirasi: sekmeyi numaraya gore diz
+                            java.util.Collections.sort(shown, new java.util.Comparator<Channel>() {
+                                @Override public int compare(Channel a, Channel b) {
+                                    return a.no - b.no;
+                                }
+                            });
+                            saveOrder();
                         }
                         refresh();
+                        Toast.makeText(MainActivity.this,
+                                c.name + " artık №" + no, Toast.LENGTH_SHORT).show();
                     }
                 }).setNegativeButton("Vazgeç", null).show();
     }
 
-    private void healthScan() {
-        final android.app.ProgressDialog pd = new android.app.ProgressDialog(this);
-        pd.setMessage("Kanallar test ediliyor...");
-        pd.setCancelable(false);
-        pd.show();
-        new Thread(new Runnable() {
-            @Override public void run() {
-                int ok = 0, bad = 0;
-                for (Channel c : all) {
-                    boolean good = probe(c.url);
-                    if (good) { Prefs.clearFails(MainActivity.this, c.url); ok++; }
-                    else { Prefs.addFail(MainActivity.this, c.url); Prefs.addFail(MainActivity.this, c.url);
-                        Prefs.addFail(MainActivity.this, c.url); bad++; }
-                }
-                final int fok = ok, fbad = bad;
-                runOnUiThread(new Runnable() {
-                    @Override public void run() {
-                        pd.dismiss();
+    private void sortDialog() {
+        if (!canReorder()) return;
+        final String[] items = {
+                "🕘 Çok izlediklerim en üstte",
+                "🆕 Hiç izlemediklerim en üstte",
+                "🔤 Ada göre A → Z",
+                "🔢 Kanal numarasına göre",
+                "↩️ Varsayılan sıraya dön"
+        };
+        new AlertDialog.Builder(this)
+                .setTitle("Bu sekme nasıl sıralansın?")
+                .setMessage(group + " · " + shown.size() + " kanal")
+                .setItems(items, new DialogInterface.OnClickListener() {
+                    @Override public void onClick(DialogInterface d, int which) {
+                        if (which == 4) {
+                            Prefs.setOrder(MainActivity.this, group, new ArrayList<String>());
+                            setEditMode(false);
+                            refresh();
+                            Toast.makeText(MainActivity.this, "Varsayılan sıra geri geldi",
+                                    Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+                        List<Channel> sorted = new ArrayList<Channel>(shown);
+                        if (which == 0 || which == 1) {
+                            final boolean mostFirst = which == 0;
+                            java.util.Collections.sort(sorted, new java.util.Comparator<Channel>() {
+                                @Override public int compare(Channel a, Channel b) {
+                                    long sa = watchScore(a), sb = watchScore(b);
+                                    if (sa == sb) return a.no - b.no;
+                                    if (mostFirst) return sa > sb ? -1 : 1;
+                                    return sa < sb ? -1 : 1;
+                                }
+                            });
+                        } else if (which == 2) {
+                            java.util.Collections.sort(sorted, new java.util.Comparator<Channel>() {
+                                @Override public int compare(Channel a, Channel b) {
+                                    return a.name.compareToIgnoreCase(b.name);
+                                }
+                            });
+                        } else {
+                            java.util.Collections.sort(sorted, new java.util.Comparator<Channel>() {
+                                @Override public int compare(Channel a, Channel b) {
+                                    return a.no - b.no;
+                                }
+                            });
+                        }
+                        shown.clear();
+                        shown.addAll(sorted);
+                        saveOrder();
+                        setEditMode(false);
                         refresh();
-                        Toast.makeText(MainActivity.this, "Tarama bitti: " + fok + " çalışıyor, "
-                                + fbad + " ölü (gizlemek için ⚙ → ölü gizle)", Toast.LENGTH_LONG).show();
+                        Toast.makeText(MainActivity.this, "Sıra kaydedildi", Toast.LENGTH_SHORT).show();
                     }
-                });
-            }
-        }).start();
+                }).show();
     }
 
-    private boolean probe(String url) {
-        java.net.HttpURLConnection con = null;
-        try {
-            con = (java.net.HttpURLConnection) new java.net.URL(url).openConnection();
-            con.setConnectTimeout(6000);
-            con.setReadTimeout(6000);
-            con.setRequestProperty("User-Agent", "VLC/3.0");
-            int code = con.getResponseCode();
-            return code >= 200 && code < 400;
-        } catch (Exception e) {
-            return false;
-        } finally {
-            if (con != null) try { con.disconnect(); } catch (Exception ignored) { }
-        }
+    /** Izlenme suresi agirlikli puan: cok izlenen kanali one almak icin. */
+    private long watchScore(Channel c) {
+        return Prefs.secs(this, c.url) * 1000L + Prefs.usage(this, c.url) / 1024L;
     }
 
     private void channelMenu(final Channel c) {
         final boolean hidden = Prefs.hiddenChannels(this).contains(c.url);
         final boolean fav = Prefs.favs(this).contains(c.url);
-        String[] items = hidden
-                ? new String[]{"\u2795 Listeye geri ekle", "Aç"}
-                : new String[]{"Aç", fav ? "★ Favoriden çıkar" : "★ Favorilere ekle", "\ud83d\uddd1 Listeden gizle"};
+        final List<String> items = new ArrayList<String>();
+        items.add("▶  Aç");
+        items.add(fav ? "★  Favoriden çıkar" : "★  Favorilere ekle");
+        items.add("🔢  Numarayı değiştir (№" + c.no + ")");
+        items.add("☑  Seçim / sıralama modu");
+        items.add(hidden ? "➕  Listeye geri ekle" : "🗑  Listeden sil");
         new AlertDialog.Builder(this)
                 .setTitle("№" + c.no + "  " + c.flag() + "  " + c.name)
-                .setItems(items, new DialogInterface.OnClickListener() {
+                .setItems(items.toArray(new String[0]), new DialogInterface.OnClickListener() {
                     @Override public void onClick(DialogInterface d, int which) {
-                        if (hidden) {
-                            if (which == 0) { Prefs.unhideChannel(MainActivity.this, c.url); refresh(); }
-                            else open(c);
-                            return;
-                        }
                         if (which == 0) { open(c); return; }
                         if (which == 1) { Prefs.toggleFav(MainActivity.this, c.url); refresh(); return; }
-                        Prefs.hideChannel(MainActivity.this, c.url);
-                        refresh();
-                        Toast.makeText(MainActivity.this,
-                                c.name + " listeden gizlendi.\nGeri eklemek: \ud83d\uddd1 Gizlenenler",
-                                Toast.LENGTH_LONG).show();
+                        if (which == 2) { askNumber(c); return; }
+                        if (which == 3) {
+                            setEditMode(true);
+                            toggleSelect(c);
+                            return;
+                        }
+                        if (hidden) {
+                            Prefs.unhideChannel(MainActivity.this, c.url);
+                            refresh();
+                        } else {
+                            Prefs.hideChannel(MainActivity.this, c.url);
+                            refresh();
+                            Toast.makeText(MainActivity.this,
+                                    c.name + " listeden silindi.\nGeri eklemek: 🗑 Gizlenenler",
+                                    Toast.LENGTH_LONG).show();
+                        }
                     }
                 }).show();
     }
@@ -516,11 +722,33 @@ public class MainActivity extends android.app.Activity {
         startActivity(i);
     }
 
+    private void handleExtras(Intent it) {
+        if (it == null) return;
+        String tab = it.getStringExtra("tab");
+        if (tab != null && tab.length() > 0) {
+            group = tab;
+            onlyHidden = "🗑 Gizlenenler".equals(tab);
+            styleChips();
+            it.removeExtra("tab");
+        }
+        if (it.getBooleanExtra("edit", false)) {
+            it.removeExtra("edit");
+            setEditMode(true);
+        }
+        if (it.getBooleanExtra("sort", false)) {
+            it.removeExtra("sort");
+            refresh();
+            sortDialog();
+        }
+    }
+
     private void refresh() {
+        ChannelRepo.applyNumbers(this);
         shown.clear();
         Set<String> favs = Prefs.favs(this);
         List<String> recent = Prefs.recent(this);
         java.util.Set<String> hidden = Prefs.hiddenChannels(this);
+        List<Channel> base = new ArrayList<Channel>();
         for (Channel c : all) {
             if (onlyHidden != hidden.contains(c.url)) continue;
             if (!onlyHidden && Prefs.hideDead(this) && Prefs.fails(this, c.url) >= 3) continue;
@@ -541,8 +769,26 @@ public class MainActivity extends android.app.Activity {
                     && !c.name.toLowerCase().contains(query)
                     && !c.group.toLowerCase().contains(query)
                     && !String.valueOf(c.no).equals(query)) continue;
-            shown.add(c);
+            base.add(c);
         }
+
+        // Bu sekme icin kaydedilmis kullanici sirasi (surukle/birak yerine kalici sira)
+        if (!"🕘 Son".equals(group)) {
+            final List<String> ord = Prefs.order(this, group);
+            if (!ord.isEmpty()) {
+                java.util.Collections.sort(base, new java.util.Comparator<Channel>() {
+                    @Override public int compare(Channel a, Channel b) {
+                        int ia = ord.indexOf(a.url);
+                        int ib = ord.indexOf(b.url);
+                        if (ia < 0) ia = Integer.MAX_VALUE;
+                        if (ib < 0) ib = Integer.MAX_VALUE;
+                        return ia < ib ? -1 : (ia == ib ? 0 : 1);
+                    }
+                });
+            }
+        }
+        shown.addAll(base);
+
         if ("🕘 Son".equals(group)) {
             final List<Channel> ordered = new ArrayList<Channel>();
             for (String u : recent) for (Channel c : shown) if (c.url.equals(u)) ordered.add(c);
@@ -550,11 +796,18 @@ public class MainActivity extends android.app.Activity {
             shown.clear();
             shown.addAll(ordered);
         }
+
+        // secimleri yalnizca gorunen kanallarla sinirla
+        java.util.Set<String> visible = new java.util.HashSet<String>();
+        for (Channel c : shown) visible.add(c.url);
+        selected.retainAll(visible);
+
+        updateSelCount();
         adapter.notifyDataSetChanged();
         if (shown.isEmpty()) {
             emptyView.setVisibility(View.VISIBLE);
             emptyView.setText(onlyHidden
-                    ? "Gizlenen kanal yok.\n\nBir kanala uzun basıp \"Listeden gizle\" dersen burada birikir."
+                    ? "Gizlenen kanal yok.\n\nBir kanala uzun basıp \"Listeden sil\" dersen burada birikir."
                     : "Bu filtrede kanal yok.\n\nAramayı temizle veya başka bir sekme dene.");
             if (listView != null) listView.setVisibility(View.GONE);
         } else {
@@ -574,6 +827,7 @@ public class MainActivity extends android.app.Activity {
         } else {
             s += " · limit yok";
         }
+        s += "  · 🎚 " + QualityDialog.label(this);
         s += Prefs.audioOnlyMobile(this) ? "  · 🎧 mobilde sadece ses" : "";
         dataBar.setText(s);
         dataBar.setTextColor(lim > 0 && used > lim * 1048576L ? Color.parseColor("#FF5252") : MUTED);
@@ -582,6 +836,20 @@ public class MainActivity extends android.app.Activity {
     @Override
     protected void onResume() {
         super.onResume();
+        // ulke veya arayuz dili degistiyse ekrani bastan kur
+        if (!shownCountry.equals(Prefs.country(this)) || !shownLang.equals(Prefs.uiLang(this))) {
+            recreate();
+            return;
+        }
+        ChannelRepo.applyNumbers(this);
+        refresh();
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        handleExtras(intent);
         refresh();
     }
 
@@ -603,6 +871,34 @@ public class MainActivity extends android.app.Activity {
         return t;
     }
 
+    private TextView mini(String s) {
+        TextView t = new TextView(this);
+        t.setText(s);
+        t.setTextColor(Color.WHITE);
+        t.setTextSize(11);
+        t.setGravity(Gravity.CENTER);
+        t.setPadding(dp(6), dp(6), dp(6), dp(6));
+        t.setBackground(rounded(SOFT, 12));
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, dp(32));
+        lp.setMargins(dp(4), 0, 0, 0);
+        t.setLayoutParams(lp);
+        return t;
+    }
+
+    private TextView arrow(String s) {
+        TextView t = new TextView(this);
+        t.setText(s);
+        t.setTextColor(Color.WHITE);
+        t.setTextSize(12);
+        t.setGravity(Gravity.CENTER);
+        t.setBackground(rounded(SOFT, 9));
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(dp(30), dp(30));
+        lp.setMargins(dp(3), 0, 0, 0);
+        t.setLayoutParams(lp);
+        return t;
+    }
+
     private int dp(int v) {
         return (int) (v * getResources().getDisplayMetrics().density);
     }
@@ -618,16 +914,30 @@ public class MainActivity extends android.app.Activity {
             row.setOrientation(LinearLayout.HORIZONTAL);
             row.setGravity(Gravity.CENTER_VERTICAL);
             row.setPadding(dp(8), dp(8), dp(10), dp(8));
-            row.setBackground(rounded(CARD, 14));
 
-            Channel c = shown.get(i);
+            final Channel c = shown.get(i);
+            final int pos = i;
+            boolean sel = selected.contains(c.url);
+            row.setBackground(rounded(sel ? Color.parseColor("#33405A") : CARD, 14));
+
+            if (editMode) {
+                TextView check = new TextView(MainActivity.this);
+                check.setText(sel ? "☑" : "☐");
+                check.setTextColor(sel ? ACCENT : MUTED);
+                check.setTextSize(18);
+                check.setGravity(Gravity.CENTER);
+                LinearLayout.LayoutParams clp = new LinearLayout.LayoutParams(dp(28), dp(28));
+                clp.setMargins(0, 0, dp(4), 0);
+                check.setLayoutParams(clp);
+                row.addView(check);
+            }
 
             TextView no = new TextView(MainActivity.this);
             no.setText(String.valueOf(c.no));
             no.setTextColor(Color.WHITE);
             no.setTextSize(11);
             no.setGravity(Gravity.CENTER);
-            no.setBackground(rounded(Color.parseColor("#2A3444"), 10));
+            no.setBackground(rounded(SOFT, 10));
             LinearLayout.LayoutParams nlp = new LinearLayout.LayoutParams(dp(34), dp(28));
             nlp.setMargins(0, 0, dp(8), 0);
             no.setLayoutParams(nlp);
@@ -668,14 +978,28 @@ public class MainActivity extends android.app.Activity {
             texts.addView(meta);
             row.addView(texts);
 
-            TextView play = new TextView(MainActivity.this);
-            play.setText("▶");
-            play.setTextColor(Color.WHITE);
-            play.setTextSize(13);
-            play.setGravity(Gravity.CENTER);
-            play.setBackground(rounded(ACCENT, 18));
-            play.setLayoutParams(new LinearLayout.LayoutParams(dp(32), dp(32)));
-            row.addView(play);
+            if (editMode) {
+                TextView up = arrow("▲");
+                up.setOnClickListener(new View.OnClickListener() {
+                    @Override public void onClick(View v) { moveItem(pos, -1); }
+                });
+                row.addView(up);
+
+                TextView down = arrow("▼");
+                down.setOnClickListener(new View.OnClickListener() {
+                    @Override public void onClick(View v) { moveItem(pos, 1); }
+                });
+                row.addView(down);
+            } else {
+                TextView play = new TextView(MainActivity.this);
+                play.setText("▶");
+                play.setTextColor(Color.WHITE);
+                play.setTextSize(13);
+                play.setGravity(Gravity.CENTER);
+                play.setBackground(rounded(ACCENT, 18));
+                play.setLayoutParams(new LinearLayout.LayoutParams(dp(32), dp(32)));
+                row.addView(play);
+            }
 
             return row;
         }

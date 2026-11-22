@@ -202,13 +202,72 @@ public class Prefs {
         sp(c).edit().putLong("mobileOk", v ? System.currentTimeMillis() : 0).apply();
     }
 
+    // --- kalite tercihi ---
+    // 0 = otomatik (kanalin en iyi kalitesi), -1 = en dusuk, 360/480/720/1080 = hedef yukseklik
+    public static int maxHeight(Context c) {
+        return sp(c).getInt("maxHeight", 0);
+    }
+
+    public static void setMaxHeight(Context c, int h) {
+        sp(c).edit().putInt("maxHeight", h).apply();
+    }
+
     /** Veri tasarrufu: yayinlarin en dusuk cozunurlugunu kullan. */
     public static boolean dataSaver(Context c) {
-        return sp(c).getBoolean("dataSaver", false);
+        return maxHeight(c) < 0;
     }
 
     public static void setDataSaver(Context c, boolean v) {
-        sp(c).edit().putBoolean("dataSaver", v).apply();
+        setMaxHeight(c, v ? -1 : 0);
+    }
+
+    // --- liste sirasi (sekme basina: "Tümü", "★ Favoriler", grup adi...) ---
+    public static List<String> order(Context c, String tab) {
+        String s = sp(c).getString("ord:" + tab, "");
+        List<String> out = new ArrayList<String>();
+        for (String u : s.split("\n")) if (u.trim().length() > 0) out.add(u.trim());
+        return out;
+    }
+
+    public static void setOrder(Context c, String tab, List<String> urls) {
+        StringBuilder b = new StringBuilder();
+        for (String u : urls) b.append(u).append('\n');
+        sp(c).edit().putString("ord:" + tab, b.toString()).apply();
+    }
+
+    // --- kumanda numarasi degistirme ---
+    public static int noOverride(Context c, String url) {
+        return sp(c).getInt("no:" + url.hashCode(), 0);
+    }
+
+    public static void setNoOverride(Context c, String url, int no) {
+        if (no <= 0) sp(c).edit().remove("no:" + url.hashCode()).apply();
+        else sp(c).edit().putInt("no:" + url.hashCode(), no).apply();
+    }
+
+    public static void clearNumbers(Context c) {
+        SharedPreferences.Editor e = sp(c).edit();
+        for (String k : sp(c).getAll().keySet()) if (k.startsWith("no:")) e.remove(k);
+        e.apply();
+    }
+
+    // --- ulke ve arayuz dili ---
+    /** Aktif ulkenin kanal listesi gosterilir (varsayilan tr). */
+    public static String country(Context c) {
+        return sp(c).getString("country", "tr");
+    }
+
+    public static void setCountry(Context c, String code) {
+        sp(c).edit().putString("country", code == null || code.length() != 2 ? "tr" : code).apply();
+    }
+
+    /** Arayuz dili: tr / en / ru / ar. */
+    public static String uiLang(Context c) {
+        return sp(c).getString("uiLang", "tr");
+    }
+
+    public static void setUiLang(Context c, String code) {
+        sp(c).edit().putString("uiLang", code).apply();
     }
 
     /** Veri tasarrufu: mobil veride sadece ses cal. */
