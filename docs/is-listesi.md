@@ -135,7 +135,7 @@ doğruysa düzeltildi ya da sıraya alındı, yanlışsa not düşüldü.
 
 | # | Bulgu / iş | Doğrulama | Durum |
 |---|---|---|---|
-78 | **P0-1 Telif: çıplak IP + ücretli kanallar + Sinema grubu** | Doğru: `channels.m3u` içinde `88.212.x` gibi IP kaynakları ve Cinemax/AXN/BBC First var; 137 kanal Sinema | ⏳ büyük iş (liste temizliği + resmi kaynak) |
+78 | **P0-1 Telif: çıplak IP + ücretli kanallar + Sinema grubu** | ✅ **(v9.19)** `_build/temizle.py`: 305 → **156 kanal**; Sinema 137 çıktı, çıplak IP 9, github-ham 2, abonelik markası 1 → **kalan çıplak IP 0**, http 59→5. Yabancı listeler için `CountryRepo.blocked/isBareIp/cleanName` filtreleri eklendi. Cihazda: 156 kanal, TRT 1 oynuyor (1/156), good_tr 146/156 doğrulandı |
 79 | P0-1b Kullanıcı kendi M3U/URL listesini eklesin (oynatıcı modeli) | Radyoda #75 ile başladı; TV tarafı yok | ⏳ |
 80 | P0-2 Gizlilik politikası gerçeği anlatmıyor ("reklam yok" diyordu) | Doğru: 3 dosyada aynı yanlış metin | ✅ (v9.18) AdMob/AD_ID/ipapi/Cloudflare/yayıncı sunucuları yazıldı |
 81 | P0-3 UMP / AB rıza ekranı yok | Doğru: `AdManager.init` doğrudan `MobileAds.initialize` | ⏳ |

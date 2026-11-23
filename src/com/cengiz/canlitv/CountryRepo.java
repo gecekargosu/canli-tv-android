@@ -70,9 +70,11 @@ public class CountryRepo {
                 country = attr(line, "tvg-country", "");
                 logo = attr(line, "tvg-logo", "");
             } else if (!line.startsWith("#")) {
-                if (name != null && !seen.contains(line)) {
+                // P0-1: indirilen ulke listelerinde de telif/icerik filtresi
+                if (name != null && !seen.contains(line) && !blocked(name, group)
+                        && !isBareIp(line)) {
                     seen.add(line);
-                    out.add(new Channel(out.size() + 1, name, group, country, logo, line));
+                    out.add(new Channel(out.size() + 1, cleanName(name), group, country, logo, line));
                 }
                 name = null;
             }
@@ -147,6 +149,35 @@ public class CountryRepo {
     public static void clear(Context ctx, String cc) {
         cacheFile(ctx, cc).delete();
         new File(ctx.getFilesDir(), "good_" + cc + ".json").delete();
+    }
+
+    /** Yetiskin ve abonelik/parali marka iceren kayitlar (P0-1). */
+    private static boolean blocked(String name, String group) {
+        String s = ((name == null ? "" : name) + " " + (group == null ? "" : group))
+                .toLowerCase(java.util.Locale.ROOT);
+        if (s.contains("xxx") || s.contains("adult") || s.contains("erotic")
+                || s.contains("porn")) return true;
+        String[] paid = {"cinemax", "axn ", "bbc first", "star action", "discovery science",
+                "film+", "hbo", "netflix", "bein", "s sport", "tivibu", "d-smart",
+                "dsmart", "digiturk", "viju", "tv1000", "nickelodeon", "cartoon network",
+                "nat geo", "eurosport", "dazn"};
+        for (String p : paid) if (s.contains(p)) return true;
+        return false;
+    }
+
+    /** http://1.2.3.4 gibi ciplak IP kaynaklari (P0-1). */
+    private static boolean isBareIp(String url) {
+        if (url == null) return false;
+        return java.util.regex.Pattern
+                .compile("^https?://\\d{1,3}(\\.\\d{1,3}){3}(:\\d+)?(/|$)").matcher(url).find();
+    }
+
+    /** "[Geo-blocked]", "(1080p)" gibi ekleri temizler. */
+    private static String cleanName(String name) {
+        if (name == null) return "Kanal";
+        String s = name.replaceAll("\\s*\\[[^\\]]*\\]", "")
+                .replaceAll("\\s*\\(\\d{3,4}p\\)", "").trim();
+        return s.length() == 0 ? name : s;
     }
 
     private static String attr(String line, String key, String def) {
