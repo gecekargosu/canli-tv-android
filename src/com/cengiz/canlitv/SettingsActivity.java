@@ -283,6 +283,17 @@ public class SettingsActivity extends Activity {
                 });
     }
 
+    private String builtAccount = null;
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // hesap durumu degistiyse (uyelik/giris/cikis) satirlari yenile
+        String now = Account.email(this) + "|" + Account.verified(this);
+        if (builtAccount == null) builtAccount = now;
+        else if (!builtAccount.equals(now)) recreate();
+    }
+
     /** Cihazda kayitli hata logunu paylasir (WhatsApp/mail ile gonderilebilir). */
     private void shareCrash() {
         String log = CrashLog.last(this);

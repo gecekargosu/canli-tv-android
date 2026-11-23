@@ -258,6 +258,10 @@ public class RadioPlayerActivity extends Activity {
         scroll.addView(root);
         setContentView(scroll);
 
+        // ONEMLI: istasyonu hemen baslat (AudioService) + ekolayzir animasyonunu calistir
+        show();
+        ui.post(anim);
+
         // 40 dakika sonra nazik teklif: "reklamsiz devam etmek ister misin?" (zorlamasiz)
         ui.postDelayed(new Runnable() {
             @Override public void run() { offerAdFree(); }
@@ -320,9 +324,6 @@ public class RadioPlayerActivity extends Activity {
                 })
                 .setNegativeButton("Şimdi değil", null)
                 .show();
-
-        show();
-        ui.post(anim);
     }
 
     private int indexOf(SeekBar s, SeekBar[] arr) {
@@ -363,13 +364,19 @@ public class RadioPlayerActivity extends Activity {
 
     private final Runnable anim = new Runnable() {
         @Override public void run() {
-            if (eqView != null) eqView.invalidate();
-            if (index >= 0 && index < names.size() && !AudioService.isPlayingStatic()) {
-                statusView.setText("yayın bekleniyor… (internet zayıf olabilir)");
-            } else {
-                statusView.setText("çalıyor · ekolayzır aktif");
+            boolean playing = AudioService.isPlayingStatic();
+            if (eqView != null) {
+                eqView.setActive(playing);   // cubuklar sadece ses varken hareket eder
+                eqView.invalidate();
             }
-            ui.postDelayed(this, 120);
+            if (statusView != null) {
+                if (playing) {
+                    statusView.setText("çalıyor · ekolayzır aktif");
+                } else if (playing == false) {
+                    statusView.setText("bağlanıyor… (internet zayıf olabilir)");
+                }
+            }
+            ui.postDelayed(this, 150);
         }
     };
 
@@ -378,6 +385,8 @@ public class RadioPlayerActivity extends Activity {
         private final Paint p = new Paint(Paint.ANTI_ALIAS_FLAG);
         private final float[] h = new float[22];
         private final float[] v = new float[22];
+        private boolean active = false;
+        void setActive(boolean a) { active = a; }
         EqView(Context c) {
             super(c);
             for (int i = 0; i < h.length; i++) { h[i] = (float) Math.random(); v[i] = 0.02f; }
@@ -387,7 +396,9 @@ public class RadioPlayerActivity extends Activity {
             int n = h.length;
             float bw = w / (n * 1.8f);
             for (int i = 0; i < n; i++) {
-                float target = 0.15f + (float) Math.abs(Math.sin(System.currentTimeMillis() / 380.0 + i * 0.7)) * 0.8f;
+                float target = active
+                        ? 0.15f + (float) Math.abs(Math.sin(System.currentTimeMillis() / 380.0 + i * 0.7)) * 0.8f
+                        : 0.04f;
                 v[i] += (target - v[i]) * 0.15f;
                 float bh = ht * 0.9f * v[i];
                 float x = i * (w / n) + bw / 2;

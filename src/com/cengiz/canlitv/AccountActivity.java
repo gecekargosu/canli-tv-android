@@ -489,6 +489,7 @@ public class AccountActivity extends Activity {
                             Toast.makeText(AccountActivity.this,
                                     Lang.t(AccountActivity.this, "login_ok"),
                                     Toast.LENGTH_SHORT).show();
+                            backToMain();
                         } else if (r.offline) {
                             // sunucu yok: bu telefonda kayitli sifre ile cevrimdisi giris
                             if (email.equals(Account.email(AccountActivity.this))
@@ -533,6 +534,8 @@ public class AccountActivity extends Activity {
                             Toast.makeText(AccountActivity.this,
                                     Lang.t(AccountActivity.this, "verified_thanks"),
                                     Toast.LENGTH_LONG).show();
+                            // dogrulama tamam: ana sayfaya don (misafir gorunumunde kalmasin)
+                            backToMain();
                         } else if (r.offline) {
                             say(Lang.t(AccountActivity.this, "offline_login"));
                         } else {
@@ -561,6 +564,14 @@ public class AccountActivity extends Activity {
                 });
             }
         }).start();
+    }
+
+    /** Uyelik islemi bitince ana sayfaya doner (geri tusuna basmak gerekmez). */
+    private void backToMain() {
+        android.content.Intent m = new android.content.Intent(this, MainActivity.class);
+        m.addFlags(android.content.Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        startActivity(m);
+        finish();
     }
 
     private void say(String s) {
