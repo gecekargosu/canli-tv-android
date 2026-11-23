@@ -69,3 +69,20 @@ Son güncelleme: 23 Kasım 2026 (v9.4)
 34 | **Geliştirici adı "Yabanarisi" incelemesi** | Google tarafında, sonuç bekleniyor | ⛔ |
 35 | **AdMob app-ads.txt doğrulaması** | Mağaza linki eklenince kendiliğinden doğrulanır | ⛔ |
 36 | **Play formları (12 adım)** | Kimlik onayı açılınca birlikte doldurulacak | ⛔ |
+37 | **Worker cron: günlük yayın sağlık taraması** → `known-good` listesi | Açılmayan kanal sorununun kök çözümü; istemci ölü link indirmez | ⏳ (sıradaki #1) |
+38 | **IP'den ülke tespiti** (`ipapi.co/json`) + ilk açılışta öneri/otomatik seçim | Yurt dışındaki kullanıcı doğru listeyi görsün | ⏳ |
+39 | **Oynatıcıyı ExoPlayer'a taşıma denemesi** | VideoView/MediaPlayer bazı HLS+AAC yayınlarını açmıyor; ExoPlayer uyumluluğu çok daha yüksek | ⏳ |
+40 | **Radyo listesini popülerliğe göre sıralama** (TR gömülü liste) | TV'de yapıldı, radyoda kaldı | ⏳ |
+41 | **Radyo çalarda otomatik sonraki istasyon** | İstasyon açılmazsa 2 sn sonra sıradakine geçsin | ⏳ |
+42 | **Yedek (mirror) URL alanı** | Aynı kanalın 2-3 kaynağı; biri ölünce sıradaki denenir | ⏳ |
+
+## F. v9.7'de tamamlananlar (23 Kasım 2026)
+
+| # | İş | Durum |
+|---|---|---|
+43 | Üst üste iki banner hatası (radyo listesi) | ✅ |
+44 | Ülkeye göre "önce tanınmış kanallar" sırası (TR/US/GB/DE/RU/IN/BR/MX/SA/FR/ES/IT/NL/SE) | ✅ |
+45 | Ölü kanal filtresi (2 hatada gizle, varsayılan açık) | ✅ |
+46 | Açılmayan kanalda otomatik sonraki kanal (en fazla 3 kez) | ✅ |
+47 | Radyo çalar üst barı yazılı/büyük + dikey başlık kaldırıldı | ✅ |
+48 | Banner sistem gezinme çubuğunun üstünde | ✅ |
