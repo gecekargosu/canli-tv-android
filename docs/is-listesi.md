@@ -98,6 +98,9 @@ Son güncelleme: 23 Kasım 2026 (v9.4)
 64 | **Doğrulanmış "çalışan kanallar" listesi (known-good)** — #37 | ✅ (v9.11): `_build/good.py` ülke listelerini dener, `site/public/good/<cc>.json` yayınlanır, uygulama indirir ve çalışanları başa alır. TR 89/90, DE 73/90, US 67/90 |
 65 | **Haftalık otomatik tazeleme** (bu taramayı cron'a bağla) | ⏳: şimdilik elle `python _build/good.py ...` + deploy |
 66 | **Banner her zaman görünür** (reklamsız sürede de) + **20 dk ödül kanal/istasyon bazlı** | ✅ (v9.12) |
+67 | **Yetişkin/erotik reklam engeli** — kod: `setMaxAdContentRating(G)` (v9.13) | ✅ kod tarafı; her istekte geçerli |
+68 | **AdMob paneli: Hassas kategoriler** → Flört + Cinsel içerik kapat | ⏳ (panel adımı; "Engelleme kontrolleri" sayfası açık) |
+69 | **Reklam inceleme merkezi** ile şikayet edilen reklamı tek tek engelle | ⏳ (Afterglow gibi spesifik reklamlar için) |
 
 ## H. ÖNCELİK SIRASI (revize — 23 Kasım 2026, v9.10 sonrası)
 
