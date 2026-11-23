@@ -23,8 +23,9 @@ import java.util.Set;
  */
 public class CountryRepo {
 
+    /** Eski iptv-org adresi kaldırıldı (#108): liste yalnız sunucudan gelir. */
     public static String playlistUrl(String cc) {
-        return "https://iptv-org.github.io/iptv/countries/" + cc + ".m3u";
+        return GOOD_BASE + cc + ".json";
     }
 
     public static File cacheFile(Context ctx, String cc) {
@@ -82,37 +83,54 @@ public class CountryRepo {
         return out;
     }
 
-    /** Ulke listesini indirir. Basarili olursa true. */
+    /**
+     * #108 ALLOWLIST: Ülke listesi artık **yalnız kendi sunucumuzdan** gelir
+     * (`site/public/good/<cc>.json`). iptv-org gibi dış kaynaklardan ham liste indirilmez;
+     * böylece liste dışı/telif riskli yayınlar uygulamaya giremez.
+     */
     public static boolean download(Context ctx, String cc) {
         File tmp = new File(ctx.getFilesDir(), "country_" + cc + ".tmp");
         HttpURLConnection con = null;
         try {
-            con = (HttpURLConnection) new URL(playlistUrl(cc)).openConnection();
-            con.setConnectTimeout(12000);
-            con.setReadTimeout(20000);
-            con.setRequestProperty("User-Agent", "Mozilla/5.0");
+            con = (HttpURLConnection) new URL(GOOD_BASE + cc + ".json").openConnection();
+            con.setConnectTimeout(10000);
+            con.setReadTimeout(15000);
+            con.setRequestProperty("User-Agent", "Mozilla/5.0 UMAYMultiTV");
             if (con.getResponseCode() != 200) return false;
             InputStream in = con.getInputStream();
-            FileOutputStream out = new FileOutputStream(tmp);
+            java.io.ByteArrayOutputStream bo = new java.io.ByteArrayOutputStream();
             byte[] buf = new byte[16384];
             int n;
-            long total = 0;
-            while ((n = in.read(buf)) > 0) {
-                out.write(buf, 0, n);
-                total += n;
-            }
-            out.close();
+            while ((n = in.read(buf)) > 0) bo.write(buf, 0, n);
             in.close();
-            if (total < 200) { tmp.delete(); return false; }
-            // icerik gercekten liste mi?
+            String json = new String(bo.toByteArray(), "UTF-8");
+            org.json.JSONObject root = new org.json.JSONObject(json);
+            org.json.JSONArray items = root.optJSONArray("items");
+            if (items == null || items.length() == 0) return false;
+
+            StringBuilder m3u = new StringBuilder("#EXTM3U\n");
+            for (int i = 0; i < items.length(); i++) {
+                org.json.JSONObject it = items.optJSONObject(i);
+                if (it == null) continue;
+                String url = it.optString("url", "");
+                if (url.length() == 0) continue;
+                String name = it.optString("name", "Kanal").replace('\n', ' ');
+                String group = it.optString("group", "Genel");
+                String logo = it.optString("logo", "");
+                m3u.append("#EXTINF:-1 tvg-logo=\"").append(logo)
+                        .append("\" group-title=\"").append(group).append("\",")
+                        .append(name).append('\n').append(url).append('\n');
+            }
+            FileOutputStream out = new FileOutputStream(tmp);
+            out.write(m3u.toString().getBytes("UTF-8"));
+            out.close();
+
             List<Channel> check = parse(new BufferedReader(new InputStreamReader(
                     new FileInputStream(tmp), "UTF-8")));
             if (check.isEmpty()) { tmp.delete(); return false; }
             File target = cacheFile(ctx, cc);
             if (target.exists()) target.delete();
-            boolean ok = tmp.renameTo(target);
-            if (ok) fetchGood(ctx, cc);   // "calisan kanallar" listesi (varsa)
-            return ok;
+            return tmp.renameTo(target);
         } catch (Exception e) {
             tmp.delete();
             return false;
@@ -120,6 +138,9 @@ public class CountryRepo {
             if (con != null) try { con.disconnect(); } catch (Exception ignored) { }
         }
     }
+
+    /** Sunucu adresi tek yerde. */
+    public static final String GOOD_BASE = "https://umay-multi-tv-gq3zer.freebuff.site/good/";
 
     /** Sunucudaki doğrulanmış kanal listesini indirir (site/public/good/<cc>.json). */
     public static void fetchGood(Context ctx, String cc) {

@@ -165,6 +165,14 @@ public class SettingsActivity extends Activity {
                         render();
                     }
                 });
+        row("🪙", "Ekonomi modu",
+                "Her zaman en düşük kalite + kapakta sadece ses · en az veri",
+                Prefs.economy(this) ? "Açık" : "Kapalı", new View.OnClickListener() {
+                    @Override public void onClick(View v) {
+                        Prefs.setEconomy(SettingsActivity.this, !Prefs.economy(SettingsActivity.this));
+                        render();
+                    }
+                });
         row("🎧", "Mobil veride sadece ses",
                 "Wi-Fi yokken görüntü inmez, sadece ses çalar (en az veri)",
                 Prefs.audioOnlyMobile(this) ? "Açık" : "Kapalı",

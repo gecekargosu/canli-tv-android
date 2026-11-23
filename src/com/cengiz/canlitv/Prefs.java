@@ -268,6 +268,15 @@ public class Prefs {
     }
 
     /** Veri tasarrufu: yayinlarin en dusuk cozunurlugunu kullan. */
+    /** Ekonomi modu: her zaman en düşük kalite + kapakta sadece ses (veri tasarrufu). */
+    public static boolean economy(Context c) {
+        return sp(c).getBoolean("economy", false);
+    }
+
+    public static void setEconomy(Context c, boolean v) {
+        sp(c).edit().putBoolean("economy", v).apply();
+    }
+
     public static boolean dataSaver(Context c) {
         return maxHeight(c) < 0;
     }

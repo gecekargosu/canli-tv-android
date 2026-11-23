@@ -27,7 +27,7 @@ import android.widget.ProgressBar;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
-import android.widget.VideoView;
+
 
 import java.util.List;
 
@@ -43,7 +43,12 @@ public class PlayerActivity extends android.app.Activity {
     /** #42: ayni kanal icin denenen yedek kaynak sayisi. */
     private int fbTried = 0;
     private int index;
-    private VideoView video;
+    private androidx.media3.ui.PlayerView video;
+    private androidx.media3.exoplayer.ExoPlayer player;
+    /** Ekonomi modunda ekran kapanınca görüntüyü bırakıp sadece sese geçmek için. */
+    private android.content.BroadcastReceiver screenOff;
+    /** İlk READY bir kez işlensin (yeniden bağlanmada tekrar tetiklenir). */
+    private boolean ready = false;
     private ProgressBar progress;
     private TextView nameView, errorView, favButton, playButton, counter, recButton, clockBar;
     private LinearLayout top, bottom;
@@ -62,7 +67,7 @@ public class PlayerActivity extends android.app.Activity {
     private int lastPos = -1;
     private long lastPosAt = 0;
     private long lastRestart = 0;
-    private android.media.MediaPlayer mp;
+
     private TextView lockHint;
     private TextView muteBtn;
     private TextView qualityBtn;
@@ -84,7 +89,23 @@ public class PlayerActivity extends android.app.Activity {
         FrameLayout root = new FrameLayout(this);
         root.setBackgroundColor(Color.BLACK);
 
-        video = new VideoView(this);
+        // #107: MediaPlayer yerine ExoPlayer (media3) — HLS, 302 ve hata toparlama daha güvenli.
+        androidx.media3.datasource.DefaultHttpDataSource.Factory httpFactory =
+                new androidx.media3.datasource.DefaultHttpDataSource.Factory()
+                        .setUserAgent(Net.PLAYER_UA)
+                        .setDefaultRequestProperties(Net.playerHeaders())
+                        .setAllowCrossProtocolRedirects(true);
+        player = new androidx.media3.exoplayer.ExoPlayer.Builder(this)
+                .setMediaSourceFactory(
+                        new androidx.media3.exoplayer.source.DefaultMediaSourceFactory(httpFactory))
+                .build();
+        player.setAudioAttributes(new androidx.media3.common.AudioAttributes.Builder()
+                .setUsage(androidx.media3.common.C.USAGE_MEDIA)
+                .setContentType(androidx.media3.common.C.AUDIO_CONTENT_TYPE_MUSIC).build(), true);
+
+        video = new androidx.media3.ui.PlayerView(this);
+        video.setUseController(false);
+        video.setPlayer(player);
         FrameLayout.LayoutParams vlp = new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
         vlp.gravity = Gravity.CENTER;
@@ -262,8 +283,8 @@ public class PlayerActivity extends android.app.Activity {
         playButton = smallButton("⏸");
         playButton.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View v) {
-                if (video.isPlaying()) { video.pause(); playButton.setText("▶"); }
-                else { video.start(); playButton.setText("⏸"); }
+                if (player.isPlaying()) { player.pause(); playButton.setText("▶"); }
+                else { player.play(); playButton.setText("⏸"); }
             }
         });
         bottom.addView(playButton);
@@ -372,46 +393,33 @@ public class PlayerActivity extends android.app.Activity {
         });
         setContentView(outer);
 
-        video.setOnPreparedListener(new android.media.MediaPlayer.OnPreparedListener() {
-            @Override public void onPrepared(android.media.MediaPlayer m) {
-                progress.setVisibility(View.GONE);
-                errorView.setVisibility(View.GONE);
-                mp = m;
-                if (muted) m.setVolume(0f, 0f);
-                video.start();
-                playButton.setText("⏸");
-                Prefs.clearFails(PlayerActivity.this, list.get(index).url);
-                autoSkips = 0;   // yayin acildi: sayac sifirlanir
-                fbTried = 0;     // yedek kaynak denemesi de sifirlanir
-                stallCount = 0;
-                hideNotice();
-                if (!tracking) { tracking = true; openedAt = System.currentTimeMillis(); Net.begin(); }
-                ui.removeCallbacks(watchdog);
+        // Ekonomi modu: ekran kapanınca video indirmeyi durdur, sadece sesi sürdür.
+        screenOff = new android.content.BroadcastReceiver() {
+            @Override public void onReceive(android.content.Context c, android.content.Intent i) {
+                try {
+                    if (!Prefs.economy(PlayerActivity.this)) return;
+                    if (!player.isPlaying()) return;
+                    if (index < 0 || index >= list.size()) return;
+                    Channel ch = list.get(index);
+                    String q = Prefs.quality(PlayerActivity.this, ch.url);
+                    AudioService.start(PlayerActivity.this, q != null ? q : ch.url, ch.name);
+                    screenOffAudio = true;
+                    player.pause();
+                } catch (Exception ignored) { }
             }
-        });
-        video.setOnErrorListener(new android.media.MediaPlayer.OnErrorListener() {
-            @Override public boolean onError(android.media.MediaPlayer mp, int what, int extra) {
-                progress.setVisibility(View.GONE);
-                // #42: önce yedek kaynak dene (kanal düşmesin), yoksa sıradaki kanala geç
-                String cur = list.get(index).url;
-                String[] alts = ChannelRepo.fallbacks(cur);
-                if (alts != null && fbTried < alts.length) {
-                    String alt = alts[fbTried++];
-                    Toast.makeText(PlayerActivity.this,
-                            "Yedek kaynak deneniyor…", Toast.LENGTH_SHORT).show();
-                    errorView.setVisibility(View.GONE);
-                    try {
-                        video.stopPlayback();
-                        video.setVideoURI(android.net.Uri.parse(alt), Net.playerHeaders());
-                        video.start();
-                        return true;
-                    } catch (Throwable ignored) { }
-                }
-                Prefs.addFail(PlayerActivity.this, cur);
-                errorView.setText("Bu kanal şu an açılamadı.\n\nDokun → tekrar dene\nveya ⏭ ile sonraki kanal");
-                errorView.setVisibility(View.VISIBLE);
-                autoNext();
-                return true;
+        };
+        try {
+            registerReceiver(screenOff,
+                    new android.content.IntentFilter(android.content.Intent.ACTION_SCREEN_OFF));
+        } catch (Throwable ignored) { }
+
+        player.addListener(new androidx.media3.common.Player.Listener() {
+            @Override public void onPlaybackStateChanged(int state) {
+                if (state == androidx.media3.common.Player.STATE_READY) onReady();
+            }
+
+            @Override public void onPlayerError(androidx.media3.common.PlaybackException e) {
+                onPError();
             }
         });
 
@@ -450,11 +458,53 @@ public class PlayerActivity extends android.app.Activity {
      * Donan yayını kurtar: konum 15 saniye ilerlemezse oynatıcıyı taze playlist ile
      * yeniden başlatır (canlı kenara döner). TV8'in uzun reklam kuşağında da kendini toparlar.
      */
+    /** ExoPlayer hazır: kullanıcıya göster, sayaçları sıfırla. */
+    private void onReady() {
+        if (ready) return;
+        ready = true;
+        progress.setVisibility(View.GONE);
+        errorView.setVisibility(View.GONE);
+        player.setVolume(muted ? 0f : 1f);
+        player.play();
+        playButton.setText("⏸");
+        Prefs.clearFails(this, list.get(index).url);
+        autoSkips = 0;
+        fbTried = 0;
+        stallCount = 0;
+        hideNotice();
+        if (!tracking) { tracking = true; openedAt = System.currentTimeMillis(); Net.begin(); }
+        ui.removeCallbacks(watchdog);
+    }
+
+    /** ExoPlayer hatası: yedek kaynak → sonraki kanal. */
+    private void onPError() {
+        progress.setVisibility(View.GONE);
+        String cur = list.get(index).url;
+        String[] alts = ChannelRepo.fallbacks(cur);
+        if (alts != null && fbTried < alts.length) {
+            String alt = alts[fbTried++];
+            Toast.makeText(this, "Yedek kaynak deneniyor…", Toast.LENGTH_SHORT).show();
+            errorView.setVisibility(View.GONE);
+            try {
+                player.stop();
+                player.clearMediaItems();
+                player.setMediaItem(androidx.media3.common.MediaItem.fromUri(alt));
+                player.prepare();
+                player.play();
+                return;
+            } catch (Throwable ignored) { }
+        }
+        Prefs.addFail(this, cur);
+        errorView.setText("Bu kanal şu an açılamadı.\n\nDokun → tekrar dene\nveya ⏭ ile sonraki kanal");
+        errorView.setVisibility(View.VISIBLE);
+        autoNext();
+    }
+
     private void checkStall() {
         try {
-            if (!video.isPlaying()) return;
+            if (!player.isPlaying()) return;
             long now = System.currentTimeMillis();
-            int pos = video.getCurrentPosition();
+            int pos = (int) player.getCurrentPosition();
             if (pos != lastPos) {
                 lastPos = pos;
                 lastPosAt = now;
@@ -614,7 +664,7 @@ public class PlayerActivity extends android.app.Activity {
         }
         AudioService.start(this, c.url, c.name);
         // ayni anda iki ses olmasin: TV goruntusunu sessize al
-        try { if (mp != null) mp.setVolume(0f, 0f); } catch (Exception ignored) { }
+        try { player.setVolume(0f); } catch (Exception ignored) { }
         muted = true;
         muteBtn.setText("🔇");
         Toast.makeText(this, c.name + " arka planda çalıyor. Ekranı kapatabilirsin.", Toast.LENGTH_LONG).show();
@@ -719,10 +769,14 @@ public class PlayerActivity extends android.app.Activity {
     private void startVideo(String url) {
         progress.setVisibility(View.VISIBLE);
         errorView.setVisibility(View.GONE);
-        try { video.stopPlayback(); } catch (Exception ignored) { }
-        mp = null;
+        ready = false;
+        try { player.stop(); player.clearMediaItems(); } catch (Exception ignored) { }
         // Tarayıcı UA'sı: TV8 gibi CDN'ler aksi hâlde reklam kuşağı klibi döndürüyor.
-        video.setVideoURI(android.net.Uri.parse(url), Net.playerHeaders());
+        try {
+            player.setMediaItem(androidx.media3.common.MediaItem.fromUri(url));
+            player.prepare();
+            player.play();
+        } catch (Exception ignored) { }
         video.requestFocus();
         lastPos = -1;
         lastPosAt = System.currentTimeMillis();
@@ -732,7 +786,7 @@ public class PlayerActivity extends android.app.Activity {
 
     private void toggleMute() {
         muted = !muted;
-        try { if (mp != null) mp.setVolume(muted ? 0f : 1f, muted ? 0f : 1f); }
+        try { player.setVolume(muted ? 0f : 1f); }
         catch (Exception ignored) { }
         muteBtn.setText(muted ? "🔇" : "🔊");
         Toast.makeText(this, muted ? "TV sesi kapalı (radyo/müzik dinleyebilirsin)"
@@ -743,7 +797,7 @@ public class PlayerActivity extends android.app.Activity {
     private final Runnable watchdog = new Runnable() {
         @Override public void run() {
             try {
-                if (!video.isPlaying()) {
+                if (!player.isPlaying()) {
                     progress.setVisibility(View.GONE);
                     errorView.setText("Yayın 13 saniyede açılmadı.\n\nDokun → tekrar dene\nveya ⏭ ile sonraki kanal");
                     errorView.setVisibility(View.VISIBLE);
@@ -766,7 +820,7 @@ public class PlayerActivity extends android.app.Activity {
     private boolean enterPip() {
         if (Build.VERSION.SDK_INT < 26) return false;
         try {
-            if (!video.isPlaying()) return false;
+            if (!player.isPlaying()) return false;
             enterPictureInPictureMode(new PictureInPictureParams.Builder()
                     .setAspectRatio(new Rational(16, 9)).build());
             return true;
@@ -965,14 +1019,14 @@ public class PlayerActivity extends android.app.Activity {
         if (Build.VERSION.SDK_INT >= 26 && isInPictureInPictureMode()) return;
         // ekran kapaninca / uygulamadan cikinca ses devam etsin (kilit ekrani dinleme)
         try {
-            if (video.isPlaying() && index >= 0 && index < list.size()) {
+            if (player.isPlaying() && index >= 0 && index < list.size()) {
                 Channel c = list.get(index);
                 String q = Prefs.quality(this, c.url);
                 AudioService.start(this, q != null ? q : c.url, c.name);
                 screenOffAudio = true;
             }
         } catch (Exception ignored) { }
-        try { video.pause(); } catch (Exception ignored) { }
+        try { player.pause(); } catch (Exception ignored) { }
     }
 
     @Override
@@ -981,7 +1035,7 @@ public class PlayerActivity extends android.app.Activity {
         if (screenOffAudio) {
             screenOffAudio = false;
             AudioService.stop(this);
-            try { video.start(); } catch (Exception ignored) { }
+            try { player.play(); } catch (Exception ignored) { }
         }
     }
 
@@ -1003,7 +1057,8 @@ public class PlayerActivity extends android.app.Activity {
         finishUsage();
         ui.removeCallbacksAndMessages(null);
         if (recorder.isRunning()) recorder.stop();
-        try { video.stopPlayback(); } catch (Exception ignored) { }
+        try { if (screenOff != null) unregisterReceiver(screenOff); } catch (Throwable ignored) { }
+        try { player.release(); } catch (Exception ignored) { }
         super.onDestroy();
     }
 }

@@ -85,7 +85,8 @@ public class Quality {
         if (cb == null) return;
         String custom = Prefs.quality(ctx, url);
         if (custom != null) { cb.onUrl(custom); return; }
-        final int pref = Prefs.maxHeight(ctx);
+        // Ekonomi modu: tercih ne olursa olsun en düşük çalışan varyant.
+        final int pref = Prefs.economy(ctx) ? -1 : Prefs.maxHeight(ctx);
         if (pref == 0) { cb.onUrl(url); return; }
         load(url, new Callback() {
             @Override public void onResult(List<Variant> variants) {

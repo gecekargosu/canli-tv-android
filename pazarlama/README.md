@@ -22,3 +22,15 @@ Yeni görüntüler eklendikçe bu klasöre atılır; dosya adı = içerik.
 | 15-kendi-kanallarim.png | "Kendi kanallarım" satırı |
 
 Radyo listesi/çalar, haber kanalı ve diğer ülke yayın görüntüleri sıradaki turda eklenecek.
+
+## v9.29 ek görseller
+| Dosya | İçerik |
+|---|---|
+| 19-exoplayer-atv.png | ATV yayını (ExoPlayer/media3, 360p) |
+| 20-exoplayer-kralpop.png | Kral Pop TV (jetonlu CDN, 302 takibi) |
+| 21-ulke-almanya.png | Almanya listesi (sunucudan allowlist, 67 kanal) |
+| 22-almanya-yayin.png | 3sat yayını (yabancı kanal) |
+| 23-radyo-listesi.png | Radyo listesi (80 istasyon, ülke bazlı) |
+| 24-radyo-calar.png | Radyo çalar + ekolayzır |
+| 25-haber-kanali.png | Haber Global (haber kanalı) |
+| 26-ekonomi-modu.png | Ekonomi modu açık (Ayarlar) |
