@@ -6,6 +6,15 @@ plugins {
     id 'com.android.application'
 }
 
+// Imza sifresi repoda durmasin: kok dizindeki keystore.properties (git'e girmez) ya da
+// UMAY_STOREPASSWORD / UMAY_KEYPASSWORD ortam degiskeni okunur.
+def ksProps = new Properties()
+def ksFile = rootProject.file('keystore.properties')
+if (ksFile.exists()) ksFile.withInputStream { ksProps.load(it) }
+def ks = { String k ->
+    ksProps.getProperty(k) ?: (System.getenv('UMAY_' + k.replaceAll('([A-Z])', '_$1').toUpperCase()) ?: '')
+}
+
 android {
     namespace 'com.cengiz.canlitv'
     compileSdk 36
@@ -14,8 +23,8 @@ android {
         applicationId 'com.cengiz.canlitv'
         minSdk 26
         targetSdk 36
-        versionCode 26
-        versionName '9.17'
+        versionCode 27
+        versionName '9.18'
     }
 
     signingConfigs {
@@ -28,9 +37,10 @@ android {
         }
         release {
             storeFile file('../upload-keystore.jks')
-            storePassword 'UmayMultiTV2026!'
+            // Sifre depoda acik yazilmasin: keystore.properties (git'e girmez) veya ortam degiskeni
+            storePassword ks('storePassword')
             keyAlias 'upload'
-            keyPassword 'UmayMultiTV2026!'
+            keyPassword ks('keyPassword')
         }
     }
 

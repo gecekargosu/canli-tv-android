@@ -855,6 +855,7 @@ public class PlayerActivity extends android.app.Activity {
     protected void onPause() {
         super.onPause();
         finishUsage();
+        if (isFinishing()) return;   // ✕ Kapat / geri: arkada ses devam etmesin
         if (Build.VERSION.SDK_INT >= 26 && isInPictureInPictureMode()) return;
         // ekran kapaninca / uygulamadan cikinca ses devam etsin (kilit ekrani dinleme)
         try {

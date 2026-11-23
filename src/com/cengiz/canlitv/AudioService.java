@@ -100,14 +100,20 @@ public class AudioService extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         if (intent == null) return START_NOT_STICKY;
-        if (intent.getBooleanExtra("stop", false)) { stopSelf(); return START_NOT_STICKY; }
+        String action = intent.getStringExtra("action");
+        // Bildirimdeki Durdur: PendingIntent "action=stop" gonderir (eskiden yalniz
+        // boolean extra "stop" bekleniyordu, dugme bu yuzden calismiyordu)
+        if ("stop".equals(action) || intent.getBooleanExtra("stop", false)) {
+            try { if (player != null) player.stop(); } catch (Throwable ignored) { }
+            stopSelf();
+            return START_NOT_STICKY;
+        }
 
         INSTANCE = this;
         createChannel();
         ensureSession();
         startForeground(NOTIF_ID, notification());
 
-        String action = intent.getStringExtra("action");
         if ("next".equals(action)) { step(1); return START_STICKY; }
         if ("prev".equals(action)) { step(-1); return START_STICKY; }
         if ("toggle".equals(action)) { toggle(); return START_STICKY; }
@@ -159,8 +165,10 @@ public class AudioService extends Service {
     private void step(int d) {
         List<Channel> l = list();
         if (l.isEmpty()) return;
-        int idx = 0;
+        int idx = -1;
         for (int i = 0; i < l.size(); i++) if (l.get(i).url.equals(currentUrl)) { idx = i; break; }
+        // calan sey TV listesinde yoksa (radyo) yanlislikla TV kanalina atlamasin
+        if (idx < 0) return;
         idx = (idx + d + l.size()) % l.size();
         Channel c = l.get(idx);
         name = c.name;

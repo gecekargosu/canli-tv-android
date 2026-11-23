@@ -387,6 +387,14 @@ public class RadioActivity extends Activity {
                         onlineBusy = false;
                         refresh();   // internet sonuclari listeye girsin
                         if (n > 0) {
+                            // klavyeyi kapat: sonuclar ekranda gorunsun
+                            try {
+                                android.view.inputmethod.InputMethodManager im =
+                                        (android.view.inputmethod.InputMethodManager)
+                                                getSystemService(INPUT_METHOD_SERVICE);
+                                View f = getCurrentFocus();
+                                if (im != null && f != null) im.hideSoftInputFromWindow(f.getWindowToken(), 0);
+                            } catch (Throwable ignored) { }
                             Toast.makeText(RadioActivity.this,
                                     "İnternetten " + n + " istasyon bulundu — uzun basıp \"kendi listeme ekle\"",
                                     Toast.LENGTH_LONG).show();

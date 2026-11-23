@@ -128,6 +128,35 @@ Cihazda: v9.15 oynatıcı yerleşimi, v9.16 radyo sırası, banner'ın gezinme �
 77 | **Listede olmayan TV kanalı araması** (iptv-org global indeks ~8 MB indirip isimle arama + önbellek) | Radyoda yapıldı (#75); TV için büyük indeks gerekiyor — sıradaki iş | ⏳ |
 76 | **İş listesi denetimi** (kodda tek tek doğrulama + sayaç) | ✅ 23 Kas 2026: 8 madde kodla, 3 madde cihazda doğrulandı; #38/#40/#41/#58 yanlışlıkla ⏳ kalmıştı → ✅ |
 
+## I. Claude derin analizi (v9.16) — maddeler tek tek doğrulandı (23 Kas 2026)
+
+> Rapor: `UMAY Multi TV — Derin Analiz ve Yol Haritası (v9.16).md`. Aşağıdaki her satırda **rapordaki iddia kodda arandı**;
+doğruysa düzeltildi ya da sıraya alındı, yanlışsa not düşüldü.
+
+| # | Bulgu / iş | Doğrulama | Durum |
+|---|---|---|---|
+78 | **P0-1 Telif: çıplak IP + ücretli kanallar + Sinema grubu** | Doğru: `channels.m3u` içinde `88.212.x` gibi IP kaynakları ve Cinemax/AXN/BBC First var; 137 kanal Sinema | ⏳ büyük iş (liste temizliği + resmi kaynak) |
+79 | P0-1b Kullanıcı kendi M3U/URL listesini eklesin (oynatıcı modeli) | Radyoda #75 ile başladı; TV tarafı yok | ⏳ |
+80 | P0-2 Gizlilik politikası gerçeği anlatmıyor ("reklam yok" diyordu) | Doğru: 3 dosyada aynı yanlış metin | ✅ (v9.18) AdMob/AD_ID/ipapi/Cloudflare/yayıncı sunucuları yazıldı |
+81 | P0-3 UMP / AB rıza ekranı yok | Doğru: `AdManager.init` doğrudan `MobileAds.initialize` | ⏳ |
+82 | P0-4 Üyelik sistemi açıkları (cihaza bağlı hash, /api/verify erken dönüş, hesap ele geçirme, HTML enjeksiyonu) | Rapordaki kod okuması tutarlı; kaldırma kararı ürün kararı | ⏳ **senin onayın gerek** |
+83 | P0-5a Bildirimdeki **Durdur** düğmesi çalışmıyor | Doğru: bildirim `action="stop"`, servis `getBooleanExtra("stop")` bekliyordu | ✅ (v9.18) |
+84 | P0-5b Radyoda ⏭ **TV kanalına** atlıyor | Doğru: `AudioService.step()` TV listesinde arıyor, bulamayınca 0'a düşüyordu | ✅ (v9.18) artık radyoda atlamıyor (radyo içi geçiş: radyo listesi verilecek) |
+85 | P0-5c Kapat/geri sonrası ses arkada sürebiliyor | Doğru: `onPause` `isFinishing()` bakmıyordu | ✅ (v9.18) |
+86 | P0-5d Ses odağı (audio focus) ve kulaklık çıkınca durma yok | Doğru: `requestAudioFocus` yok, noisy receiver yok | ⏳ |
+87 | P0-5e/f WakeLock/WifiLock zaman aşımsız | Kontrol edilecek | ⏳ |
+88 | P0-5g https→http düşürme güvenlik zayıflığı | Doğru: `AudioService` https başarısızsa http deniyor | ⏳ (kullanıcı onayıyla kaldırılacak) |
+89 | P0-6 Android 15/16 edge-to-edge: üst bar çentik altında kalabilir | `wrap` yalnız alt inset uyguluyor — doğru | ⏳ (ortak Insets yardımcısı) |
+90 | P0-7 İmza şifresi `app/build.gradle` içinde açık | Doğru: `UmayMultiTV2026!` düz yazı, depo halka açık | ✅ (v9.18) `keystore.properties` + ortam değişkeni (dosya git dışında) — **şifre rotasyonu ayrı iş** |
+91 | P0-7b Halka açık APK debug anahtarıyla imzalı | Doğru (`publicApk` debug ile imzalıyor) | ⏳ Play'e çıkınca sitedeki APK bağlantısı kaldırılacak |
+92 | P0-8 Mağaza başlığı 32 karakter (sınır 30), listede olmayan kanallar yazıyor | Kontrol edilecek (mağaza dokümanı `docs/play/` altında) | ⏳ |
+93 | P1 Çoklu ekran: sessiz pencerelere kalite tavanı, çözücü sınırı, yeniden bağlanma | Doğru: tüm pencereler aynı kalitede, retry yok | ⏳ |
+94 | P1 Yerelleştirme: 70+ sabit Türkçe metin, `strings.xml` yok, RTL yok | Doğru | ⏳ |
+95 | P1 R8/shrink + Crashlytics + vitals | `minifyEnabled false` doğru | ⏳ |
+96 | P2 Veri sayacı tüm uygulama trafiğini sayıyor | Doğru: `TrafficStats.getUidRxBytes` | ⏳ |
+97 | P2 Ödülden sonra `recreate()` yayını baştan başlatıyor | Doğru: `AdManager` ödül sonrası `a.recreate()` | ⏳ |
+98 | P2 Arama sonuçları klavye açıkken görünmüyordu (senin bulduğun) | Doğru: cihaz ekran görüntüsünde liste boş görünüyordu | ✅ (v9.18) sonuç gelince klavye kapanıyor |
+
 ## H. ÖNCELİK SIRASI (revize — 23 Kasım 2026, v9.10 sonrası)
 
 > Aşağıdaki sıra geçerlidir; B bölümündeki eski numaralar aynı işleri gösterir.

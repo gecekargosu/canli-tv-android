@@ -45,3 +45,4 @@ _build/gradle/
 Thumbs.db
 desktop.ini
 .DS_Store
+keystore.properties
