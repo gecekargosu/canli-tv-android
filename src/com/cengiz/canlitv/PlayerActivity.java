@@ -320,22 +320,28 @@ public class PlayerActivity extends android.app.Activity {
         lockHint.setVisibility(View.GONE);
         root.addView(lockHint, lhlp);
 
-        // --- banner: videonun ALTINDA (uzerine binmez), reklamsiz surede gizli ---
-        root.addView(AdManager.rewardStrip(this,
+        // --- alt bar: once reklamsiz serit, sonra banner ---
+        // ONEMLI: bunlar video katmaninin (FrameLayout root) ICINE eklenmez; ayri bir
+        // dikey kapta videonun ALTINDA durur ve sistem gezinme cubugunun ustunde kalir.
+        LinearLayout outer = new LinearLayout(this);
+        outer.setOrientation(LinearLayout.VERTICAL);
+        outer.setBackgroundColor(Color.BLACK);
+        root.setLayoutParams(new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
+        outer.addView(root);
+        outer.addView(AdManager.rewardStrip(this,
                 index >= 0 && index < list.size() ? list.get(index).url : null));
         android.view.View adBar = AdManager.banner(this);
-        if (adBar != null) {
-            LinearLayout holder = new LinearLayout(this);
-            holder.setOrientation(LinearLayout.VERTICAL);
-            holder.setBackgroundColor(Color.BLACK);
-            root.setLayoutParams(new LinearLayout.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
-            holder.addView(root);
-            holder.addView(adBar);
-            setContentView(holder);
-        } else {
-            setContentView(root);
-        }
+        if (adBar != null) outer.addView(adBar);
+        outer.setOnApplyWindowInsetsListener(new View.OnApplyWindowInsetsListener() {
+            @Override public android.view.WindowInsets onApplyWindowInsets(View v,
+                                                                              android.view.WindowInsets insets) {
+                int b = insets.getSystemWindowInsetBottom();
+                if (b > 0) v.setPadding(0, 0, 0, b);
+                return insets;
+            }
+        });
+        setContentView(outer);
 
         video.setOnPreparedListener(new android.media.MediaPlayer.OnPreparedListener() {
             @Override public void onPrepared(android.media.MediaPlayer m) {
