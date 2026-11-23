@@ -23,6 +23,8 @@ public class ChannelRepo {
         if (!cc.equals(loadedCountry)) {
             CHANNELS.clear();
             CHANNELS.addAll(CountryRepo.load(ctx, cc));
+            // en cok izlenen/bilinen kanallar basta, bilinmeyenler sonra (liste sirasi korunur)
+            Popular.arrange(cc, CHANNELS);
             loadedCountry = cc;
         }
         applyNumbers(ctx);

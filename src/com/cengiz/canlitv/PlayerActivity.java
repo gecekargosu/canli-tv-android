@@ -38,6 +38,8 @@ public class PlayerActivity extends android.app.Activity {
     private static final int MUTED = Color.parseColor("#B9C0CE");
 
     private List<Channel> list;
+    /** Ust uste kac olu kanal otomatik atlandi (sonsuz dongu olmasin). */
+    private int autoSkips = 0;
     private int index;
     private VideoView video;
     private ProgressBar progress;
@@ -342,6 +344,7 @@ public class PlayerActivity extends android.app.Activity {
                 video.start();
                 playButton.setText("⏸");
                 Prefs.clearFails(PlayerActivity.this, list.get(index).url);
+                autoSkips = 0;   // yayin acildi: sayac sifirlanir
                 if (!tracking) { tracking = true; openedAt = System.currentTimeMillis(); Net.begin(); }
                 ui.removeCallbacks(watchdog);
             }
@@ -352,6 +355,7 @@ public class PlayerActivity extends android.app.Activity {
                 Prefs.addFail(PlayerActivity.this, list.get(index).url);
                 errorView.setText("Bu kanal şu an açılamadı.\n\nDokun → tekrar dene\nveya ⏭ ile sonraki kanal");
                 errorView.setVisibility(View.VISIBLE);
+                autoNext();
                 return true;
             }
         });
@@ -636,6 +640,7 @@ public class PlayerActivity extends android.app.Activity {
                     errorView.setText("Yayın 13 saniyede açılmadı.\n\nDokun → tekrar dene\nveya ⏭ ile sonraki kanal");
                     errorView.setVisibility(View.VISIBLE);
                     Prefs.addFail(PlayerActivity.this, list.get(index).url);
+                    autoNext();
                 }
             } catch (Exception ignored) { }
         }
@@ -660,6 +665,26 @@ public class PlayerActivity extends android.app.Activity {
         } catch (Exception e) {
             return false;
         }
+    }
+
+    /**
+     * Aynı kanal 2 kez üst üste açılmadıysa kullanıcıyı bekletmeden sonraki kanala geçer.
+     * En fazla 3 kez üst üste atlar (tüm liste ölüyse döngüye girmez).
+     */
+    private void autoNext() {
+        try {
+            if (list.size() < 2 || autoSkips >= 3) return;
+            if (Prefs.fails(this, list.get(index).url) < 2) return;
+            autoSkips++;
+            ui.postDelayed(new Runnable() {
+                @Override public void run() {
+                    if (isFinishing()) return;
+                    Toast.makeText(PlayerActivity.this,
+                            "Kanal açılmadı, sonraki kanala geçiliyor", Toast.LENGTH_SHORT).show();
+                    step(1);
+                }
+            }, 2200);
+        } catch (Exception ignored) { }
     }
 
     private void step(int d) {

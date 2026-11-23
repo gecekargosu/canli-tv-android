@@ -764,7 +764,7 @@ public class MainActivity extends android.app.Activity {
         List<Channel> base = new ArrayList<Channel>();
         for (Channel c : all) {
             if (onlyHidden != hidden.contains(c.url)) continue;
-            if (!onlyHidden && Prefs.hideDead(this) && Prefs.fails(this, c.url) >= 3) continue;
+            if (!onlyHidden && Prefs.hideDead(this) && Prefs.fails(this, c.url) >= 2) continue;
             if (!"Tümü".equals(group)) {
                 if ("★ Favoriler".equals(group)) {
                     if (!favs.contains(c.url)) continue;

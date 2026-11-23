@@ -59,7 +59,7 @@ public class Prefs {
     }
 
     public static boolean hideDead(Context c) {
-        return sp(c).getBoolean("hideDead", false);
+        return sp(c).getBoolean("hideDead", true);
     }
 
     public static void setHideDead(Context c, boolean v) {

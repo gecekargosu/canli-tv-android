@@ -4,7 +4,7 @@ public class Channel {
     /** Kullanicinin degistirebildigi kumanda numarasi. */
     public int no;
     /** Listeye gomulu asil numara (sifirlama icin). */
-    public final int baseNo;
+    public int baseNo;
     public final String name;
     public final String group;
     public final String country;

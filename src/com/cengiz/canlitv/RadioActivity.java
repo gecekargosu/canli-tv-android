@@ -196,10 +196,7 @@ public class RadioActivity extends Activity {
         foot.setPadding(0, dp(4), 0, 0);
         root.addView(foot);
 
-        // reklam: radyo listesinin altinda
-        com.google.android.gms.ads.AdView adBar = AdManager.banner(this);
-        if (adBar != null) root.addView(adBar);
-
+        // reklam: AdManager.wrap ekliyor (burada ikinci kez eklenirse ust uste iki bar olur)
         AdManager.wrap(this, root);
         AdManager.init(this);
         refresh();
