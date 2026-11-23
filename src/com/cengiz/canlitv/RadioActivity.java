@@ -42,7 +42,20 @@ public class RadioActivity extends Activity {
     private final List<Integer> shown = new ArrayList<Integer>();
     private String query = "";
     private boolean showHidden = false;
+    private String cat = "Tümü";
+    private LinearLayout chipsRow;
     private RadioAdapter adapter;
+
+    /** Radyo turu: isimden cikarilir (haber / spor / dini / muzik). */
+    static String category(String name) {
+        String n = name.toLowerCase(java.util.Locale.US);
+        if (n.contains("haber") || n.contains("news") || n.contains("cnn")) return "📰 Haber";
+        if (n.contains("spor") || n.contains("sport") || n.contains("goal")) return "⚽ Spor";
+        if (n.contains("kuran") || n.contains("mekke") || n.contains("diyanet")
+                || n.contains("islam") || n.contains("moral") || n.contains("risale")
+                || n.contains("ilahi")) return "🕌 Dini";
+        return "🎵 Müzik";
+    }
 
     private static void load(Activity a) {
         if (loaded) return;
@@ -77,6 +90,8 @@ public class RadioActivity extends Activity {
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
         root.setBackgroundColor(BG);
+        // durum cubugunun altindan basla (edge-to-edge bosluk duzeltmesi)
+        root.setFitsSystemWindows(true);
         root.setPadding(dp(12), dp(12), dp(12), dp(6));
 
         LinearLayout head = new LinearLayout(this);
@@ -107,11 +122,29 @@ public class RadioActivity extends Activity {
         titles.addView(sub);
         head.addView(titles, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
 
+        // Kapat: calan radyoyu durdurur ve ana sayfaya doner
         TextView close = pill("Kapat");
         close.setOnClickListener(new View.OnClickListener() {
-            @Override public void onClick(View v) { finish(); }
+            @Override public void onClick(View v) {
+                AudioService.stop(RadioActivity.this);
+                finish();
+            }
         });
         head.addView(close);
+
+        // Uygulamadan tamamen cik
+        TextView quit = pill("⏻");
+        quit.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) {
+                AudioService.stop(RadioActivity.this);
+                finishAffinity();
+            }
+        });
+        LinearLayout.LayoutParams qlp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        qlp.setMargins(dp(6), 0, 0, 0);
+        quit.setLayoutParams(qlp);
+        head.addView(quit);
         root.addView(head);
 
         EditText search = new EditText(this);
@@ -136,26 +169,17 @@ public class RadioActivity extends Activity {
             public void afterTextChanged(Editable s) { }
         });
 
-        LinearLayout chips = new LinearLayout(this);
-        chips.setOrientation(LinearLayout.HORIZONTAL);
-        final TextView all = pill("Tümü");
-        all.setOnClickListener(new View.OnClickListener() {
-            @Override public void onClick(View v) { showHidden = false; refresh(); }
-        });
-        final TextView hidden = pill("🗑 Gizlenenler");
-        hidden.setOnClickListener(new View.OnClickListener() {
-            @Override public void onClick(View v) { showHidden = true; refresh(); }
-        });
-        LinearLayout.LayoutParams clp = new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        clp.setMargins(0, 0, dp(8), 0);
-        hidden.setLayoutParams(clp);
-        chips.addView(all);
-        chips.addView(hidden);
+        // --- tur siniflari (TV tarafindaki gibi): favoriler, haber, spor, muzik, dini ---
+        android.widget.HorizontalScrollView chipScroll = new android.widget.HorizontalScrollView(this);
+        chipScroll.setHorizontalScrollBarEnabled(false);
+        chipsRow = new LinearLayout(this);
+        chipsRow.setOrientation(LinearLayout.HORIZONTAL);
+        chipScroll.addView(chipsRow);
         LinearLayout.LayoutParams chipsLp = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         chipsLp.setMargins(0, 0, 0, dp(6));
-        root.addView(chips, chipsLp);
+        root.addView(chipScroll, chipsLp);
+        buildChips();
 
         ListView list = new ListView(this);
         list.setDivider(null);
@@ -202,17 +226,56 @@ public class RadioActivity extends Activity {
         });
     }
 
+    /** Tur cipleri: Tümü, ★ Favoriler, haber/spor/müzik/dini, Gizlenenler. */
+    private void buildChips() {
+        chipsRow.removeAllViews();
+        final String[] cats = new String[]{"Tümü", "★ Favoriler", "📰 Haber", "⚽ Spor",
+                "🎵 Müzik", "🕌 Dini", "🗑 Gizlenenler"};
+        for (final String c : cats) {
+            TextView chip = pill(c);
+            if (c.equals(cat)) {
+                GradientDrawable on = rounded(ACCENT, 16);
+                chip.setBackground(on);
+                chip.setTextColor(Color.parseColor("#111111"));
+                chip.setTypeface(chip.getTypeface(), android.graphics.Typeface.BOLD);
+            }
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            lp.setMargins(0, 0, dp(8), 0);
+            chip.setLayoutParams(lp);
+            chip.setOnClickListener(new View.OnClickListener() {
+                @Override public void onClick(View v) {
+                    cat = c;
+                    showHidden = "🗑 Gizlenenler".equals(c);
+                    buildChips();
+                    refresh();
+                }
+            });
+            chipsRow.addView(chip);
+        }
+    }
+
     private void menu(final int i) {
         final boolean hidden = Prefs.hiddenRadios(this).contains(URLS.get(i));
-        String[] items = hidden
-                ? new String[]{"➕ Listeye geri ekle", "Şimdi çal"}
-                : new String[]{"🗑 Listeden gizle", "Şimdi çal"};
+        final boolean fav = Prefs.favs(this).contains(URLS.get(i));
+        String[] items = new String[]{
+                fav ? "★ Favorilerden çıkar" : "★ Favorilere ekle",
+                hidden ? "➕ Listeye geri ekle" : "🗑 Listeden gizle",
+                "▶ Şimdi çal"
+        };
         new AlertDialog.Builder(this).setTitle(NAMES.get(i)).setItems(items,
                 new DialogInterface.OnClickListener() {
                     @Override public void onClick(DialogInterface d, int which) {
-                        if (which == 1) { play(i); return; }
-                        if (hidden) Prefs.unhideRadio(RadioActivity.this, URLS.get(i));
-                        else Prefs.hideRadio(RadioActivity.this, URLS.get(i));
+                        if (which == 2) { play(i); return; }
+                        if (which == 0) {
+                            Prefs.toggleFav(RadioActivity.this, URLS.get(i));
+                            Toast.makeText(RadioActivity.this,
+                                    fav ? "Favorilerden çıkarıldı" : "★ Favorilere eklendi",
+                                    Toast.LENGTH_SHORT).show();
+                        } else {
+                            if (hidden) Prefs.unhideRadio(RadioActivity.this, URLS.get(i));
+                            else Prefs.hideRadio(RadioActivity.this, URLS.get(i));
+                        }
                         refresh();
                     }
                 }).show();
@@ -221,9 +284,13 @@ public class RadioActivity extends Activity {
     private void refresh() {
         shown.clear();
         java.util.Set<String> hid = Prefs.hiddenRadios(this);
+        java.util.Set<String> favs = Prefs.favs(this);
         for (int i = 0; i < NAMES.size(); i++) {
             boolean isHidden = hid.contains(URLS.get(i));
             if (showHidden != isHidden) continue;
+            if ("★ Favoriler".equals(cat) && !favs.contains(URLS.get(i))) continue;
+            if (!"Tümü".equals(cat) && !"★ Favoriler".equals(cat) && !showHidden
+                    && !cat.equals(category(NAMES.get(i)))) continue;
             if (query.length() > 0
                     && !NAMES.get(i).toLowerCase().contains(query)
                     && !META.get(i).toLowerCase().contains(query)) continue;
@@ -251,7 +318,8 @@ public class RadioActivity extends Activity {
             texts.setLayoutParams(new LinearLayout.LayoutParams(0,
                     ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
             TextView n = new TextView(RadioActivity.this);
-            n.setText("📻  " + NAMES.get(i));
+            n.setText((Prefs.favs(RadioActivity.this).contains(URLS.get(i)) ? "★ " : "📻  ")
+                    + NAMES.get(i));
             n.setTextColor(TEXT);
             n.setTextSize(14);
             n.setTypeface(n.getTypeface(), android.graphics.Typeface.BOLD);

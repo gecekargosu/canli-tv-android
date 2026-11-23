@@ -80,6 +80,8 @@ public class RadioPlayerActivity extends Activity {
 
         ScrollView scroll = new ScrollView(this);
         scroll.setBackgroundColor(BG);
+        // durum cubugunun altindan basla (edge-to-edge bosluk duzeltmesi)
+        scroll.setFitsSystemWindows(true);
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
         root.setPadding(dp(16), dp(14), dp(16), dp(16));
@@ -91,11 +93,27 @@ public class RadioPlayerActivity extends Activity {
             @Override public void onClick(View v) { finish(); }
         });
         head.addView(close);
+        // Ana sayfa: radyo calmaya devam eder (arka plan), liste ekrani kapanir
         TextView home = chip("🏠");
         home.setOnClickListener(new View.OnClickListener() {
-            @Override public void onClick(View v) { finish(); }
+            @Override public void onClick(View v) {
+                android.content.Intent m = new android.content.Intent(
+                        RadioPlayerActivity.this, MainActivity.class);
+                m.addFlags(android.content.Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                startActivity(m);
+            }
         });
         head.addView(home);
+
+        // Uygulamadan tamamen cik (radyo da durur)
+        TextView quit = chip("⏻");
+        quit.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) {
+                AudioService.stop(RadioPlayerActivity.this);
+                finishAffinity();
+            }
+        });
+        head.addView(quit);
         TextView title = new TextView(this);
         title.setText("UMAY RADYO");
         title.setTextColor(ORANGE);
@@ -252,6 +270,39 @@ public class RadioPlayerActivity extends Activity {
         scroll.addView(root);
         setContentView(scroll);
 
+        // 40 dakika sonra nazik teklif: "reklamsiz devam etmek ister misin?" (zorlamasiz)
+        ui.postDelayed(new Runnable() {
+            @Override public void run() { offerAdFree(); }
+        }, Ads.ADFREE_OFFER_MINUTES * 60000L);
+    }
+
+    /** Uzun dinlemeden sonra zorlamayan odullu reklam teklifi. */
+    private void offerAdFree() {
+        if (isFinishing() || AdManager.isAdFree(this)) return;
+        new android.app.AlertDialog.Builder(this)
+                .setTitle("Reklamsız devam?")
+                .setMessage("Uzun süredir dinliyorsun. İstersen kısa bir video izle, "
+                        + Ads.REWARD_MINUTES + " dakika boyunca hiç reklam görme. İstemezsen dokunma, "
+                        + "dinlemeye aynen devam eder.")
+                .setPositiveButton("🎬 Video izle", new android.content.DialogInterface.OnClickListener() {
+                    @Override public void onClick(android.content.DialogInterface d, int w) {
+                        AdManager.showRewarded(RadioPlayerActivity.this, new Runnable() {
+                            @Override public void run() {
+                                Toast.makeText(RadioPlayerActivity.this, "Teşekkürler! "
+                                        + Ads.REWARD_MINUTES + " dakika reklamsız.", Toast.LENGTH_LONG).show();
+                            }
+                        }, new Runnable() {
+                            @Override public void run() {
+                                Toast.makeText(RadioPlayerActivity.this,
+                                        "Reklam henüz hazır değil, biraz sonra tekrar dene.",
+                                        Toast.LENGTH_SHORT).show();
+                            }
+                        });
+                    }
+                })
+                .setNegativeButton("Şimdi değil", null)
+                .show();
+
         show();
         ui.post(anim);
     }
@@ -359,18 +410,24 @@ public class RadioPlayerActivity extends Activity {
             // kadran
             RectF dial = new RectF(body.left + body.width() * 0.34f, body.top + body.height() * 0.16f,
                     body.right - body.width() * 0.08f, body.top + body.height() * 0.46f);
-            p.setColor(Color.parseColor("#E8EDF5"));
+            // kadran: koyu zemin + ince olcek cizgileri + turuncu ibre
+            p.setColor(Color.parseColor("#0E1319"));
             canvas.drawRoundRect(dial, 10, 10, p);
-            p.setColor(Color.parseColor("#7A879B"));
+            p.setStyle(Paint.Style.STROKE);
+            p.setStrokeWidth(2);
+            p.setColor(Color.parseColor("#2A3444"));
+            canvas.drawRoundRect(dial, 10, 10, p);
+            p.setColor(Color.parseColor("#8C98A8"));
             for (int i = 0; i <= 20; i++) {
-                float x = dial.left + dial.width() * i / 20f;
-                float len = (i % 5 == 0) ? 13 : 7;
-                canvas.drawLine(x, dial.top + 8, x, dial.top + 8 + len, p);
+                float x = dial.left + 6 + (dial.width() - 12) * i / 20f;
+                float len = (i % 5 == 0) ? 12 : 6;
+                canvas.drawLine(x, dial.top + 7, x, dial.top + 7 + len, p);
             }
-            p.setColor(Color.parseColor("#1F3A93"));
             p.setStrokeWidth(3);
-            canvas.drawLine(dial.left + dial.width() * 0.62f, dial.top + 4,
-                    dial.left + dial.width() * 0.62f, dial.bottom - 6, p);
+            p.setColor(ORANGE);
+            float nx = dial.left + 6 + (dial.width() - 12) * 0.62f;
+            canvas.drawLine(nx, dial.top + 5, nx, dial.bottom - 5, p);
+            p.setStyle(Paint.Style.FILL);
             p.setStrokeWidth(1);
 
             // iki dugme

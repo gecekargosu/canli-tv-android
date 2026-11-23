@@ -50,6 +50,8 @@ public class Ads {
     public static final int ZAPS_BEFORE_INTERSTITIAL = 4;
     /** Odullu reklam karsiligi reklamsiz sure. */
     public static final int REWARD_MINUTES = 60;
+    /** Radyoda kac dakika sonra "reklamsiz devam?" teklifi gosterilir (zorlamasiz). */
+    public static final int ADFREE_OFFER_MINUTES = 40;
     /** Uygulama acilisinda reklam gosterilmez (acilis reklami kapali). */
     public static final boolean APP_OPEN_AD = false;
 }
