@@ -49,3 +49,23 @@ Son güncelleme: 23 Kasım 2026 (v9.4)
 
 - Zorunlu reklam (yayın kesme), video üstüne banner → AdMob politikası ihlali.
 - Uygulama açılışında tam ekran reklam (şimdilik) → ilk izlenim bozulur.
+- **Radyo ekranındaki "TV alanında sürekli video reklam" fikri** → AdMob'da reklamın içerik gibi
+  görünmesi ("reklamı yayın sanma") yanıltıcı tıklama sayılır, hesap askıya alınabilir. Yerine
+  banner (yapıldı) + ödüllü video kullanıyoruz.
+
+## E. Konuşmalardan çıkan, unutulmuş maddeler (23 Kasım 2026 taraması)
+
+| # | İş | Neden önemli | Durum |
+|---|---|---|---|
+25 | **Hesap silme** (uygulama içinden: Ayarlar → Hesabımı sil) | Play, hesap açan uygulamalarda zorunlu tutuyor; yoksa ret | ⏳ |
+26 | **UMP / AB rıza ekranı** (AdMob Consent SDK) | AB + İsveç trafiğinde reklam kişiselleştirme için yasal zorunluluk | ⏳ |
+27 | **Mağaza ekran görüntüleri** (en az 4: ana sayfa, oynatıcı, radyo, çoklu ekran) | Play en az 2, önerilen 8; yükleme için hazır olmalı | ⏳ |
+28 | **Watch-count'a göre otomatik sıralama** (çok izlenen üstte) | İlk günden beri istediğin madde; şu an yalnızca elle sıralama var | ⏳ |
+29 | **Vektör ikon seti** (emoji yerine) | Emoji cihaza göre değişiyor, mağaza görünümünü bozuyor | ⏳ |
+30 | **Arapça RTL düzeni** (yalnızca metin çevrildi, yerleşim soldan sağa) | Arap pazarı hedefi | ⏳ |
+31 | **Kayıtlar ekranı uçtan uca test** | Hiç denenmedi (izin kaldırıldıktan sonra) | ⏳ |
+32 | **"Reklamsız / Pro" uygulama içi satın alma** (tek seferlik) | AdMob'a ek gelir kanalı, Gemini önerisi | ⏳ |
+33 | **İngilizce mağaza metni + ASO anahtar kelimeleri** | Global hedef (ABD/Hindistan/Brezilya) | ⏳ |
+34 | **Geliştirici adı "Yabanarisi" incelemesi** | Google tarafında, sonuç bekleniyor | ⛔ |
+35 | **AdMob app-ads.txt doğrulaması** | Mağaza linki eklenince kendiliğinden doğrulanır | ⛔ |
+36 | **Play formları (12 adım)** | Kimlik onayı açılınca birlikte doldurulacak | ⛔ |

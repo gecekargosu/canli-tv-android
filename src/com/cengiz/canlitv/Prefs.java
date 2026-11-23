@@ -288,4 +288,13 @@ public class Prefs {
     public static void setAdFreeUntil(Context c, long millis) {
         sp(c).edit().putLong("adFreeUntil", millis).apply();
     }
+
+    /** Her ekrandaki veri gostergesi acik mi? (Ayarlardan kapatilabilir) */
+    public static boolean showUsage(Context c) {
+        return sp(c).getBoolean("showUsage", true);
+    }
+
+    public static void setShowUsage(Context c, boolean v) {
+        sp(c).edit().putBoolean("showUsage", v).apply();
+    }
 }

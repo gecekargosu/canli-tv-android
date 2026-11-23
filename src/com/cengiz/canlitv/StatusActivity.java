@@ -153,7 +153,7 @@ public class StatusActivity extends Activity {
         root.addView(list, new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
 
-        setContentView(root);
+        AdManager.wrap(this, root);
     }
 
     private int dp(int v) { return (int) (v * getResources().getDisplayMetrics().density); }

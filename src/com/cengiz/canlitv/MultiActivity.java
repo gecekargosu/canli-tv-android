@@ -182,7 +182,7 @@ public class MultiActivity extends android.app.Activity {
                 ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
         panel.addView(clock, clp);
 
-        setContentView(root);
+        AdManager.wrap(this, root);
 
         for (int i = 0; i < 4; i++) slots[i].setChannel(idx[i] % list.size());
         applyAudio();

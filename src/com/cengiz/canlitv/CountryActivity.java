@@ -141,7 +141,7 @@ public class CountryActivity extends Activity {
         });
         root.addView(list, new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
-        setContentView(root);
+        AdManager.wrap(this, root);
     }
 
     private void pick(final String code, final boolean force) {

@@ -2,9 +2,14 @@ package com.cengiz.canlitv;
 
 import android.app.Activity;
 import android.content.Context;
+import android.graphics.Color;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
+import android.view.View;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
+import android.widget.TextView;
 
 import com.google.android.gms.ads.AdError;
 import com.google.android.gms.ads.AdRequest;
@@ -43,6 +48,7 @@ public final class AdManager {
     private static boolean loadingRewarded = false;
     private static long lastInterstitial = 0L;
     private static int opens = 0;
+    private static boolean showingAd = false;   // ayni anda iki tam ekran reklam acilmasin
 
     private AdManager() { }
 
@@ -79,6 +85,57 @@ public final class AdManager {
         }
     }
 
+    /**
+     * Her ekranin altina "veri gostergesi + banner" koyar: activity.setContentView yerine
+     * AdManager.wrap(this, icerik) cagrilir. Icerik kalan yuksekligi alir, banner en altta durur
+     * (videonun uzerine binmez). Reklamsiz surede banner eklenmez, veri gostergesi kalir.
+     */
+    public static void wrap(final Activity activity, View content) {
+        try {
+            LinearLayout holder = new LinearLayout(activity);
+            holder.setOrientation(LinearLayout.VERTICAL);
+            holder.setBackgroundColor(Color.parseColor("#060B14"));
+            content.setLayoutParams(new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
+            holder.addView(content);
+            if (Prefs.showUsage(activity)) holder.addView(usageBar(activity));
+            AdView ad = banner(activity);
+            if (ad != null) holder.addView(ad);
+            activity.setContentView(holder);
+        } catch (Throwable t) {
+            Log.w(TAG, "wrap hatasi: " + t);
+            activity.setContentView(content);
+        }
+    }
+
+    private static int dp(Activity a, int v) {
+        return (int) (v * a.getResources().getDisplayMetrics().density);
+    }
+
+    private static String human(long bytes) {
+        if (bytes >= 1073741824L) return String.format(java.util.Locale.US, "%.2f GB", bytes / 1073741824.0);
+        return String.format(java.util.Locale.US, "%.1f MB", bytes / 1048576.0);
+    }
+
+    /** Ekranin altinda kalan kucuk veri satiri: bugun toplam ne kadar internet harcandi. */
+    private static TextView usageBar(final Activity a) {
+        final TextView t = new TextView(a);
+        t.setTextSize(11f);
+        t.setTextColor(Color.parseColor("#8FA0B5"));
+        t.setPadding(dp(a, 10), dp(a, 4), dp(a, 10), dp(a, 4));
+        t.setText("📶 Bugün kullanılan veri: " + human(Prefs.todayBytes(a)));
+        final Handler h = new Handler(Looper.getMainLooper());
+        final Runnable r = new Runnable() {
+            @Override public void run() {
+                if (!t.isAttachedToWindow()) return;
+                t.setText("📶 Bugün kullanılan veri: " + human(Prefs.todayBytes(a)));
+                h.postDelayed(this, 5000);
+            }
+        };
+        h.postDelayed(r, 5000);
+        return t;
+    }
+
     /** Liste/oynatici altindaki banner. Reklamsiz surede veya SDK yoksa null doner. */
     public static AdView banner(Activity activity) {
         if (!Ads.SDK_READY || isAdFree(activity)) return null;
@@ -104,7 +161,7 @@ public final class AdManager {
      * yoksa isi hemen calistirir. Reklamsiz surede hic beklemez.
      */
     public static void maybeInterstitial(final Activity activity, final Runnable then) {
-        if (!Ads.SDK_READY || isAdFree(activity)) {
+        if (!Ads.SDK_READY || isAdFree(activity) || showingAd) {
             then.run();
             return;
         }
@@ -118,13 +175,16 @@ public final class AdManager {
         }
         interstitial = null;
         lastInterstitial = System.currentTimeMillis();
+        showingAd = true;
         ad.setFullScreenContentCallback(new FullScreenContentCallback() {
             @Override public void onAdDismissedFullScreenContent() {
+                showingAd = false;
                 loadInterstitial(activity);
                 then.run();
             }
 
             @Override public void onAdFailedToShowFullScreenContent(AdError error) {
+                showingAd = false;
                 loadInterstitial(activity);
                 then.run();
             }
@@ -132,6 +192,7 @@ public final class AdManager {
         try {
             ad.show(activity);
         } catch (Throwable t) {
+            showingAd = false;
             Log.w(TAG, "gecis reklami gosterilemedi: " + t);
             loadInterstitial(activity);
             then.run();

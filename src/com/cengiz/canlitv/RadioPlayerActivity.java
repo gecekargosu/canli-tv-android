@@ -69,13 +69,15 @@ public class RadioPlayerActivity extends Activity {
 
         LinearLayout head = new LinearLayout(this);
         head.setGravity(Gravity.CENTER_VERTICAL);
-        TextView close = chip("‹ Liste");
+        TextView close = chip("◀ Liste");
+        close.setTextSize(12);
         close.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View v) { finish(); }
         });
         head.addView(close);
         // Ana sayfa: radyo calmaya devam eder (arka plan), liste ekrani kapanir
-        TextView home = chip("🏠");
+        TextView home = chip("🏠 Ana");
+        home.setTextSize(12);
         home.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View v) {
                 android.content.Intent m = new android.content.Intent(
@@ -87,7 +89,8 @@ public class RadioPlayerActivity extends Activity {
         head.addView(home);
 
         // Uygulamadan tamamen cik (radyo da durur)
-        TextView quit = chip("⏻");
+        TextView quit = chip("⏻ Çık");
+        quit.setTextSize(12);
         quit.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View v) {
                 AudioService.stop(RadioPlayerActivity.this);
@@ -97,20 +100,19 @@ public class RadioPlayerActivity extends Activity {
         head.addView(quit);
 
         // uyku zamanlayici: gece dinlerken belirli sure sonra durdur
-        TextView sleepBtn = chip("⏱");
+        TextView sleepBtn = chip("⏱ Uyku");
+        sleepBtn.setTextSize(12);
         sleepBtn.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View v) { sleepDialog(); }
         });
         head.addView(sleepBtn);
         TextView title = new TextView(this);
-        title.setText("UMAY RADYO");
-        title.setTextColor(ORANGE);
-        title.setTextSize(13);
-        title.setGravity(Gravity.CENTER);
-        title.setTypeface(title.getTypeface(), android.graphics.Typeface.BOLD);
+        // ust bardaki dugmeler yazili oldugu icin baslik gosterilmiyor (sikismasin)
+        title.setVisibility(View.GONE);
         head.addView(title, new LinearLayout.LayoutParams(0,
                 ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
-        TextView stopBtn = chip("⏹");
+        TextView stopBtn = chip("⏹ Durdur");
+        stopBtn.setTextSize(12);
         stopBtn.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View v) {
                 AudioService.stop(RadioPlayerActivity.this);
@@ -256,7 +258,7 @@ public class RadioPlayerActivity extends Activity {
         root.addView(nav);
 
         scroll.addView(root);
-        setContentView(scroll);
+        AdManager.wrap(this, scroll);
 
         // ONEMLI: istasyonu hemen baslat (AudioService) + ekolayzir animasyonunu calistir
         show();

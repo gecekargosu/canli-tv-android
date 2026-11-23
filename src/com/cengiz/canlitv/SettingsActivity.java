@@ -77,7 +77,7 @@ public class SettingsActivity extends Activity {
         root.addView(body);
 
         scroll.addView(root);
-        setContentView(scroll);
+        AdManager.wrap(this, scroll);
 
         // durum cubugunun altindan basla (edge-to-edge)
         root.setOnApplyWindowInsetsListener(new View.OnApplyWindowInsetsListener() {
@@ -115,6 +115,17 @@ public class SettingsActivity extends Activity {
         c2.setPadding(0, dp(3), 0, 0);
         card.addView(c2);
         body.addView(card, marginBottom(10));
+
+        // veri gostergesi: her ekranin altinda bugunku kullanim yazsin mi?
+        row("📶", "Veri göstergesi",
+                "Her ekranın altında bugün harcanan interneti gösterir",
+                Prefs.showUsage(this) ? "Açık" : "Kapalı",
+                new View.OnClickListener() {
+                    @Override public void onClick(View v) {
+                        Prefs.setShowUsage(SettingsActivity.this, !Prefs.showUsage(SettingsActivity.this));
+                        recreate();
+                    }
+                });
 
         // --- hesap (istege bagli uyelik) ---
         section(Lang.t(this, "account"));

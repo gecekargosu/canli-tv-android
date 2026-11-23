@@ -84,7 +84,7 @@ public class AccountActivity extends Activity {
         root.addView(body);
 
         scroll.addView(root);
-        setContentView(scroll);
+        AdManager.wrap(this, scroll);
 
         // durum cubugunun altindan basla (edge-to-edge)
         root.setOnApplyWindowInsetsListener(new View.OnApplyWindowInsetsListener() {

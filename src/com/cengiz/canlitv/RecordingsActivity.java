@@ -80,7 +80,7 @@ public class RecordingsActivity extends Activity {
         root.addView(list, new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
 
-        setContentView(root);
+        AdManager.wrap(this, root);
         askPermission();
         load();
     }
