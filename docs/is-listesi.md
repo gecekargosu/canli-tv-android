@@ -97,6 +97,7 @@ Son güncelleme: 23 Kasım 2026 (v9.4)
 63 | **Tek dokunuşla ödüllü video şeridi** ("▶ Reklam izle · 20 dk reklamsız", her ekranda) + süre 20 dk | ✅ (v9.10) |
 64 | **Doğrulanmış "çalışan kanallar" listesi (known-good)** — #37 | ✅ (v9.11): `_build/good.py` ülke listelerini dener, `site/public/good/<cc>.json` yayınlanır, uygulama indirir ve çalışanları başa alır. TR 89/90, DE 73/90, US 67/90 |
 65 | **Haftalık otomatik tazeleme** (bu taramayı cron'a bağla) | ⏳: şimdilik elle `python _build/good.py ...` + deploy |
+66 | **Banner her zaman görünür** (reklamsız sürede de) + **20 dk ödül kanal/istasyon bazlı** | ✅ (v9.12) |
 
 ## H. ÖNCELİK SIRASI (revize — 23 Kasım 2026, v9.10 sonrası)
 
