@@ -76,7 +76,7 @@ Son güncelleme: 23 Kasım 2026 (v9.4)
 41 | **Radyo çalarda otomatik sonraki istasyon** | İstasyon açılmazsa 2 sn sonra sıradakine geçsin | ⏳ |
 42 | **Yedek (mirror) URL alanı** | Aynı kanalın 2-3 kaynağı; biri ölünce sıradaki denenir | ⏳ |
 49 | **Otomatik A'dan Z'ye test: Firebase Test Lab (Roboflow)** | Gerçek cihazda kendi kendine tıklar, çökme/ekran görüntüsü raporu verir; Google hesabı + faturalama ister | ⏳ |
-50 | **Appetize.io** ile tarayıcıda APK çalıştırma | Kurulum gerekmez, tarayıcıdan denenir; ücretsiz plan süre sınırlı | ⏳ |
+50 | **Appetize.io** ile tarayıcıda APK çalıştırma | ✅ v9.7 Pixel 7 / Android 13'te açıldı, liste + banner + veri satırı göründü (23 Kas 2026). Tarayıcıdan tıklama sadece kullanıcı faresiyle yapılabiliyor | ✅ |
 51 | **MobSF** (yerel, açık kaynak) güvenlik/statik analiz | APK'yı izinler, sertifika, gömülü anahtar açısından tarar (Docker) | ⏳ |
 52 | **Her sürümde Claude paketi (`UMAY-MULTI-TV-Claude-vX.Y.zip`)** | Kaynak + doküman + sürüm notu + tanıtım videosu tek zip'te | ✅ (v9.7) |
 53 | **Yerel otomatik gezinme testi** (`_build/crawl.py`) | Telefonda tüm ekranları/duğmeleri kendisi gezip çökme + ekran görüntüsü raporu üretir | ⏳ (sıradaki) |
