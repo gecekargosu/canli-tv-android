@@ -318,7 +318,20 @@ public class PlayerActivity extends android.app.Activity {
         lockHint.setVisibility(View.GONE);
         root.addView(lockHint, lhlp);
 
-        setContentView(root);
+        // --- banner: videonun ALTINDA (uzerine binmez), reklamsiz surede gizli ---
+        com.google.android.gms.ads.AdView adBar = AdManager.banner(this);
+        if (adBar != null) {
+            LinearLayout holder = new LinearLayout(this);
+            holder.setOrientation(LinearLayout.VERTICAL);
+            holder.setBackgroundColor(Color.BLACK);
+            root.setLayoutParams(new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
+            holder.addView(root);
+            holder.addView(adBar);
+            setContentView(holder);
+        } else {
+            setContentView(root);
+        }
 
         video.setOnPreparedListener(new android.media.MediaPlayer.OnPreparedListener() {
             @Override public void onPrepared(android.media.MediaPlayer m) {

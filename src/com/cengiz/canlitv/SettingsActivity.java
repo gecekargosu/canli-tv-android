@@ -258,20 +258,14 @@ public class SettingsActivity extends Activity {
                         .setPositiveButton("Tamam", null).show();
             }
         });
-        row("📢", "Reklam ve üyelik",
-                Account.signedIn(this) ? "Üyelik açık · reklam gösterilmiyor"
-                        : "Üyelik isteğe bağlı · reklam gösterilmiyor",
-                "Bilgi", new View.OnClickListener() {
-                    @Override public void onClick(View v) {
-                        new AlertDialog.Builder(SettingsActivity.this)
-                                .setTitle("Reklam ve üyelik")
-                                .setMessage("Reklam yok: bu sürümde hiçbir yerde reklam gösterilmiyor.\n\n"
-                                        + "Üyelik isteğe bağlı: e-posta ile üye olabilir veya Google ile girebilirsin. "
-                                        + "Üye olmasan da uygulamanın tüm özellikleri açık (misafir modu).\n\n"
-                                        + "İleride reklam eklenirse: kanal listesinde banner ve kanal değiştirirken "
-                                        + "se Seyrek geçiş reklamı; yayının üstüne reklam binmez.")
-                                .setPositiveButton("Tamam", null).show();
-                    }
+        int freeLeft = AdManager.adFreeMinutesLeft(this);
+        row("📢", "Reklamlar",
+                freeLeft > 0
+                        ? "Reklamsız sürüyor · " + freeLeft + " dakika kaldı"
+                        : "Liste altında banner · video izleyip 60 dk reklamsız",
+                freeLeft > 0 ? (freeLeft + " dk") : "Reklamsız ›",
+                new View.OnClickListener() {
+                    @Override public void onClick(View v) { adDialog(); }
                 });
         row("⭐", "Bizi değerlendir",
                 "Play'de puan ver · uygulama daha çok kişiye ulaşsın",
@@ -283,6 +277,51 @@ public class SettingsActivity extends Activity {
                 "Paylaş ›", new View.OnClickListener() {
                     @Override public void onClick(View v) { shareApp(); }
                 });
+    }
+
+    /** Reklam bilgisi + odullu "60 dk reklamsiz" + uyelik kisayolu. */
+    private void adDialog() {
+        int left = AdManager.adFreeMinutesLeft(this);
+        String msg = "Reklamlar sadece şuralarda: kanal/radyo listesinin altında küçük bir banner "
+                + "ve kanal değiştirirken 10 dakikada en fazla bir geçiş reklamı.\n\n"
+                + "Yayının üstüne reklam binmez, oynatma kesilmez."
+                + (left > 0 ? "\n\nŞu an reklamsız: " + left + " dakika kaldı." : "")
+                + "\n\nKısa bir video izleyip " + Ads.REWARD_MINUTES + " dakika reklamsız kullanabilirsin.\n\n"
+                + "Üyelik isteğe bağlı: e-posta veya Google ile girebilir, misafir olarak da her şeyi kullanabilirsin.";
+        new AlertDialog.Builder(this)
+                .setTitle("Reklamlar ve üyelik")
+                .setMessage(msg)
+                .setPositiveButton("🎬 " + Ads.REWARD_MINUTES + " dk reklamsız",
+                        new DialogInterface.OnClickListener() {
+                            @Override public void onClick(DialogInterface d, int w) { watchRewarded(); }
+                        })
+                .setNeutralButton("Üyelik", new DialogInterface.OnClickListener() {
+                    @Override public void onClick(DialogInterface d, int w) {
+                        startActivity(new Intent(SettingsActivity.this, AccountActivity.class));
+                    }
+                })
+                .setNegativeButton("Kapat", null).show();
+    }
+
+    private void watchRewarded() {
+        if (AdManager.isAdFree(this)) {
+            toast("Zaten reklamsız: " + AdManager.adFreeMinutesLeft(this) + " dakika kaldı");
+            return;
+        }
+        AdManager.showRewarded(this, new Runnable() {
+            @Override public void run() {
+                toast("Teşekkürler! " + Ads.REWARD_MINUTES + " dakika reklamsız.");
+                recreate();
+            }
+        }, new Runnable() {
+            @Override public void run() {
+                toast("Reklam henüz hazır değil, birkaç saniye sonra tekrar dene.");
+            }
+        });
+    }
+
+    private void toast(String s) {
+        android.widget.Toast.makeText(this, s, android.widget.Toast.LENGTH_LONG).show();
     }
 
     /** Arayuz dili secimi. */

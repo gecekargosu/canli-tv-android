@@ -186,12 +186,20 @@ public class RadioActivity extends Activity {
         foot.setPadding(0, dp(4), 0, 0);
         root.addView(foot);
 
+        // reklam: radyo listesinin altinda
+        com.google.android.gms.ads.AdView adBar = AdManager.banner(this);
+        if (adBar != null) root.addView(adBar);
+
         setContentView(root);
+        AdManager.init(this);
         refresh();
     }
 
-    private void play(int i) {
-        RadioPlayerActivity.open(this, i);
+    private void play(final int i) {
+        // radyo acilirken frekans sinirli gecis reklami (reklamsiz surede atlanir)
+        AdManager.maybeInterstitial(this, new Runnable() {
+            @Override public void run() { RadioPlayerActivity.open(RadioActivity.this, i); }
+        });
     }
 
     private void menu(final int i) {

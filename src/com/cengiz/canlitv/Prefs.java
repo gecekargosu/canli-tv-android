@@ -278,4 +278,14 @@ public class Prefs {
     public static void setAudioOnlyMobile(Context c, boolean v) {
         sp(c).edit().putBoolean("audioOnlyMobile", v).apply();
     }
+
+    // --- reklamsiz sure (odullu reklam ile kazanilir) ---
+    /** Reklamsiz surenin bitis zamani (ms). Gecmisse reklam gosterilir. */
+    public static long adFreeUntil(Context c) {
+        return sp(c).getLong("adFreeUntil", 0L);
+    }
+
+    public static void setAdFreeUntil(Context c, long millis) {
+        sp(c).edit().putLong("adFreeUntil", millis).apply();
+    }
 }

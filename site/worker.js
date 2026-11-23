@@ -26,6 +26,7 @@ export default {
 
     if (!path.startsWith("/api/")) {
       if (path === "/giris" || path === "/giris/") return googleLoginPage(env);
+      if (path === "/indir" || path === "/indir/") return downloadPage();
       return env.ASSETS.fetch(request);   // "/" -> index.html, /gizlilik-politikasi -> html
     }
 
@@ -45,6 +46,28 @@ export default {
     }
   },
 };
+
+// ---------------------------------------------------------------- indirme sayfasi
+const APK_URL =
+  "https://github.com/gecekargosu/canli-tv-android/releases/latest/download/CanliTV-9.1.apk";
+
+function downloadPage() {
+  return html(`<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<body style="font-family:system-ui;background:#11151c;color:#f5f7fa;padding:26px;max-width:520px;margin:0 auto">
+<h1 style="color:#ff7a18;margin:0 0 4px">UMAY Multi TV</h1>
+<p style="color:#9aa4b2;margin:0 0 20px">305 canli TV kanali + 50 radyo</p>
+<a href="${APK_URL}" style="display:block;text-align:center;background:#ff7a18;color:#111;padding:18px;border-radius:16px;text-decoration:none;font-weight:bold;font-size:18px">⬇ APK indir (Android 8+)</a>
+<h2 style="font-size:16px;margin:26px 0 8px">Nasil kurulur?</h2>
+<ol style="color:#c7d0dc;line-height:1.6;padding-left:20px;font-size:14px">
+<li>Yukaridaki dugmeye bas, dosya insin (yaklasik 5 MB).</li>
+<li>Inen dosyaya dokun. \"Bilinmeyen kaynaklara izin ver\" derse, ayarlardan bu tarayici icin izin ver.</li>
+<li>Kur → Ac. Baska izin gerekmez.</li>
+</ol>
+<p style="color:#9aa4b2;font-size:12px;line-height:1.6">Play Store surumu gelistirici dogrulamasi
+onayindan sonra yayinlanacak; o zamana kadar buradan indirilebilir. Guncelleme geldiginde ayni
+adresten yeni dosyayi indirip uzerine kurabilirsin (ayarlarin korunur).</p>
+<p><a href="/" style="color:#ff7a18">Siteye don</a></p></body>`);
+}
 
 // ---------------------------------------------------------------- yardimcilar
 function cors() {

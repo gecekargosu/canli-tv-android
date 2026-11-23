@@ -32,6 +32,7 @@ Son kontrol: **23 Kasım 2026** (Play Console ve AdMob konsolu açılıp bakıld
 | İş | Neden bekliyor | Kim yapar |
 |---|---|---|
 | Play'de uygulama kaydı | Kimlik onayı | Google onayı sonrası ben |
+| Kapalı test (12 tester / 14 gün) | Uygulama kaydı | Siz (tester listesi) + ben (yükleme) |
 | AAB yükleme + mağaza kaydı (açıklama, görseller) | Uygulama kaydı yok | Ben |
 | Veri güvenliği formu (e-posta toplanıyor) | Uygulama kaydı yok | Ben |
 | 12 tester / 14 gün kapalı test | Play kuralı | Siz + ben |
@@ -39,7 +40,7 @@ Son kontrol: **23 Kasım 2026** (Play Console ve AdMob konsolu açılıp bakıld
 | Gerçek reklam sunumu | Play listelemesi + AdMob incelemesi | Google |
 | E-posta gönderimi (kod + hoş geldin maili) | `RESEND_API_KEY`, `MAIL_FROM` yok | **Siz** (Resend hesabı) |
 | Google ile giriş | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` yok | **Siz** (Cloud Console) |
-| Ödüllü reklam ekranı ("60 dk reklamsız") | Birim hazır, arayüz bağlanmadı | Ben (v9.1) |
+| ~~Ödüllü reklam ekranı ("60 dk reklamsız")~~ | ✅ **v9.1'de yapıldı** (Ayarlar → Reklamlar) | — |
 
 ## 4. Sıradaki adımlar (sırayla)
 
