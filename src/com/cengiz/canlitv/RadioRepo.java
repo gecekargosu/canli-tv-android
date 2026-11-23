@@ -59,6 +59,7 @@ public final class RadioRepo {
         if ("tr".equals(cc)) {
             readStream(c, openAsset(c));
             sortPopular(cc);
+            addCustoms(c);
             return;
         }
         File f = cacheFile(c, cc);
@@ -66,12 +67,27 @@ public final class RadioRepo {
             try {
                 readStream(c, new java.io.FileInputStream(f));
                 sortPopular(cc);
+                addCustoms(c);
                 return;
             } catch (Exception e) {
                 Log.w(TAG, "onbellek okunamadi: " + e);
             }
         }
         // onbellek yok: gomulu TR listesini gecici goster, indirme baslatilabilir
+    }
+
+    /** Kullanicinin internetten arayip ekledigi istasyonlar en başa. */
+    private static void addCustoms(Context c) {
+        java.util.List<String[]> mine = Prefs.customRadios(c);
+        if (mine.isEmpty()) return;
+        int at = 0;
+        for (String[] r : mine) {
+            if (URLS.contains(r[1])) continue;
+            NAMES.add(at, r[0]);
+            META.add(at, "kendi listem · internet");
+            URLS.add(at, r[1]);
+            at++;
+        }
     }
 
     /** Bilinen/en çok dinlenen istasyonlar başa (ülke listesi varsa). */

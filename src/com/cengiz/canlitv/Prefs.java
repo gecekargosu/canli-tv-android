@@ -142,6 +142,43 @@ public class Prefs {
         sp(c).edit().putStringSet("hiddenRd", s).apply();
     }
 
+    // --- kullanicinin internetten arayip ekledigi radyolar ("ad" + \u0001 + "url") ---
+    public static List<String[]> customRadios(Context c) {
+        List<String[]> out = new ArrayList<String[]>();
+        String all = sp(c).getString("customRd", "");
+        if (all.length() == 0) return out;
+        for (String row : all.split("\n")) {
+            int i = row.indexOf('\u0001');
+            if (i <= 0 || i + 1 >= row.length()) continue;
+            out.add(new String[]{row.substring(0, i), row.substring(i + 1)});
+        }
+        return out;
+    }
+
+    public static boolean hasCustomRadio(Context c, String url) {
+        for (String[] r : customRadios(c)) if (r[1].equals(url)) return true;
+        return false;
+    }
+
+    public static void addCustomRadio(Context c, String name, String url) {
+        if (url == null || url.length() == 0 || name == null) return;
+        if (hasCustomRadio(c, url)) return;
+        String all = sp(c).getString("customRd", "");
+        String row = name.replace("\n", " ").replace("\u0001", " ").trim() + "\u0001" + url.trim();
+        sp(c).edit().putString("customRd", all.length() == 0 ? row : row + "\n" + all).apply();
+    }
+
+    public static void removeCustomRadio(Context c, String url) {
+        List<String[]> cur = customRadios(c);
+        StringBuilder sb = new StringBuilder();
+        for (String[] r : cur) {
+            if (r[1].equals(url)) continue;
+            if (sb.length() > 0) sb.append("\n");
+            sb.append(r[0]).append('\u0001').append(r[1]);
+        }
+        sp(c).edit().putString("customRd", sb.toString()).apply();
+    }
+
     // --- internet kullanimi ---
     private static String today() {
         return new java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US)

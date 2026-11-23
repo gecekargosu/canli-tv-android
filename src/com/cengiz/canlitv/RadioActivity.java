@@ -34,6 +34,10 @@ public class RadioActivity extends Activity {
     private static final int TEXT = Color.parseColor("#F5F7FA");
     private static final int MUTED = Color.parseColor("#9AA4B2");
 
+    private String onlineQuery = "";
+    private boolean onlineBusy = false;
+    private final java.util.Set<String> onlineUrls = new java.util.HashSet<String>();
+
     private static final List<String> NAMES = new ArrayList<String>();
     private static final List<String> META = new ArrayList<String>();
     private static final List<String> URLS = new ArrayList<String>();
@@ -262,15 +266,31 @@ public class RadioActivity extends Activity {
     private void menu(final int i) {
         final boolean hidden = Prefs.hiddenRadios(this).contains(URLS.get(i));
         final boolean fav = Prefs.favs(this).contains(URLS.get(i));
+        final boolean mine = Prefs.hasCustomRadio(this, URLS.get(i));
         String[] items = new String[]{
                 fav ? "★ Favorilerden çıkar" : "★ Favorilere ekle",
                 hidden ? "➕ Listeye geri ekle" : "🗑 Listeden gizle",
+                mine ? "🗑 Kendi listemden çıkar" : "➕ Kendi listeme ekle (kalıcı)",
                 "▶ Şimdi çal"
         };
         new AlertDialog.Builder(this).setTitle(NAMES.get(i)).setItems(items,
                 new DialogInterface.OnClickListener() {
                     @Override public void onClick(DialogInterface d, int which) {
-                        if (which == 2) { play(i); return; }
+                        if (which == 3) { play(i); return; }
+                        if (which == 2) {
+                            if (mine) {
+                                Prefs.removeCustomRadio(RadioActivity.this, URLS.get(i));
+                                Toast.makeText(RadioActivity.this, "Kendi listemden çıkarıldı",
+                                        Toast.LENGTH_SHORT).show();
+                            } else {
+                                Prefs.addCustomRadio(RadioActivity.this, NAMES.get(i), URLS.get(i));
+                                Toast.makeText(RadioActivity.this,
+                                        "★ Kendi listeme eklendi — her açılışta en üstte",
+                                        Toast.LENGTH_LONG).show();
+                            }
+                            refresh();
+                            return;
+                        }
                         if (which == 0) {
                             Prefs.toggleFav(RadioActivity.this, URLS.get(i));
                             Toast.makeText(RadioActivity.this,
@@ -292,15 +312,97 @@ public class RadioActivity extends Activity {
         for (int i = 0; i < NAMES.size(); i++) {
             boolean isHidden = hid.contains(URLS.get(i));
             if (showHidden != isHidden) continue;
+            // internetten gelen sonuclar: isim eslesmese de gosterilir
+            if (onlineUrls.contains(URLS.get(i))) { shown.add(i); continue; }
             if ("★ Favoriler".equals(cat) && !favs.contains(URLS.get(i))) continue;
             if (!"Tümü".equals(cat) && !"★ Favoriler".equals(cat) && !showHidden
                     && !cat.equals(category(NAMES.get(i)))) continue;
-            if (query.length() > 0
-                    && !NAMES.get(i).toLowerCase().contains(query)
-                    && !META.get(i).toLowerCase().contains(query)) continue;
+            if (query.length() > 0) {
+                String nm = NAMES.get(i).toLowerCase();
+                String mt = META.get(i).toLowerCase();
+                String qs = query.replace(" ", "");
+                boolean hit = nm.contains(query) || mt.contains(query)
+                        || nm.replace(" ", "").contains(qs);   // "radyofenomen" = "Radyo Fenomen"
+                if (!hit) continue;
+            }
             shown.add(i);
         }
         adapter.notifyDataSetChanged();
+        // listede yok: internette ara (en az 3 harf), ayni sorgu icin bir kez
+        if (shown.isEmpty() && query.length() >= 3 && !query.equals(onlineQuery) && !onlineBusy) {
+            searchOnline(query);
+        }
+    }
+
+    /** Arama cubuguna yazilan istasyon listede yoksa radio-browser'da arar. */
+    private void searchOnline(final String q) {
+        onlineQuery = q;
+        onlineBusy = true;
+        Toast.makeText(this, "Listede yok — internette aranıyor: " + q, Toast.LENGTH_SHORT).show();
+        new Thread(new Runnable() {
+            @Override public void run() {
+                int found = 0;
+                String err = null;
+                try {
+                    String u = "https://de1.api.radio-browser.info/json/stations/search"
+                            + "?hidebroken=true&order=clickcount&reverse=true&limit=15&name="
+                            + java.net.URLEncoder.encode(q, "UTF-8");
+                    java.net.HttpURLConnection con =
+                            (java.net.HttpURLConnection) new java.net.URL(u).openConnection();
+                    con.setConnectTimeout(8000);
+                    con.setReadTimeout(8000);
+                    con.setRequestProperty("User-Agent", "UMAY-MultiTV/9.17");
+                    java.io.BufferedReader r = new java.io.BufferedReader(
+                            new java.io.InputStreamReader(con.getInputStream(), "UTF-8"));
+                    StringBuilder sb = new StringBuilder();
+                    String line;
+                    while ((line = r.readLine()) != null) sb.append(line);
+                    r.close();
+                    con.disconnect();
+                    org.json.JSONArray arr = new org.json.JSONArray(sb.toString());
+                    for (int k = 0; k < arr.length(); k++) {
+                        org.json.JSONObject o = arr.getJSONObject(k);
+                        String nm = o.optString("name", "").trim();
+                        String su = o.optString("url_resolved", o.optString("url", "")).trim();
+                        if (nm.length() == 0 || su.length() < 8) continue;
+                        if (!su.startsWith("http")) continue;
+                        if (URLS.contains(su)) continue;
+                        String cc = o.optString("country", "");
+                        int br = o.optInt("bitrate", 0);
+                        NAMES.add(nm);
+                        META.add((cc.length() > 0 ? cc : "internet") + " · "
+                                + (br > 0 ? br + " kbps" : "internet"));
+                        URLS.add(su);
+                        onlineUrls.add(su);
+                        found++;
+                        if (found >= 15) break;
+                    }
+                } catch (Throwable e) {
+                    err = e.toString();
+                }
+                final int n = found;
+                final String e2 = err;
+                runOnUiThread(new Runnable() {
+                    @Override public void run() {
+                        onlineBusy = false;
+                        refresh();   // internet sonuclari listeye girsin
+                        if (n > 0) {
+                            Toast.makeText(RadioActivity.this,
+                                    "İnternetten " + n + " istasyon bulundu — uzun basıp \"kendi listeme ekle\"",
+                                    Toast.LENGTH_LONG).show();
+                        } else if (e2 == null) {
+                            Toast.makeText(RadioActivity.this,
+                                    "Bu istasyon zaten listende (ya da internet sonucu yok)",
+                                    Toast.LENGTH_LONG).show();
+                        } else {
+                            Toast.makeText(RadioActivity.this,
+                                    "İnternete ulaşılamadı: " + e2, Toast.LENGTH_LONG).show();
+                            android.util.Log.w("UMAY", "online arama hatasi: " + e2);
+                        }
+                    }
+                });
+            }
+        }).start();
     }
 
     private class RadioAdapter extends BaseAdapter {

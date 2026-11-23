@@ -7,11 +7,11 @@ Son güncelleme: 23 Kasım 2026 (v9.16 sonrası **denetim** — 8 madde kodla, 3
 
 | Durum | Adet |
 |---|---|
-| ✅ Bitti | **39** |
+| ✅ Bitti | **40** |
 | ⚠️ Kısmen | **2** (#60, #71 — kaynak yok) |
 | ⛔ Engelli (dışarıya bağlı) | **6** (#20, #21, #22, #34, #35, #36) |
 | ⏳ Sırada | **28** |
-| **Toplam** | **75** |
+| **Toplam** | **76** |
 
 **Denetim notu (23 Kas 2026):** aşağıdaki maddeler kodda tek tek kontrol edildi —
 #67 `AdManager.init` içinde `setMaxAdContentRating(G)` ✅ · #66 `banner()` içinde `isAdFree` kontrolü yok (her zaman görünür) + `isAdFreeFor(key)` kanal bazlı ✅ ·
@@ -124,7 +124,8 @@ Cihazda: v9.15 oynatıcı yerleşimi, v9.16 radyo sırası, banner'ın gezinme �
 72 | **TV oynatıcı yerleşimi** — şerit/banner video katmanının içindeydi, görüntü kayboluyordu | ✅ (v9.15)
 73 | **Banner sistem çubuğunun üstünde + dokunulabilir** (oynatıcı dahil) | ✅ (v9.15)
 74 | **Radyo popüler sıralama + marka başına tek** — #40 | ✅ (v9.16) |
-75 | **Listede olmayan kanal/istasyon araması** (kullanıcı arama çubuğuna yazınca internette aransın, çalışıyorsa listeye eklensin) | Şu an arama **yalnız yerel listeyi** süzüyor (#76 denetimi). Plan: radyo → radio-browser `?name=` araması (hazır API); TV → iptv-org ülke/global indeksinden isim araması + önbellek. Sıradaki iş | ⏳ |
+75 | **Listede olmayan RADYO araması** (arama çubuğuna yaz → internette ara → kendi listene ekle) | ✅ (v9.17): radio-browser `?name=` araması, uzun bas → "➕ Kendi listeme ekle (kalıcı)", kapat/aç sonrası en üstte kalıyor. Cihazda `lofi` → 15 sonuç test edildi |
+77 | **Listede olmayan TV kanalı araması** (iptv-org global indeks ~8 MB indirip isimle arama + önbellek) | Radyoda yapıldı (#75); TV için büyük indeks gerekiyor — sıradaki iş | ⏳ |
 76 | **İş listesi denetimi** (kodda tek tek doğrulama + sayaç) | ✅ 23 Kas 2026: 8 madde kodla, 3 madde cihazda doğrulandı; #38/#40/#41/#58 yanlışlıkla ⏳ kalmıştı → ✅ |
 
 ## H. ÖNCELİK SIRASI (revize — 23 Kasım 2026, v9.10 sonrası)
