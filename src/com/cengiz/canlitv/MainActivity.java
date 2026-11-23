@@ -351,7 +351,7 @@ public class MainActivity extends android.app.Activity {
                 ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
 
         // reklam: sadece listenin altinda banner (oynatma ekraninda yok)
-        AdView banner = AdManager.banner(this);
+        android.view.View banner = AdManager.banner(this);
         if (banner != null) root.addView(banner);
 
         setContentView(root);

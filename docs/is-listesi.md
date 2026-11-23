@@ -80,6 +80,12 @@ Son güncelleme: 23 Kasım 2026 (v9.4)
 51 | **MobSF** (yerel, açık kaynak) güvenlik/statik analiz | APK'yı izinler, sertifika, gömülü anahtar açısından tarar (Docker) | ⏳ |
 52 | **Her sürümde Claude paketi (`UMAY-MULTI-TV-Claude-vX.Y.zip`)** | Kaynak + doküman + sürüm notu + tanıtım videosu tek zip'te | ✅ (v9.7) |
 53 | **Yerel otomatik gezinme testi** (`_build/crawl.py`) | Telefonda tüm ekranları/duğmeleri kendisi gezip çökme + ekran görüntüsü raporu üretir | ⏳ (sıradaki) |
+54 | **Reklam dolmadığında kendi barımız (house bar)** | No-fill'de ekranın altı boş kalmıyor; her radyo/TV sayfasında bar var | ✅ (v9.8) |
+55 | **Ölü radyo istasyonunda otomatik sonraki istasyon** | 9 sn'de ses yoksa işaretle + geç (max 3) — "Radyo 7" gibi kayıtlar asılı kalmıyor | ✅ (v9.8) |
+56 | **Takılma (buffering) için oynatıcı tamponu** | Tampon süresini artır + takılınca otomatik kalite düşür; ExoPlayer (#39) ile birlikte | ⏳ |
+57 | **Cihaz matrisi testi** (Pixel 7 dışında: Android 8/10/12, küçük ekran 720×1280, tablet) | Appetize'da her cihaz 3 dk ücretsiz; sırayla denenmeli | ⏳ |
+58 | **TR listesine eksik ana kanalları ekle** (ATV, Show, Now, TRT 2, TRT Belgesel) | Sıralamada ilk 20 gerçekten "en çok izlenen" olsun | ⏳ |
+59 | **Appetize yerine Firebase Test Lab** (gerçek cihaz, 3 dk sınırı yok) | A'dan Z'ye otomatik tur + çökme videosu | ⏳ |
 
 ## F. v9.7'de tamamlananlar (23 Kasım 2026)
 

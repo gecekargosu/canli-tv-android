@@ -351,13 +351,35 @@ public class RadioPlayerActivity extends Activity {
         show();
     }
 
+    /** Üst üste kaç istasyon açılmadı (sonsuz döngü olmasın). */
+    private int radioSkips = 0;
+
     private void show() {
         nameView.setText(names.get(index));
         metaView.setText(metas.get(index));
         statusView.setText("bağlanıyor…");
         AudioService.start(this, urls.get(index), names.get(index));
         playing = true;
+        ui.removeCallbacks(radioWatchdog);
+        ui.postDelayed(radioWatchdog, 9000);
     }
+
+    /** 9 saniyede ses gelmezse istasyonu "ölü" işaretleyip sıradakine geçer. */
+    private final Runnable radioWatchdog = new Runnable() {
+        @Override public void run() {
+            if (names.isEmpty() || index < 0 || index >= urls.size()) return;
+            if (AudioService.isPlayingStatic()) { radioSkips = 0; return; }
+            Prefs.addFail(RadioPlayerActivity.this, urls.get(index));
+            if (radioSkips >= 3) {
+                statusView.setText("Bu ülkedeki istasyonlar açılmıyor · başka ülke dene");
+                return;
+            }
+            radioSkips++;
+            Toast.makeText(RadioPlayerActivity.this,
+                    "İstasyon açılmadı, sıradakine geçiliyor", Toast.LENGTH_SHORT).show();
+            changeStation(1);
+        }
+    };
 
     private final Runnable anim = new Runnable() {
         @Override public void run() {

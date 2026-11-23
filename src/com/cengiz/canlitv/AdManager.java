@@ -99,7 +99,7 @@ public final class AdManager {
                     ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
             holder.addView(content);
             if (Prefs.showUsage(activity)) holder.addView(usageBar(activity));
-            AdView ad = banner(activity);
+            View ad = banner(activity);
             if (ad != null) holder.addView(ad);
             // sistem gezinme cubugu (jest cubugu) banner'in uzerine binmesin:
             // ekranin altina cubuk yuksekligi kadar bosluk birak
@@ -146,24 +146,56 @@ public final class AdManager {
         return t;
     }
 
-    /** Liste/oynatici altindaki banner. Reklamsiz surede veya SDK yoksa null doner. */
-    public static AdView banner(Activity activity) {
+    /**
+     * Liste/oynatici altindaki banner. Reklamsiz surede veya SDK yoksa null doner.
+     * Reklam dolmazsa (no-fill / internet yok) yerine **kendi tanitim barimiz** gosterilir;
+     * boylece ekranin altinda bosluk kalmaz.
+     */
+    public static View banner(final Activity activity) {
         if (!Ads.SDK_READY || isAdFree(activity)) return null;
         try {
-            AdView view = new AdView(activity);
+            final android.widget.FrameLayout holder = new android.widget.FrameLayout(activity);
+            holder.setLayoutParams(new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+
+            final AdView view = new AdView(activity);
             view.setAdUnitId(Ads.BANNER);
             float density = activity.getResources().getDisplayMetrics().density;
             int widthDp = (int) (activity.getResources().getDisplayMetrics().widthPixels / density);
             AdSize size = AdSize.getCurrentOrientationAnchoredAdaptiveBannerAdSize(activity, widthDp);
             view.setAdSize(size != null ? size : AdSize.BANNER);
-            view.setLayoutParams(new LinearLayout.LayoutParams(
+            holder.addView(view, new android.widget.FrameLayout.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+
+            final TextView house = houseBar(activity);
+            house.setVisibility(View.GONE);
+            holder.addView(house);
+
+            view.setAdListener(new com.google.android.gms.ads.AdListener() {
+                @Override public void onAdFailedToLoad(LoadAdError error) {
+                    Log.w(TAG, "banner dolmadi, kendi barimiz gosteriliyor: " + error.getMessage());
+                    view.setVisibility(View.GONE);
+                    house.setVisibility(View.VISIBLE);
+                }
+            });
             view.loadAd(new AdRequest.Builder().build());
-            return view;
+            return holder;
         } catch (Throwable t) {
             Log.w(TAG, "banner hatasi: " + t);
             return null;
         }
+    }
+
+    /** Reklam dolmadiginda gosterilen kendi barimiz (bos yer birakmamak icin). */
+    private static TextView houseBar(final Activity a) {
+        TextView t = new TextView(a);
+        t.setTextSize(12f);
+        t.setTextColor(Color.parseColor("#0B1220"));
+        t.setBackgroundColor(Color.parseColor("#FFB020"));
+        t.setPadding(dp(a, 12), dp(a, 10), dp(a, 12), dp(a, 10));
+        t.setGravity(android.view.Gravity.CENTER);
+        t.setText("UMAY Multi TV  ·  60 dk reklamsız izlemek için ★ menüsünden ödüllü videoyu aç");
+        return t;
     }
 
     /**

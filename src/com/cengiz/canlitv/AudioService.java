@@ -215,6 +215,7 @@ public class AudioService extends Service {
                             attemptPlay(currentUrl);
                         } else {
                             android.util.Log.w("UmayRadio", "yayin acilmadi: " + candidate);
+                            try { Prefs.addFail(AudioService.this, currentUrl); } catch (Exception ignored) { }
                             notifyText("Yayın açılamadı · başka istasyon dene");
                         }
                     } catch (Exception ignored) { }
