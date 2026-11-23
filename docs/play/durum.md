@@ -38,7 +38,7 @@ Son kontrol: **23 Kasım 2026** (Play Console ve AdMob konsolu açılıp bakıld
 | 12 tester / 14 gün kapalı test | Play kuralı | Siz + ben |
 | AdMob'a mağaza bağlantısı | Play yayını | Ben (yayından sonra) |
 | Gerçek reklam sunumu | Play listelemesi + AdMob incelemesi | Google |
-| E-posta gönderimi (kod + hoş geldin maili) | `RESEND_API_KEY`, `MAIL_FROM` yok | **Siz** (Resend hesabı) |
+| ~~E-posta gönderimi (kod + hoş geldin maili)~~ | ✅ **Açıldı** (`RESEND_API_KEY` + `MAIL_FROM` eklendi, `mail:true`). Not: gönderen `onboarding@resend.dev` olduğu için şimdilik sadece hesap sahibine gider; tüm kullanıcılar için domain gerekir | — |
 | Google ile giriş | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` yok | **Siz** (Cloud Console) |
 | ~~Ödüllü reklam ekranı ("60 dk reklamsız")~~ | ✅ **v9.1'de yapıldı** (Ayarlar → Reklamlar) | — |
 

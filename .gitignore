@@ -38,6 +38,9 @@ local.properties
 _build/tools/
 _build/gradle/
 
+# gizli anahtarlar (asla commit edilmez)
+.secrets/
+
 # işletim sistemi
 Thumbs.db
 desktop.ini

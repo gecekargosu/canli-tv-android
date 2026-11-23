@@ -59,6 +59,7 @@ public class MainActivity extends android.app.Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        CrashLog.install(this);   // cokme olursa cihaza log yaz (Ayarlar -> Hata bildir)
         all = ChannelRepo.all(this);
         shownCountry = Prefs.country(this);
         shownLang = Prefs.uiLang(this);

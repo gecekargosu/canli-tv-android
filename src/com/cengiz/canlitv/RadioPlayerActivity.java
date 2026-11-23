@@ -46,30 +46,11 @@ public class RadioPlayerActivity extends Activity {
     }
 
     private void load() {
-        if (loaded) return;
-        loaded = true;
-        names = new java.util.ArrayList<String>();
-        metas = new java.util.ArrayList<String>();
-        urls = new java.util.ArrayList<String>();
-        try {
-            java.io.BufferedReader r = new java.io.BufferedReader(new java.io.InputStreamReader(
-                    getAssets().open("radios.m3u"), "UTF-8"));
-            String line, info = null;
-            while ((line = r.readLine()) != null) {
-                line = line.trim();
-                if (line.length() == 0) continue;
-                if (line.startsWith("#EXTINF")) {
-                    info = line.substring(line.indexOf(',') + 1).trim();
-                } else if (!line.startsWith("#") && info != null) {
-                    String[] p = info.split("\\|");
-                    names.add(p.length > 0 ? p[0].trim() : "Radyo");
-                    metas.add(p.length > 1 ? p[1].trim() + (p.length > 2 ? " · " + p[2].trim() : "") : "internet");
-                    urls.add(line);
-                    info = null;
-                }
-            }
-            r.close();
-        } catch (Exception ignored) { }
+        // secilen ulkenin radyolari (TR gomulu, digerleri onbellekten)
+        RadioRepo.ensure(this);
+        names = RadioRepo.NAMES;
+        metas = RadioRepo.META;
+        urls = RadioRepo.URLS;
     }
 
     @Override
@@ -114,6 +95,13 @@ public class RadioPlayerActivity extends Activity {
             }
         });
         head.addView(quit);
+
+        // uyku zamanlayici: gece dinlerken belirli sure sonra durdur
+        TextView sleepBtn = chip("⏱");
+        sleepBtn.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) { sleepDialog(); }
+        });
+        head.addView(sleepBtn);
         TextView title = new TextView(this);
         title.setText("UMAY RADYO");
         title.setTextColor(ORANGE);
@@ -274,6 +262,36 @@ public class RadioPlayerActivity extends Activity {
         ui.postDelayed(new Runnable() {
             @Override public void run() { offerAdFree(); }
         }, Ads.ADFREE_OFFER_MINUTES * 60000L);
+    }
+
+    private final Runnable stopTimer = new Runnable() {
+        @Override public void run() {
+            AudioService.stop(RadioPlayerActivity.this);
+            playing = false;
+            Toast.makeText(RadioPlayerActivity.this, "Uyku zamanlayıcı: radyo durduruldu",
+                    Toast.LENGTH_LONG).show();
+        }
+    };
+
+    /** Uyku zamanlayici: 15/30/60/90 dakika sonra radyoyu durdurur. */
+    private void sleepDialog() {
+        final String[] opts = {"15 dakika", "30 dakika", "60 dakika", "90 dakika", "Kapat"};
+        new android.app.AlertDialog.Builder(this)
+                .setTitle("Uyku zamanlayıcı")
+                .setItems(opts, new android.content.DialogInterface.OnClickListener() {
+                    @Override public void onClick(android.content.DialogInterface d, int w) {
+                        ui.removeCallbacks(stopTimer);
+                        if (w == 4) {
+                            Toast.makeText(RadioPlayerActivity.this, "Zamanlayıcı kapalı",
+                                    Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+                        int min = new int[]{15, 30, 60, 90}[w];
+                        ui.postDelayed(stopTimer, min * 60000L);
+                        Toast.makeText(RadioPlayerActivity.this,
+                                min + " dakika sonra radyo duracak", Toast.LENGTH_LONG).show();
+                    }
+                }).show();
     }
 
     /** Uzun dinlemeden sonra zorlamayan odullu reklam teklifi. */

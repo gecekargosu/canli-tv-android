@@ -267,6 +267,10 @@ public class SettingsActivity extends Activity {
                 new View.OnClickListener() {
                     @Override public void onClick(View v) { adDialog(); }
                 });
+        row("🐞", "Hata bildir", "Bir sorun olursa hata kaydını gönder, düzelteyim",
+                "Gönder ›", new View.OnClickListener() {
+                    @Override public void onClick(View v) { shareCrash(); }
+                });
         row("⭐", "Bizi değerlendir",
                 "Play'de puan ver · uygulama daha çok kişiye ulaşsın",
                 "Play ›", new View.OnClickListener() {
@@ -277,6 +281,20 @@ public class SettingsActivity extends Activity {
                 "Paylaş ›", new View.OnClickListener() {
                     @Override public void onClick(View v) { shareApp(); }
                 });
+    }
+
+    /** Cihazda kayitli hata logunu paylasir (WhatsApp/mail ile gonderilebilir). */
+    private void shareCrash() {
+        String log = CrashLog.last(this);
+        if (log.length() == 0) {
+            toast("Kayıtlı hata yok. Bir sorun olursa buradan gönderebilirsin.");
+            return;
+        }
+        Intent i = new Intent(Intent.ACTION_SEND);
+        i.setType("text/plain");
+        i.putExtra(Intent.EXTRA_SUBJECT, "UMAY Multi TV hata kaydı");
+        i.putExtra(Intent.EXTRA_TEXT, log);
+        startActivity(Intent.createChooser(i, "Hata kaydını gönder"));
     }
 
     /** Reklam bilgisi + odullu "60 dk reklamsiz" + uyelik kisayolu. */

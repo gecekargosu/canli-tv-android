@@ -37,7 +37,7 @@ public class RadioActivity extends Activity {
     private static final List<String> NAMES = new ArrayList<String>();
     private static final List<String> META = new ArrayList<String>();
     private static final List<String> URLS = new ArrayList<String>();
-    private static boolean loaded = false;
+    private TextView subView;
 
     private final List<Integer> shown = new ArrayList<Integer>();
     private String query = "";
@@ -57,29 +57,15 @@ public class RadioActivity extends Activity {
         return "🎵 Müzik";
     }
 
+    /** Secilen ulkenin radyolarini yukler (TR gomulu, digerleri indirilip onbelleklenir). */
     private static void load(Activity a) {
-        if (loaded) return;
-        loaded = true;
-        try {
-            BufferedReader r = new BufferedReader(new InputStreamReader(
-                    a.getAssets().open("radios.m3u"), "UTF-8"));
-            String line, info = null;
-            while ((line = r.readLine()) != null) {
-                line = line.trim();
-                if (line.length() == 0) continue;
-                if (line.startsWith("#EXTINF")) {
-                    info = line.substring(line.indexOf(',') + 1).trim();
-                } else if (!line.startsWith("#") && info != null) {
-                    String[] p = info.split("\\|");
-                    NAMES.add(p.length > 0 ? p[0].trim() : "Radyo");
-                    META.add(p.length > 1 ? (p[1].trim() + (p.length > 2 ? " · " + p[2].trim() : ""))
-                            : "internet");
-                    URLS.add(line);
-                    info = null;
-                }
-            }
-            r.close();
-        } catch (Exception ignored) { }
+        RadioRepo.ensure(a);
+        NAMES.clear();
+        META.clear();
+        URLS.clear();
+        NAMES.addAll(RadioRepo.NAMES);
+        META.addAll(RadioRepo.META);
+        URLS.addAll(RadioRepo.URLS);
     }
 
     @Override
@@ -114,12 +100,12 @@ public class RadioActivity extends Activity {
         t.setTextColor(TEXT);
         t.setTextSize(21);
         t.setTypeface(t.getTypeface(), android.graphics.Typeface.BOLD);
-        TextView sub = new TextView(this);
-        sub.setText(NAMES.size() + " istasyon · kilit ekranında da çalar");
-        sub.setTextColor(MUTED);
-        sub.setTextSize(11);
+        subView = new TextView(this);
+        subView.setText(NAMES.size() + " istasyon · kilit ekranında da çalar");
+        subView.setTextColor(MUTED);
+        subView.setTextSize(11);
         titles.addView(t);
-        titles.addView(sub);
+        titles.addView(subView);
         head.addView(titles, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
 
         // Kapat: calan radyoyu durdurur ve ana sayfaya doner
@@ -217,6 +203,27 @@ public class RadioActivity extends Activity {
         setContentView(root);
         AdManager.init(this);
         refresh();
+
+        // secilen ulke icin radyo listesi yoksa indir (radio-browser.info)
+        if (RadioRepo.needsDownload(this)) {
+            Toast.makeText(this, "Bu ülkenin radyoları indiriliyor…", Toast.LENGTH_SHORT).show();
+            RadioRepo.download(this, new Runnable() {
+                @Override public void run() {
+                    runOnUiThread(new Runnable() {
+                        @Override public void run() {
+                            load(RadioActivity.this);
+                            if (subView != null) {
+                                subView.setText(NAMES.size() + " istasyon · kilit ekranında da çalar");
+                            }
+                            if (chipsRow != null) buildChips();
+                            refresh();
+                            Toast.makeText(RadioActivity.this,
+                                    NAMES.size() + " radyo hazır", Toast.LENGTH_SHORT).show();
+                        }
+                    });
+                }
+            });
+        }
     }
 
     private void play(final int i) {
