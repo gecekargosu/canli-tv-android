@@ -196,3 +196,8 @@ doğruysa düzeltildi ya da sıraya alındı, yanlışsa not düşüldü.
 46 | Açılmayan kanalda otomatik sonraki kanal (en fazla 3 kez) | ✅ |
 47 | Radyo çalar üst barı yazılı/büyük + dikey başlık kaldırıldı | ✅ |
 48 | Banner sistem gezinme çubuğunun üstünde | ✅ |
+99 | **P0-1/2:** Sunucuda izin listesi (allowlist) — ülke listeleri uygulamaya filtrelenmiş JSON olarak gelsin | Ham iptv-org indirmesi kaldırılacak | ⏳ |
+100 | **P0-1/4:** Ayarlar → "Telif/İçerik bildir" e-postası + 24-48 saat kaldırma süreci | Play Fikri Mülkiyet politikası için | ⏳ |
+101 | **Good-listesi günlük tazeleme** (açılışta günde 1 kez sunucudan `good/<cc>.json`) | Donuk liste sorunu | ⏳ |
+102 | **TV için kendi M3U/URL ekleme** (#79'un TV ayağı) | Radyoda var (#75) | ⏳ |
+103 | **Yedek kaynakları tüm kanallara yay** (ATV dışındakiler için 2. kaynak toplama) | #42 altyapısı hazır | ⏳ |

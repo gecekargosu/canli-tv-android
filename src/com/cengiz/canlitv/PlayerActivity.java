@@ -40,6 +40,8 @@ public class PlayerActivity extends android.app.Activity {
     private List<Channel> list;
     /** Ust uste kac olu kanal otomatik atlandi (sonsuz dongu olmasin). */
     private int autoSkips = 0;
+    /** #42: ayni kanal icin denenen yedek kaynak sayisi. */
+    private int fbTried = 0;
     private int index;
     private VideoView video;
     private ProgressBar progress;
@@ -356,6 +358,7 @@ public class PlayerActivity extends android.app.Activity {
                 playButton.setText("⏸");
                 Prefs.clearFails(PlayerActivity.this, list.get(index).url);
                 autoSkips = 0;   // yayin acildi: sayac sifirlanir
+                fbTried = 0;     // yedek kaynak denemesi de sifirlanir
                 if (!tracking) { tracking = true; openedAt = System.currentTimeMillis(); Net.begin(); }
                 ui.removeCallbacks(watchdog);
             }
@@ -363,7 +366,21 @@ public class PlayerActivity extends android.app.Activity {
         video.setOnErrorListener(new android.media.MediaPlayer.OnErrorListener() {
             @Override public boolean onError(android.media.MediaPlayer mp, int what, int extra) {
                 progress.setVisibility(View.GONE);
-                Prefs.addFail(PlayerActivity.this, list.get(index).url);
+                // #42: önce yedek kaynak dene (kanal düşmesin), yoksa sıradaki kanala geç
+                String cur = list.get(index).url;
+                String[] alts = ChannelRepo.fallbacks(cur);
+                if (alts != null && fbTried < alts.length) {
+                    String alt = alts[fbTried++];
+                    Toast.makeText(PlayerActivity.this,
+                            "Yedek kaynak deneniyor…", Toast.LENGTH_SHORT).show();
+                    errorView.setVisibility(View.GONE);
+                    try {
+                        video.setVideoPath(alt);
+                        video.start();
+                        return true;
+                    } catch (Throwable ignored) { }
+                }
+                Prefs.addFail(PlayerActivity.this, cur);
                 errorView.setText("Bu kanal şu an açılamadı.\n\nDokun → tekrar dene\nveya ⏭ ile sonraki kanal");
                 errorView.setVisibility(View.VISIBLE);
                 autoNext();

@@ -3,13 +3,34 @@ package com.cengiz.canlitv;
 import android.content.Context;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Aktif ulkenin kanal listesi. Ulke degisince liste bastan yuklenir.
  * Liste kaynagi: tr icin gomulu assets/channels.m3u, digerleri icin CountryRepo (indirilip saklanir).
  */
 public class ChannelRepo {
+
+    /**
+     * #42: yedek kaynak (mirror). Bir kanalın asıl adresi açılmazsa sırayla buradakiler denenir.
+     * Anahtar: kanalın asıl URL'si. Değer: sırayla denenecek yedek URL'ler.
+     */
+    private static final Map<String, String[]> FALLBACK = new HashMap<String, String[]>();
+    static {
+        String atv720 = "https://rnttwmjcin.turknet.ercdn.net/lcpmvefbyo/atv/atv_720p.m3u8";
+        String atvMain = "https://rnttwmjcin.turknet.ercdn.net/lcpmvefbyo/atv/atv.m3u8";
+        String atv1080 = "https://rnttwmjcin.turknet.ercdn.net/lcpmvefbyo/atv/atv_1080p.m3u8";
+        FALLBACK.put(atv720, new String[]{atvMain, atv1080});
+        FALLBACK.put(atvMain, new String[]{atv720, atv1080});
+        FALLBACK.put(atv1080, new String[]{atv720, atvMain});
+    }
+
+    /** Yedek URL listesi (yoksa null). */
+    public static String[] fallbacks(String url) {
+        return url == null ? null : FALLBACK.get(url);
+    }
 
     private static final List<Channel> CHANNELS = new ArrayList<Channel>();
     private static String loadedCountry = "";
