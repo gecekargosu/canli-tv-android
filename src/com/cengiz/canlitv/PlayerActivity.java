@@ -164,6 +164,18 @@ public class PlayerActivity extends android.app.Activity {
         });
         barRow.addView(favButton);
 
+        // Çoklu ekran (ız gara/3'lü) — en çok kullanılan özellik, barın başında dursun
+        TextView multiBtn = barButton("▦", "Çoklu");
+        hint(multiBtn, "Çoklu ekran: 2-4 kanalı aynı anda izle");
+        multiBtn.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) {
+                Intent i = new Intent(PlayerActivity.this, MultiActivity.class);
+                i.putExtra("start", index);
+                startActivity(i);
+            }
+        });
+        barRow.addView(multiBtn);
+
         qualityBtn = barButton("🎚", QualityDialog.label(this));
         hint(qualityBtn, "Yayın kalitesi: 360p / 480p / 720p · veri tasarrufu");
         qualityBtn.setOnClickListener(new View.OnClickListener() {
@@ -194,17 +206,6 @@ public class PlayerActivity extends android.app.Activity {
             }
         });
         barRow.addView(pipBtn);
-
-        TextView multiBtn = barButton("▦", "Çoklu");
-        hint(multiBtn, "Çoklu ekran: 2-4 kanalı aynı anda izle");
-        multiBtn.setOnClickListener(new View.OnClickListener() {
-            @Override public void onClick(View v) {
-                Intent i = new Intent(PlayerActivity.this, MultiActivity.class);
-                i.putExtra("start", index);
-                startActivity(i);
-            }
-        });
-        barRow.addView(multiBtn);
 
         TextView lockBtn = barButton("🔒", "Kilit");
         hint(lockBtn, "Dokunma kilidi: yanlış dokunuşları engeller");

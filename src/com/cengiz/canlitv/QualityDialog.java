@@ -39,8 +39,31 @@ public class QualityDialog {
                 .setTitle("Yayın kalitesi · " + label(a) + " (az veri → çok veri)")
                 .setItems(items, new DialogInterface.OnClickListener() {
                     @Override public void onClick(DialogInterface d, int which) {
-                        Prefs.setMaxHeight(a, HEIGHTS[which]);
+                        final int h = HEIGHTS[which];
                         d.dismiss();
+                        // 360p üstü = daha fazla veri: kullanıcıdan onay al
+                        if (h > 360) {
+                            new AlertDialog.Builder(a)
+                                    .setTitle("Daha yüksek kalite · daha çok veri")
+                                    .setMessage(h + "p yayın yaklaşık " + gb(h)
+                                            + " harcar ve mobil veride kotanı hızlı tüketebilir.\n\n"
+                                            + "Mobil verideysen 360p önerilir; Wi-Fi'de yükseltmek mantıklı.")
+                                    .setPositiveButton("Yükselt", new DialogInterface.OnClickListener() {
+                                        @Override public void onClick(DialogInterface dd, int w) {
+                                            Prefs.setMaxHeight(a, h);
+                                            if (after != null) after.run();
+                                        }
+                                    })
+                                    .setNegativeButton("360p'de kal", new DialogInterface.OnClickListener() {
+                                        @Override public void onClick(DialogInterface dd, int w) {
+                                            Prefs.setMaxHeight(a, 360);
+                                            if (after != null) after.run();
+                                        }
+                                    })
+                                    .show();
+                            return;
+                        }
+                        Prefs.setMaxHeight(a, h);
                         if (after != null) after.run();
                     }
                 })

@@ -241,8 +241,9 @@ public class Prefs {
 
     // --- kalite tercihi ---
     // 0 = otomatik (kanalin en iyi kalitesi), -1 = en dusuk, 360/480/720/1080 = hedef yukseklik
+    /** Varsayılan: 360p (en düşük makul kalite = en az veri). Kullanıcı yükseltirse saklanır. */
     public static int maxHeight(Context c) {
-        return sp(c).getInt("maxHeight", 0);
+        return sp(c).getInt("maxHeight", 360);
     }
 
     public static void setMaxHeight(Context c, int h) {
