@@ -58,18 +58,59 @@ public final class RadioRepo {
 
         if ("tr".equals(cc)) {
             readStream(c, openAsset(c));
+            sortPopular(cc);
             return;
         }
         File f = cacheFile(c, cc);
         if (f.exists()) {
             try {
                 readStream(c, new java.io.FileInputStream(f));
+                sortPopular(cc);
                 return;
             } catch (Exception e) {
                 Log.w(TAG, "onbellek okunamadi: " + e);
             }
         }
         // onbellek yok: gomulu TR listesini gecici goster, indirme baslatilabilir
+    }
+
+    /** Bilinen/en çok dinlenen istasyonlar başa (ülke listesi varsa). */
+    private static void sortPopular(String cc) {
+        int n = NAMES.size();
+        if (n < 2) return;
+        final String country = cc;
+        java.util.List<Integer> idx = new java.util.ArrayList<Integer>();
+        for (int i = 0; i < n; i++) idx.add(i);
+        java.util.Collections.sort(idx, new java.util.Comparator<Integer>() {
+            @Override public int compare(Integer a, Integer b) {
+                int ra = Popular.radioRank(country, NAMES.get(a));
+                int rb = Popular.radioRank(country, NAMES.get(b));
+                if (ra != rb) return ra < rb ? -1 : 1;
+                return a < b ? -1 : (a.equals(b) ? 0 : 1);   // esitse eski sira korunur
+            }
+        });
+        java.util.List<String> names = new java.util.ArrayList<String>(NAMES);
+        java.util.List<String> metas = new java.util.ArrayList<String>(META);
+        java.util.List<String> urls = new java.util.ArrayList<String>(URLS);
+        NAMES.clear(); META.clear(); URLS.clear();
+        // ayni marka birden fazla kez: sadece ilki kalir (TV'deki "marka basina tek" kurali)
+        java.util.HashSet<String> seen = new java.util.HashSet<String>();
+        for (int i : idx) {
+            String brand = Popular.radioBrand(country, names.get(i));
+            // "Süper FM" ile "SUPER FM 2" ayni marka sayilsin: Turkce harfler sadelesir
+            if (brand != null && !seen.add(ascii(brand))) continue;
+            NAMES.add(names.get(i));
+            META.add(metas.get(i));
+            URLS.add(urls.get(i));
+        }
+    }
+
+    /** Türkçe harfleri sadeleştirir (marka karşılaştırması için). */
+    private static String ascii(String s) {
+        return s.replace('ü', 'u').replace('Ü', 'U').replace('ş', 's').replace('Ş', 'S')
+                .replace('ç', 'c').replace('Ç', 'C').replace('ğ', 'g').replace('Ğ', 'G')
+                .replace('ı', 'i').replace('İ', 'I').replace('ö', 'o').replace('Ö', 'O')
+                .replace(" ", "").replace("-", "");
     }
 
     /** O ulke icin indirme gerekiyor mu? */

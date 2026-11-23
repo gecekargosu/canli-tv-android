@@ -104,7 +104,8 @@ Son güncelleme: 23 Kasım 2026 (v9.4)
 70 | **Radyoda ölü istasyonu listeden kaldır** — #41 | ✅ (v9.14)
 71 | **TR eksik kanallar** — #60 | ⚠️ kısmen: TRT Çocuk/Müzik zaten var; Show TV, Now TV, TV100, Teve2 kaynakta yok (doğrulanmış link gerekli) |
 72 | **TV oynatıcı yerleşimi** — şerit/banner video katmanının içindeydi, görüntü kayboluyordu | ✅ (v9.15)
-73 | **Banner sistem çubuğunun üstünde + dokunulabilir** (oynatıcı dahil) | ✅ (v9.15) |
+73 | **Banner sistem çubuğunun üstünde + dokunulabilir** (oynatıcı dahil) | ✅ (v9.15)
+74 | **Radyo popüler sıralama + marka başına tek** — #40 | ✅ (v9.16) |
 
 ## H. ÖNCELİK SIRASI (revize — 23 Kasım 2026, v9.10 sonrası)
 

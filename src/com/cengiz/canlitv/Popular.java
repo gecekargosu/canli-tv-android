@@ -68,6 +68,14 @@ public final class Popular {
                     "aztv", "itv", "atv", "xezer", "cbc", "real tv", "apa"},
     };
 
+    /** Ülke -> sırayla aranacak radyo adları (TR listesi için). */
+    private static final String[][] RADIO = {
+            {"tr", "genç kral", "genc kral", "kral fm", "süper fm", "super fm", "metro fm",
+                    "joy türk", "joy fm", "radio 7", "ntv radyo", "trt fm", "radyo 1",
+                    "power fm", "virgin radio", "fenomen", "best fm", "number one",
+                    "radyo d", "alem fm", "show radyo", "pal fm", "retro türk"},
+    };
+
     private static final int UNKNOWN = 1000;
 
     private Popular() { }
@@ -84,6 +92,37 @@ public final class Popular {
                 if (n.startsWith(kw + " ") || n.startsWith(kw + "(")
                         || n.startsWith(kw + " -")) return j - 1;   // "ATV Haber"
                 if (n.contains(kw)) return j;                        // "ATV Alanya" biraz geride
+            }
+        }
+        return UNKNOWN;
+    }
+
+    /** Radyo adının eşleştiği marka anahtarı (yoksa null). */
+    public static String radioBrand(String cc, String name) {
+        if (name == null) return null;
+        String n = name.toLowerCase(new Locale("tr", "TR")).trim();
+        for (int i = 0; i < RADIO.length; i++) {
+            if (!RADIO[i][0].equals(cc)) continue;
+            for (int j = 1; j < RADIO[i].length; j++) {
+                String kw = RADIO[i][j];
+                if (n.equals(kw) || n.startsWith(kw + " ") || n.startsWith(kw + " -") || n.contains(kw))
+                    return kw;
+            }
+        }
+        return null;
+    }
+
+    /** Radyo adı için sıra: 0 = en popüler. */
+    public static int radioRank(String cc, String name) {
+        if (name == null) return UNKNOWN;
+        String n = name.toLowerCase(new Locale("tr", "TR")).trim();
+        for (int i = 0; i < RADIO.length; i++) {
+            if (!RADIO[i][0].equals(cc)) continue;
+            for (int j = 1; j < RADIO[i].length; j++) {
+                String kw = RADIO[i][j];
+                if (n.equals(kw)) return j - 1;
+                if (n.startsWith(kw + " ") || n.startsWith(kw + " -")) return j - 1;
+                if (n.contains(kw)) return j;
             }
         }
         return UNKNOWN;
