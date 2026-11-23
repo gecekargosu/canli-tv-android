@@ -10,6 +10,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.google.android.gms.ads.AdError;
 import com.google.android.gms.ads.AdRequest;
@@ -102,6 +103,60 @@ public final class AdManager {
                 rc.setTestDeviceIds(Collections.singletonList(Ads.TEST_DEVICE));
             }
             MobileAds.setRequestConfiguration(rc.build());
+
+            // --- P0-3: AB/UK/CH rıza ekranı (UMP). Rıza yoksa reklam istenmez. ---
+            com.google.android.ump.ConsentInformation ci =
+                    com.google.android.ump.UserMessagingPlatform.getConsentInformation(activity);
+            com.google.android.ump.ConsentRequestParameters.Builder params =
+                    new com.google.android.ump.ConsentRequestParameters.Builder();
+            if (Ads.TEST_MODE) {
+                // Test cihazında rıza formunu görebilmek için (yalnız test modunda)
+                try {
+                    params.setConsentDebugSettings(
+                            new com.google.android.ump.ConsentDebugSettings.Builder(activity)
+                                    .setDebugGeography(com.google.android.ump.ConsentDebugSettings
+                                            .DebugGeography.DEBUG_GEOGRAPHY_EEA)
+                                    .addTestDeviceHashedId(Ads.TEST_DEVICE)
+                                    .build());
+                } catch (Throwable ignored) { }
+            }
+            ci.requestConsentInfoUpdate(activity, params.build(),
+                    new com.google.android.ump.ConsentInformation.OnConsentInfoUpdateSuccessListener() {
+                        @Override public void onConsentInfoUpdateSuccess() {
+                            com.google.android.ump.UserMessagingPlatform
+                                    .loadAndShowConsentFormIfRequired(activity,
+                                            new com.google.android.ump.ConsentForm.OnConsentFormDismissedListener() {
+                                                @Override public void onConsentFormDismissed(
+                                                        com.google.android.ump.FormError error) {
+                                                    startAds(activity);
+                                                }
+                                            });
+                        }
+                    },
+                    new com.google.android.ump.ConsentInformation.OnConsentInfoUpdateFailureListener() {
+                        @Override public void onConsentInfoUpdateFailure(com.google.android.ump.FormError error) {
+                            Log.w(TAG, "riza bilgisi alinamadi: " + error);
+                            startAds(activity);
+                        }
+                    });
+        } catch (Throwable t) {
+            Log.w(TAG, "baslatma hatasi: " + t);
+            startAds(activity);
+        }
+    }
+
+    /** Rıza varsa SDK'yı başlatır (yoksa reklam istenmez). */
+    private static void startAds(final Activity activity) {
+        boolean can = true;
+        try {
+            can = com.google.android.ump.UserMessagingPlatform
+                    .getConsentInformation(activity).canRequestAds();
+        } catch (Throwable ignored) { }
+        if (!can) {
+            Log.i(TAG, "riza yok — reklam istenmeyecek");
+            return;
+        }
+        try {
             MobileAds.initialize(activity, new OnInitializationCompleteListener() {
                 @Override public void onInitializationComplete(InitializationStatus status) {
                     Log.i(TAG, "SDK hazir");
@@ -110,7 +165,31 @@ public final class AdManager {
                 }
             });
         } catch (Throwable t) {
-            Log.w(TAG, "baslatma hatasi: " + t);
+            Log.w(TAG, "SDK baslatma: " + t);
+        }
+    }
+
+    /** Ayarlar → "Reklam gizlilik tercihleri": rıza formunu yeniden açar. */
+    public static boolean hasPrivacyOptions(final Activity a) {
+        try {
+            return com.google.android.ump.UserMessagingPlatform.getConsentInformation(a)
+                    .getPrivacyOptionsRequirementStatus()
+                    == com.google.android.ump.ConsentInformation.PrivacyOptionsRequirementStatus.REQUIRED;
+        } catch (Throwable t) {
+            return false;
+        }
+    }
+
+    public static void showPrivacyOptions(final Activity a) {
+        try {
+            com.google.android.ump.UserMessagingPlatform.showPrivacyOptionsForm(a,
+                    new com.google.android.ump.ConsentForm.OnConsentFormDismissedListener() {
+                        @Override public void onConsentFormDismissed(com.google.android.ump.FormError error) {
+                            Toast.makeText(a, "Tercihler kaydedildi", Toast.LENGTH_SHORT).show();
+                        }
+                    });
+        } catch (Throwable t) {
+            Log.w(TAG, "gizlilik tercihleri acilamadi: " + t);
         }
     }
 

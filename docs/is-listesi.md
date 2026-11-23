@@ -138,7 +138,7 @@ doğruysa düzeltildi ya da sıraya alındı, yanlışsa not düşüldü.
 78 | **P0-1 Telif: çıplak IP + ücretli kanallar + Sinema grubu** | ✅ **(v9.19)** `_build/temizle.py`: 305 → **156 kanal**; Sinema 137 çıktı, çıplak IP 9, github-ham 2, abonelik markası 1 → **kalan çıplak IP 0**, http 59→5. Yabancı listeler için `CountryRepo.blocked/isBareIp/cleanName` filtreleri eklendi. Cihazda: 156 kanal, TRT 1 oynuyor (1/156), good_tr 146/156 doğrulandı |
 79 | P0-1b Kullanıcı kendi M3U/URL listesini eklesin (oynatıcı modeli) | Radyoda #75 ile başladı; TV tarafı yok | ⏳ |
 80 | P0-2 Gizlilik politikası gerçeği anlatmıyor ("reklam yok" diyordu) | Doğru: 3 dosyada aynı yanlış metin | ✅ (v9.18) AdMob/AD_ID/ipapi/Cloudflare/yayıncı sunucuları yazıldı |
-81 | P0-3 UMP / AB rıza ekranı yok | Doğru: `AdManager.init` doğrudan `MobileAds.initialize` | ⏳ |
+81 | P0-3 UMP / AB rıza ekranı yok | Doğru: `AdManager.init` doğrudan `MobileAds.initialize` | ✅ **(v9.20)** consent-information → form → `canRequestAds()` → init; test modunda EEA debug geography |
 82 | P0-4 Üyelik sistemi açıkları (cihaza bağlı hash, /api/verify erken dönüş, hesap ele geçirme, HTML enjeksiyonu) | Rapordaki kod okuması tutarlı; kaldırma kararı ürün kararı | ⏳ **senin onayın gerek** |
 83 | P0-5a Bildirimdeki **Durdur** düğmesi çalışmıyor | Doğru: bildirim `action="stop"`, servis `getBooleanExtra("stop")` bekliyordu | ✅ (v9.18) |
 84 | P0-5b Radyoda ⏭ **TV kanalına** atlıyor | Doğru: `AudioService.step()` TV listesinde arıyor, bulamayınca 0'a düşüyordu | ✅ (v9.18) artık radyoda atlamıyor (radyo içi geçiş: radyo listesi verilecek) |
