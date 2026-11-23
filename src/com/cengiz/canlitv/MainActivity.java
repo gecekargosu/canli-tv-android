@@ -62,6 +62,7 @@ public class MainActivity extends android.app.Activity {
         CrashLog.install(this);   // cokme olursa cihaza log yaz (Ayarlar -> Hata bildir)
         all = ChannelRepo.all(this);
         shownCountry = Prefs.country(this);
+        maybeSuggestCountry();
         shownLang = Prefs.uiLang(this);
 
         LinearLayout root = new LinearLayout(this);
@@ -358,6 +359,56 @@ public class MainActivity extends android.app.Activity {
         AdManager.init(this);
         handleExtras(getIntent());
         refresh();
+    }
+
+    /**
+     * Ilk acilista IP'den ulke tahmini yapar; desteklenen ve mevcut ulkeden farkliysa
+     * "kanallari buna gore yukleyeyim mi?" diye sorar (bir kez).
+     */
+    private void maybeSuggestCountry() {
+        if (Prefs.countryAsked(this)) return;
+        Prefs.setCountryAsked(this, true);
+        final String current = Prefs.country(this);
+        new Thread(new Runnable() {
+            @Override public void run() {
+                String cc = null;
+                try {
+                    java.net.HttpURLConnection c = (java.net.HttpURLConnection)
+                            new java.net.URL("https://ipapi.co/json/").openConnection();
+                    c.setConnectTimeout(6000);
+                    c.setReadTimeout(6000);
+                    c.setRequestProperty("User-Agent", "UMAYMultiTV/9.9");
+                    java.io.BufferedReader r = new java.io.BufferedReader(
+                            new java.io.InputStreamReader(c.getInputStream(), "UTF-8"));
+                    StringBuilder sb = new StringBuilder();
+                    String line;
+                    while ((line = r.readLine()) != null) sb.append(line);
+                    r.close();
+                    org.json.JSONObject o = new org.json.JSONObject(sb.toString());
+                    cc = o.optString("country_code", "").toLowerCase(java.util.Locale.US);
+                } catch (Exception ignored) { }
+                final String found = cc;
+                if (found == null || found.length() != 2) return;
+                if (found.equals(current) || !Countries.supported(found)) return;
+                runOnUiThread(new Runnable() {
+                    @Override public void run() {
+                        if (isFinishing()) return;
+                        new android.app.AlertDialog.Builder(MainActivity.this)
+                                .setTitle("Ülkeni bulduk: " + Countries.name(found, false))
+                                .setMessage("Kanalları ve radyoları bu ülkeye göre yükleyeyim mi?")
+                                .setPositiveButton("Evet, değiştir", new android.content.DialogInterface.OnClickListener() {
+                                    @Override public void onClick(android.content.DialogInterface d, int w) {
+                                        Prefs.setCountry(MainActivity.this, found);
+                                        ChannelRepo.reload(MainActivity.this);
+                                        recreate();
+                                    }
+                                })
+                                .setNegativeButton("Şimdi değil", null)
+                                .show();
+                    }
+                });
+            }
+        }).start();
     }
 
     private void buildChips() {

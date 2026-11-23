@@ -57,6 +57,12 @@ public class Countries {
             {"by", "Belarus", "Belarus"},
     };
 
+    /** Bu ulke listede var mi? (IP'den gelen kod icin) */
+    public static boolean supported(String code) {
+        for (String[] c : LIST) if (c[0].equals(code)) return true;
+        return false;
+    }
+
     public static String name(String code, boolean english) {
         for (String[] c : LIST) if (c[0].equals(code)) return english ? c[2] : c[1];
         return code.toUpperCase();

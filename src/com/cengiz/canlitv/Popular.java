@@ -140,7 +140,9 @@ public final class Popular {
         if (name == null) return 3;
         String n = name.toLowerCase(new Locale("tr", "TR")).trim();
         if (n.equals(kw)) return 0;
-        if (n.startsWith(kw + " ") || n.startsWith(kw + "(") || n.startsWith(kw + " -")) return 1;
+        // "ATV (Turkiye)" gibi parantezli asil kanal, "ATV Alanya" gibi yerel yayindan onde olmali
+        if (n.startsWith(kw + " (") || n.startsWith(kw + "(")) return 0;
+        if (n.startsWith(kw + " ") || n.startsWith(kw + " -")) return 1;
         if (n.contains(kw)) return 2;
         return 3;
     }

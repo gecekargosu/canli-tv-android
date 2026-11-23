@@ -289,6 +289,15 @@ public class Prefs {
         sp(c).edit().putLong("adFreeUntil", millis).apply();
     }
 
+    /** IP'den ulke onerisi bir kez soruldu mu? */
+    public static boolean countryAsked(Context c) {
+        return sp(c).getBoolean("countryAsked", false);
+    }
+
+    public static void setCountryAsked(Context c, boolean v) {
+        sp(c).edit().putBoolean("countryAsked", v).apply();
+    }
+
     /** Her ekrandaki veri gostergesi acik mi? (Ayarlardan kapatilabilir) */
     public static boolean showUsage(Context c) {
         return sp(c).getBoolean("showUsage", true);
