@@ -90,11 +90,18 @@ public final class AdManager {
         if (!Ads.SDK_READY || inited) return;
         inited = true;
         try {
+            // Aile dostu reklam: yetiskin/erotik/"afterglow" turu icerikler istenmez.
+            // MAX_AD_CONTENT_RATING_G = yalnizca genel izleyiciye uygun reklamlar.
+            RequestConfiguration.Builder rc = new RequestConfiguration.Builder()
+                    .setMaxAdContentRating(RequestConfiguration.MAX_AD_CONTENT_RATING_G)
+                    .setTagForChildDirectedTreatment(
+                            RequestConfiguration.TAG_FOR_CHILD_DIRECTED_TREATMENT_UNSPECIFIED)
+                    .setTagForUnderAgeOfConsent(
+                            RequestConfiguration.TAG_FOR_UNDER_AGE_OF_CONSENT_UNSPECIFIED);
             if (Ads.TEST_MODE) {
-                MobileAds.setRequestConfiguration(new RequestConfiguration.Builder()
-                        .setTestDeviceIds(Collections.singletonList(Ads.TEST_DEVICE))
-                        .build());
+                rc.setTestDeviceIds(Collections.singletonList(Ads.TEST_DEVICE));
             }
+            MobileAds.setRequestConfiguration(rc.build());
             MobileAds.initialize(activity, new OnInitializationCompleteListener() {
                 @Override public void onInitializationComplete(InitializationStatus status) {
                     Log.i(TAG, "SDK hazir");
