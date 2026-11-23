@@ -127,17 +127,7 @@ public class SettingsActivity extends Activity {
                     }
                 });
 
-        // --- hesap (istege bagli uyelik) ---
-        section(Lang.t(this, "account"));
-        row("👤", Lang.t(this, "account"), Lang.t(this, "account_why"),
-                Account.signedIn(this)
-                        ? (Account.name(this).length() > 0 ? Account.name(this) : Account.email(this))
-                        : Lang.t(this, "guest_short"),
-                new View.OnClickListener() {
-                    @Override public void onClick(View v) {
-                        startActivity(new Intent(SettingsActivity.this, AccountActivity.class));
-                    }
-                });
+        // --- P0-4: üyelik sistemi kaldırıldı (v9.21) ---
 
         // --- genel: ulke + dil ---
         section(Lang.t(this, "general"));
@@ -294,17 +284,6 @@ public class SettingsActivity extends Activity {
                 });
     }
 
-    private String builtAccount = null;
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-        // hesap durumu degistiyse (uyelik/giris/cikis) satirlari yenile
-        String now = Account.email(this) + "|" + Account.verified(this);
-        if (builtAccount == null) builtAccount = now;
-        else if (!builtAccount.equals(now)) recreate();
-    }
-
     /** Cihazda kayitli hata logunu paylasir (WhatsApp/mail ile gonderilebilir). */
     private void shareCrash() {
         String log = CrashLog.last(this);
@@ -327,7 +306,7 @@ public class SettingsActivity extends Activity {
                 + "Yayının üstüne reklam binmez, oynatma kesilmez."
                 + (left > 0 ? "\n\nŞu an reklamsız: " + left + " dakika kaldı." : "")
                 + "\n\nKısa bir video izleyip " + Ads.REWARD_MINUTES + " dakika reklamsız kullanabilirsin.\n\n"
-                + "Üyelik isteğe bağlı: e-posta veya Google ile girebilir, misafir olarak da her şeyi kullanabilirsin.";
+                + "Üyelik gerekmez: hiçbir özellik için giriş istemiyoruz.";
         new AlertDialog.Builder(this)
                 .setTitle("Reklamlar ve üyelik")
                 .setMessage(msg)
@@ -335,11 +314,6 @@ public class SettingsActivity extends Activity {
                         new DialogInterface.OnClickListener() {
                             @Override public void onClick(DialogInterface d, int w) { watchRewarded(); }
                         })
-                .setNeutralButton("Üyelik", new DialogInterface.OnClickListener() {
-                    @Override public void onClick(DialogInterface d, int w) {
-                        startActivity(new Intent(SettingsActivity.this, AccountActivity.class));
-                    }
-                })
                 .setNegativeButton("Kapat", null).show();
     }
 

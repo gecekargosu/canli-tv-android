@@ -24,6 +24,10 @@ export default {
     const url = new URL(request.url);
     const path = url.pathname;
 
+    // P0-4 (v9.21): uyelik/hesap uclari kaldirildi. Yalnizca statik site + good/*.json.
+    if (path.startsWith("/api/")) {
+      return json({ ok: false, error: "account system removed" }, 410);
+    }
     if (!path.startsWith("/api/")) {
       if (path === "/giris" || path === "/giris/") return googleLoginPage(env);
       if (path === "/indir" || path === "/indir/") return downloadPage();
