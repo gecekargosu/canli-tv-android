@@ -352,7 +352,7 @@ public class MainActivity extends android.app.Activity {
                 ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
 
         // reklam: listenin altinda once "20 dk reklamsız" seridi, sonra banner
-        if (!AdManager.isAdFree(this)) root.addView(AdManager.rewardStrip(this));
+        root.addView(AdManager.rewardStrip(this));   // 20 dk reklamsiz serit (reklamlar yine gosterilir)
         android.view.View banner = AdManager.banner(this);
         if (banner != null) root.addView(banner);
 

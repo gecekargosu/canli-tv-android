@@ -253,7 +253,7 @@ public class RadioPlayerActivity extends Activity {
         root.addView(nav);
 
         scroll.addView(root);
-        AdManager.wrap(this, scroll);
+        AdManager.wrap(this, scroll, urls.get(index));
 
         // ONEMLI: istasyonu hemen baslat (AudioService) + ekolayzir animasyonunu calistir
         show();
@@ -297,7 +297,7 @@ public class RadioPlayerActivity extends Activity {
 
     /** Uzun dinlemeden sonra zorlamayan odullu reklam teklifi. */
     private void offerAdFree() {
-        if (isFinishing() || AdManager.isAdFree(this)) return;
+        if (isFinishing() || AdManager.isAdFreeFor(this, urls.get(index))) return;
         new android.app.AlertDialog.Builder(this)
                 .setTitle("Reklamsız devam?")
                 .setMessage("Uzun süredir dinliyorsun. İstersen kısa bir video izle, "
@@ -305,7 +305,7 @@ public class RadioPlayerActivity extends Activity {
                         + "dinlemeye aynen devam eder.")
                 .setPositiveButton("🎬 Video izle", new android.content.DialogInterface.OnClickListener() {
                     @Override public void onClick(android.content.DialogInterface d, int w) {
-                        AdManager.showRewarded(RadioPlayerActivity.this, new Runnable() {
+                        AdManager.showRewarded(RadioPlayerActivity.this, urls.get(index), new Runnable() {
                             @Override public void run() {
                                 Toast.makeText(RadioPlayerActivity.this, "Teşekkürler! "
                                         + Ads.REWARD_MINUTES + " dakika reklamsız.", Toast.LENGTH_LONG).show();

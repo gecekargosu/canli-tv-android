@@ -52,9 +52,31 @@ public final class AdManager {
 
     private AdManager() { }
 
-    /** Reklamsiz sure aktif mi? */
+    /** Reklamsiz sure (herhangi bir kanal icin) aktif mi? — bilgi/ayar ekranlari icin. */
     public static boolean isAdFree(Context c) {
         return System.currentTimeMillis() < Prefs.adFreeUntil(c);
+    }
+
+    /**
+     * Bu kanal/istasyon icin reklamsiz sure aktif mi?
+     * 20 dakikalik odul **kanal bazlidir**: baska kanala gecince yeniden video gerekir.
+     */
+    public static boolean isAdFreeFor(Context c, String key) {
+        if (System.currentTimeMillis() >= Prefs.adFreeUntil(c)) return false;
+        String k = Prefs.adFreeKey(c);
+        if (k == null || k.length() == 0) return false;
+        String want = key != null ? key : lastKey(c);
+        return want != null && want.equals(k);
+    }
+
+    /** Ekran bir kanal belirtmiyorsa "en son izlenen kanal" esas alinir. */
+    private static String lastKey(Context c) {
+        try {
+            java.util.List<Channel> l = ChannelRepo.all(c);
+            int i = Prefs.lastIndex(c);
+            if (i >= 0 && i < l.size()) return l.get(i).url;
+        } catch (Exception ignored) { }
+        return null;
     }
 
     /** Reklamsiz kalan dakika (0 = yok). */
@@ -91,6 +113,11 @@ public final class AdManager {
      * (videonun uzerine binmez). Reklamsiz surede banner eklenmez, veri gostergesi kalir.
      */
     public static void wrap(final Activity activity, View content) {
+        wrap(activity, content, null);
+    }
+
+    /** key: bu ekranda gecerli kanal/istasyon adresi (reklamsiz serit icin). */
+    public static void wrap(final Activity activity, View content, final String key) {
         try {
             LinearLayout holder = new LinearLayout(activity);
             holder.setOrientation(LinearLayout.VERTICAL);
@@ -99,7 +126,7 @@ public final class AdManager {
                     ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
             holder.addView(content);
             if (Prefs.showUsage(activity)) holder.addView(usageBar(activity));
-            if (!isAdFree(activity)) holder.addView(rewardStrip(activity));
+            holder.addView(rewardStrip(activity, key));
             View ad = banner(activity);
             if (ad != null) holder.addView(ad);
             // sistem gezinme cubugu (jest cubugu) banner'in uzerine binmesin:
@@ -153,7 +180,8 @@ public final class AdManager {
      * boylece ekranin altinda bosluk kalmaz.
      */
     public static View banner(final Activity activity) {
-        if (!Ads.SDK_READY || isAdFree(activity)) return null;
+        // Banner her zaman gosterilir: 20 dk reklamsiz sure yalnizca video (gecis) reklamini kaldirir.
+        if (!Ads.SDK_READY) return null;
         try {
             final android.widget.FrameLayout holder = new android.widget.FrameLayout(activity);
             holder.setLayoutParams(new LinearLayout.LayoutParams(
@@ -192,20 +220,38 @@ public final class AdManager {
      * Kullanici menu aramaz: "▶ Reklam izle · 20 dk reklamsız" yazar, dokunur, izler.
      */
     public static TextView rewardStrip(final Activity a) {
-        TextView t = new TextView(a);
+        return rewardStrip(a, null);
+    }
+
+    /**
+     * @param key kanal/istasyon URL'si; 20 dk reklamsiz sure bu kanal icin gecerlidir.
+     *            null ise "herhangi bir kanal" anlaminda calisir.
+     */
+    public static TextView rewardStrip(final Activity a, final String rawKey) {
+        final String key = rawKey != null ? rawKey : lastKey(a);
+        final TextView t = new TextView(a);
         t.setTextSize(13f);
         t.setTextColor(Color.parseColor("#0B1220"));
         t.setBackgroundColor(Color.parseColor("#FFB020"));
         t.setPadding(dp(a, 10), dp(a, 9), dp(a, 10), dp(a, 9));
         t.setGravity(android.view.Gravity.CENTER);
         t.setTypeface(t.getTypeface(), android.graphics.Typeface.BOLD);
+
+        if (isAdFreeFor(a, key)) {
+            int left = adFreeMinutesLeft(a);
+            t.setBackgroundColor(Color.parseColor("#2A3340"));
+            t.setTextColor(Color.parseColor("#8FE3A0"));
+            t.setText("✓  Bu kanalda reklamsız · " + left + " dk kaldı");
+            return t;
+        }
+
         t.setText("▶  Reklam izle · " + Ads.REWARD_MINUTES + " dk reklamsız");
         t.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View v) {
-                showRewarded(a, new Runnable() {
+                showRewarded(a, key, new Runnable() {
                     @Override public void run() {
                         android.widget.Toast.makeText(a,
-                                "Teşekkürler! " + Ads.REWARD_MINUTES + " dakika reklamsız.",
+                                "Teşekkürler! Bu kanalda " + Ads.REWARD_MINUTES + " dakika reklamsız.",
                                 android.widget.Toast.LENGTH_LONG).show();
                         a.recreate();
                     }
@@ -256,7 +302,13 @@ public final class AdManager {
      * yoksa isi hemen calistirir. Reklamsiz surede hic beklemez.
      */
     public static void maybeInterstitial(final Activity activity, final Runnable then) {
-        if (!Ads.SDK_READY || isAdFree(activity) || showingAd) {
+        maybeInterstitial(activity, null, then);
+    }
+
+    /** Kanal bazli: key (URL) icin 20 dk reklamsiz sure varsa gecis reklami gosterilmez. */
+    public static void maybeInterstitial(final Activity activity, final String key,
+                                         final Runnable then) {
+        if (!Ads.SDK_READY || isAdFreeFor(activity, key) || showingAd) {
             then.run();
             return;
         }
@@ -305,6 +357,12 @@ public final class AdManager {
      */
     public static void showRewarded(final Activity activity, final Runnable onReward,
                                     final Runnable onFail) {
+        showRewarded(activity, null, onReward, onFail);
+    }
+
+    /** key = hangi kanal/istasyon icin reklamsiz sure verilecek. */
+    public static void showRewarded(final Activity activity, final String key,
+                                    final Runnable onReward, final Runnable onFail) {
         final RewardedAd ad = rewarded;
         if (!Ads.SDK_READY || ad == null) {
             loadRewarded(activity);
@@ -326,7 +384,7 @@ public final class AdManager {
                 @Override public void onUserEarnedReward(
                         com.google.android.gms.ads.rewarded.RewardItem item) {
                     long until = System.currentTimeMillis() + Ads.REWARD_MINUTES * 60000L;
-                    Prefs.setAdFreeUntil(activity, until);
+                    Prefs.setAdFreeUntil(activity, until, key);
                     onReward.run();
                 }
             });

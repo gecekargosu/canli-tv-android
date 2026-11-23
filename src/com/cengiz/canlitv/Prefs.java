@@ -289,6 +289,20 @@ public class Prefs {
         sp(c).edit().putLong("adFreeUntil", millis).apply();
     }
 
+    /** Reklamsız sürenin geçerli olduğu kanal/istasyon (URL). Boşsa tüm uygulama. */
+    public static String adFreeKey(Context c) {
+        return sp(c).getString("adFreeKey", "");
+    }
+
+    /**
+     * 20 dakikalık reklamsız süre **tek kanal için** geçerlidir: kanal/istasyon değişince
+     * yeniden ödüllü video gerekir.
+     */
+    public static void setAdFreeUntil(Context c, long millis, String key) {
+        sp(c).edit().putLong("adFreeUntil", millis)
+                .putString("adFreeKey", key == null ? "" : key).apply();
+    }
+
     /** IP'den ulke onerisi bir kez soruldu mu? */
     public static boolean countryAsked(Context c) {
         return sp(c).getBoolean("countryAsked", false);
