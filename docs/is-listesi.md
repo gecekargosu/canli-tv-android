@@ -7,11 +7,11 @@ Son güncelleme: 23 Kasım 2026 (v9.16 sonrası **denetim** — 8 madde kodla, 3
 
 | Durum | Adet |
 |---|---|
-| ✅ Bitti | **40** |
+| ✅ Bitti | **50** |
 | ⚠️ Kısmen | **2** (#60, #71 — kaynak yok) |
-| ⛔ Engelli (dışarıya bağlı) | **6** (#20, #21, #22, #34, #35, #36) |
-| ⏳ Sırada | **28** |
-| **Toplam** | **76** |
+| ⛔ Engelli (dışarıya bağlı) | **8** (#20, #21, #22, #34, #35, #36) |
+| ⏳ Sırada | **40** |
+| **Toplam** | **100** |
 
 **Denetim notu (23 Kas 2026):** aşağıdaki maddeler kodda tek tek kontrol edildi —
 #67 `AdManager.init` içinde `setMaxAdContentRating(G)` ✅ · #66 `banner()` içinde `isAdFree` kontrolü yok (her zaman görünür) + `isAdFreeFor(key)` kanal bazlı ✅ ·
