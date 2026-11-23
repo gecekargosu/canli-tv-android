@@ -1,59 +1,55 @@
 # AdMob — yapılanlar ve kalanlar
 
-Hesap: `cengizkilic1980@gmail.com` · Durum: **hesap doğrulaması bekliyor** (Google: 24 saat – 2 hafta)
+Hesap: `cengizkilic1980@gmail.com` · **Hesap doğrulaması: ONAYLANDI** (23 Kasım 2026)
 
-## 1. Konsolda yapıldı (23 Kasım 2026)
+## 1. Konsol durumu (kontrol edildi)
 
 | Ne | Değer |
 |---|---|
-| Uygulama | **UMAY Multi TV** (Android) · ID `5042287034` · durum "İnceleme gerekli" |
-| Uygulama kimliği (App ID) | `ca-app-pub-7629051535337276~5042287034` |
-| Banner birimi | Liste alt banner · `ca-app-pub-7629051535337276/6107956695` |
-| Geçiş birimi | Kanal geçiş reklamı · `ca-app-pub-7629051535337276/6126022588` |
-| Ödüllü birim | Kesintisiz 60 dakika · `ca-app-pub-7629051535337276/4812940915` |
+| Hesap | ✅ "Hesap bilgileriniz doğrulandı ve reklam sunumunuz etkinleştirildi" |
+| Uygulama | **UMAY Multi TV** (Android) · ID `5042287034` |
+| Uygulama durumu | ⏳ **"İnceleme gerekli / sınırlı reklam sunumu"** — *"Limiti kaldırmak için mağaza ekleyin"* |
+| Kurulum görevleri | **3/4** — kalan tek görev: *"Uygulama mağazasına bağlantı oluştur"* (Play yayını gerekir) |
+| App ID | `ca-app-pub-7629051535337276~5042287034` |
+| Banner | `ca-app-pub-7629051535337276/6107956695` |
+| Geçiş | `ca-app-pub-7629051535337276/6126022588` |
+| Ödüllü | `ca-app-pub-7629051535337276/4812940915` |
+| app-ads.txt | ✅ `https://umay-multi-tv-gq3zer.freebuff.site/app-ads.txt` |
 
-Bu kimlikler kodda `src/com/cengiz/canlitv/Ads.java` içinde duruyor.
-AdMob'da uygulama **mağazada listeli değil** olarak eklendi; Play'de yayınlanana kadar reklam
-sunumu sınırlı olur, yayından sonra AdMob'a Play bağlantısını eklemek gerekir.
+## 2. Kodda yapılanlar (v9.0)
 
-## 2. Neden bu sürümde reklam görünmüyor
+- **Gradle'a geçildi:** `settings.gradle`, `build.gradle`, `app/build.gradle`, `gradle.properties`.
+  `bash gradle-build.sh assembleDebug|assembleRelease|bundleRelease`.
+- **SDK:** `implementation "com.google.android.gms:play-services-ads:24.4.0"`.
+- **Manifest:** `com.google.android.gms.ads.APPLICATION_ID` meta-data'sı eklendi (SDK'sız çöker).
+- **`Ads.java`:** kimlikler + `TEST_MODE = BuildConfig.DEBUG` (debug'da Google test birimleri).
+- **`AdManager.java`:** `MobileAds.initialize`, liste altı banner, frekans sınırlı geçiş reklamı.
+- **`MainActivity`:** banner listenin altına ekleniyor; kanal açılışı `AdManager.maybeInterstitial`
+  üzerinden geçiyor (4. açılış + 10 dk kuralı).
+- **İmzalama:** halka açık APK debug anahtarıyla (üzerine güncellenebilir), Play AAB upload
+  anahtarıyla (`upload-keystore.jks`).
 
-Google Mobile Ads SDK'sı `com.google.android.gms:play-services-ads` **AAR** paketidir; bu proje
-Gradle kullanmadan (`aapt2 → javac → d8`) derleniyor ve AAR'ların manifest/kaynak birleştirmesi
-yapılmıyor. SDK'yı elle eklemek 20+ geçişli AAR'ı çekmek demek — kırılgan. Bu yüzden reklam
-**bir sonraki sürümde, Gradle geçişiyle** bağlanacak. `Ads.SDK_READY = false` bu yüzden var.
+## 3. Doğrulanan testler (cihaz Z5R87DU8V4LBSOVG)
 
-## 3. Gradle geçişi (reklamı açan adım) — sırayla
+| Test | Sonuç |
+|---|---|
+| Test banner'ı (debug) | ✅ "Test Reklamı 468x60" liste altında |
+| Geçiş reklamı (4. kanal) | ✅ gösterildi, kapanınca yeniden yüklendi |
+| Gerçek banner (public APK) | ✅ gerçek reklam sunuldu |
+| Çökme | ✅ yok |
 
-1. `settings.gradle` + `build.gradle` + `gradle/wrapper/gradle-wrapper.properties` (AGP 8.9+, Gradle 8.11+, JDK 17).
-2. `app/build.gradle`:
-   ```gradle
-   android { namespace "com.cengiz.canlitv"; compileSdk 36; defaultConfig { applicationId "com.cengiz.canlitv"; minSdk 26; targetSdk 36 } }
-   dependencies { implementation "com.google.android.gms:play-services-ads:24.4.0" }
-   ```
-3. `AndroidManifest.xml` içine (application altına):
-   ```xml
-   <meta-data android:name="com.google.android.gms.ads.APPLICATION_ID"
-              android:value="ca-app-pub-7629051535337276~5042287034"/>
-   ```
-4. `Ads.SDK_READY = true` yap ve `MobileAds.initialize(this, ...)` çağır.
-5. **Test cihazı**: `RequestConfiguration.Builder().setTestDeviceIds(Arrays.asList("Z5R87DU8V4LBSOVG"))`
-   — yayına çıkmadan önce kendi reklamlarına tıklamak hesabı kapatır.
-6. Doğrulama: `adb logcat | grep -i "Ads"` → "Ad loaded" satırını gör; test reklamı açılıyorsa SDK hazır.
-7. `sites_deploy` gerekmez; Play'e yeni AAB: `bash make-aab.sh`.
+## 4. Kalanlar
 
-## 4. Reklam yerleşimi (politika güvenli)
+1. **Play'de yayın** → sonra AdMob → Uygulamalar → UMAY Multi TV → **Mağaza ekle** → Play linki.
+   Bu yapılınca "sınırlı reklam sunumu" kalkar, ödeme eşiği (100 ₺) sonrası gelir işler.
+2. **Ödüllü reklam arayüzü** ("60 dakika reklamsız") — birim hazır, kod v9.1'de bağlanacak.
+3. Play Faturalandırma ile "Reklamları kaldır" (isteğe bağlı, sonraki sürüm).
 
-- **Banner:** yalnızca kanal listesinde, listenin altında. **Video oynarken / yatay tam ekranda asla**
-  (videonun üstüne binen banner = "yanıltıcı tıklama" ihlali).
-- **Geçiş reklamı:** kanal değiştirirken, **4. zap'ta bir** ve **10 dakikada en fazla 1**.
-  Yayın açılırken veya yayın kesilerek gösterilmez.
-- **Ödüllü:** kullanıcı kendi ister → "60 dakika reklamsız izle". Zorunlu değil, yayın kesilmez.
-- **Uygulama açılış reklamı:** kapalı.
-- Reklamlar ilk gün **test reklamı** olarak açılır; AdMob "İnceleme gerekli" durumu kalkmadan
-  gerçek reklam gelmez (bu normaldir, hata değil).
+## 5. Reklam yerleşimi (politika güvenli)
 
-## 5. Ek gelir fikri (sonra)
-
-Play Faturalandırma ile "Reklamları kaldır" tek seferlik ürün (ör. 49 TL). Kullanıcı hesabı zaten
-var (`Account`), satın alma hesaba bağlanır. Bu da Gradle + Play Billing kütüphanesi ister.
+- **Banner:** yalnızca kanal listesinde, listenin altında. Video oynarken / tam ekranda **asla**.
+- **Geçiş:** 4. kanal değişiminde bir, **10 dakikada en fazla 1**; yayın kesilerek gösterilmez.
+- **Açılış reklamı:** kapalı.
+- **Test cihazı:** debug'da Google test birimleri; logcat'te çıkan hashed kimlik
+  (`3AF293B6...`) gerekirse `Ads.TEST_DEVICE` yerine yazılabilir.
+- Kendi gerçek reklamına tıklamak hesabı kapatır — testleri **her zaman** debug derlemede yap.

@@ -31,6 +31,13 @@ _build/gen/
 _build/all.m3u
 _build/channels-before-sort.m3u
 
+# gradle (reklam SDK'si) / yerel araçlar
+.gradle/
+app/build/
+local.properties
+_build/tools/
+_build/gradle/
+
 # işletim sistemi
 Thumbs.db
 desktop.ini

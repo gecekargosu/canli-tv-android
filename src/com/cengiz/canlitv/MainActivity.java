@@ -19,6 +19,8 @@ import android.widget.HorizontalScrollView;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
+
+import com.google.android.gms.ads.AdView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -347,7 +349,12 @@ public class MainActivity extends android.app.Activity {
         root.addView(list, new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
 
+        // reklam: sadece listenin altinda banner (oynatma ekraninda yok)
+        AdView banner = AdManager.banner(this);
+        if (banner != null) root.addView(banner);
+
         setContentView(root);
+        AdManager.init(this);
         handleExtras(getIntent());
         refresh();
     }
@@ -716,10 +723,15 @@ public class MainActivity extends android.app.Activity {
                 }).show();
     }
 
-    private void open(Channel c) {
-        Intent i = new Intent(this, PlayerActivity.class);
-        i.putExtra("index", ChannelRepo.indexOfUrl(c.url));
-        startActivity(i);
+    private void open(final Channel c) {
+        // 4. kanal acilisinda bir, en fazla 10 dakikada 1 gecis reklami
+        AdManager.maybeInterstitial(this, new Runnable() {
+            @Override public void run() {
+                Intent i = new Intent(MainActivity.this, PlayerActivity.class);
+                i.putExtra("index", ChannelRepo.indexOfUrl(c.url));
+                startActivity(i);
+            }
+        });
     }
 
     private void handleExtras(Intent it) {

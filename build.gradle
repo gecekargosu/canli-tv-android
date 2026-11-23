@@ -1,0 +1,4 @@
+// Ust seviye Gradle dosyasi: tek modul (app).
+plugins {
+    id 'com.android.application' version '8.13.0' apply false
+}

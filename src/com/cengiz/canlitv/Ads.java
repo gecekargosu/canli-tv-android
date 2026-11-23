@@ -3,32 +3,45 @@ package com.cengiz.canlitv;
 /**
  * AdMob kimlikleri ve reklam kurallari (tek yerden yonetilir).
  *
- * NOT: Bu surumde reklam GOSTERILMIYOR cunku Google Mobile Ads SDK'si bir Gradle
- * bagimliligidir (com.google.android.gms:play-services-ads) ve bu proje Gradle'siz
- * (aapt2 + javac + d8) derleniyor. Asagidaki kimlikler AdMob konsolunda olusturuldu;
- * Gradle gecisi yapildiginda SDK'yi baglayip sadece bu siniftaki degerleri kullanmak yeterli.
- *
  * Konsol durumu (23 Kasim 2026):
- *   - Uygulama: UMAY Multi TV (Android) · 5042287034 · "Inceleme gerekli"
- *   - Hesap dogrulamasi: bekliyor (Google 24 saat - 2 hafta diyor)
- *   - Magazada listeli degil: Play'de uygulama yayinlanana kadar reklam sunumu sinirli
+ *   - Hesap dogrulamasi: ONAYLANDI - "hesap bilgileriniz dogrulandi ve reklam sunumunuz etkinlestirildi"
+ *   - Uygulama: UMAY Multi TV (Android) · 5042287034 · "Inceleme gerekli / sinirli reklam sunumu"
+ *     (limiti kaldirmak icin Play magaza baglantisi gerekiyor)
+ *   - app-ads.txt yayinda: https://umay-multi-tv-gq3zer.freebuff.site/app-ads.txt
+ *
+ * TEST_MODE: debug derlemede true -> Google'in resmi TEST birimleri kullanilir.
+ * Kendi gercek reklamina tiklamak AdMob hesabini kapatir, bu yuzden test sart.
  */
 public class Ads {
+
+    /** Reklam SDK'si bagli mi? (Gradle + play-services-ads) */
+    public static final boolean SDK_READY = true;
+
+    /** Debug derlemede test reklamlari gosterilir (release'de false). */
+    public static final boolean TEST_MODE = BuildConfig.DEBUG;
+
+    /** Test cihazi kimligi (logcat'te "Test Device Id" olarak cikar). */
+    public static final String TEST_DEVICE = "Z5R87DU8V4LBSOVG";
 
     /** AdMob uygulama kimligi (manifest meta-data APPLICATION_ID). */
     public static final String APP_ID = "ca-app-pub-7629051535337276~5042287034";
 
+    // --- gercek birimler ---
     /** Kanal listesinin altinda banner (video ekraninda GOSTERILMEZ). */
-    public static final String BANNER = "ca-app-pub-7629051535337276/6107956695";
-
+    private static final String BANNER_REAL = "ca-app-pub-7629051535337276/6107956695";
     /** Kanal degistirirken tam ekran gecis reklami (frekans sinirli). */
-    public static final String INTERSTITIAL = "ca-app-pub-7629051535337276/6126022588";
-
+    private static final String INTERSTITIAL_REAL = "ca-app-pub-7629051535337276/6126022588";
     /** "60 dakika reklamsiz izle" odullu reklami (kullanici kendi ister). */
-    public static final String REWARDED = "ca-app-pub-7629051535337276/4812940915";
+    private static final String REWARDED_REAL = "ca-app-pub-7629051535337276/4812940915";
 
-    /** SDK baglandiginda true yapilir; o zamana kadar hicbir reklam kodu calismaz. */
-    public static final boolean SDK_READY = false;
+    // --- Google'in resmi test birimleri (debug) ---
+    private static final String BANNER_TEST = "ca-app-pub-3940256099942544/6300978111";
+    private static final String INTERSTITIAL_TEST = "ca-app-pub-3940256099942544/1033173712";
+    private static final String REWARDED_TEST = "ca-app-pub-3940256099942544/5224354917";
+
+    public static final String BANNER = TEST_MODE ? BANNER_TEST : BANNER_REAL;
+    public static final String INTERSTITIAL = TEST_MODE ? INTERSTITIAL_TEST : INTERSTITIAL_REAL;
+    public static final String REWARDED = TEST_MODE ? REWARDED_TEST : REWARDED_REAL;
 
     // --- politika kurallari (AdMob "yaniltici/zorlayici tik" ihlali olmasin diye) ---
     /** Iki gecis reklami arasi en az sure. */

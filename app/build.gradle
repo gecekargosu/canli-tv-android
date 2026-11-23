@@ -1,0 +1,81 @@
+// UMAY Multi TV - Gradle modulu (reklam SDK'si icin).
+// Kaynaklar kok dizinde duruyor (src/, res/, assets/, AndroidManifest.xml); build.sh
+// ile ayni dosyalar kullanilir. Manifest'in "package" ozniteligi Gradle 8'de yasak,
+// bu yuzden gradle-build.sh once _build/gradle/AndroidManifest.xml kopyasini uretir.
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'com.cengiz.canlitv'
+    compileSdk 36
+
+    defaultConfig {
+        applicationId 'com.cengiz.canlitv'
+        minSdk 26
+        targetSdk 36
+        versionCode 9
+        versionName '9.0'
+    }
+
+    signingConfigs {
+        // build.sh ile ayni debug anahtari: adb install -r mevcut kurulumun uzerine yazar
+        debug {
+            storeFile file('../debug.keystore')
+            storePassword 'android'
+            keyAlias 'androiddebugkey'
+            keyPassword 'android'
+        }
+        release {
+            storeFile file('../upload-keystore.jks')
+            storePassword 'UmayMultiTV2026!'
+            keyAlias 'upload'
+            keyPassword 'UmayMultiTV2026!'
+        }
+    }
+
+    buildTypes {
+        debug {
+            // test reklamlari Ads.java icinde (BuildConfig.DEBUG) secilir
+            signingConfig signingConfigs.debug
+        }
+        release {
+            minifyEnabled false
+            signingConfig signingConfigs.release
+        }
+        // Halka acik APK: gercek reklam kimlikleri (release gibi) ama debug anahtariyla imzali,
+        // boylece onceki surumun uzerine adb install -r ile guncellenebilir.
+        publicApk {
+            initWith release
+            signingConfig signingConfigs.debug
+            matchingFallbacks = ['release']
+        }
+    }
+
+    buildFeatures {
+        buildConfig true
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
+    }
+
+    sourceSets {
+        main {
+            manifest.srcFile '../_build/gradle/AndroidManifest.xml'
+            java.srcDirs = ['../src']
+            res.srcDirs = ['../res']
+            assets.srcDirs = ['../assets']
+        }
+    }
+
+    lint {
+        abortOnError false
+        checkReleaseBuilds false
+    }
+}
+
+dependencies {
+    implementation 'com.google.android.gms:play-services-ads:24.4.0'
+}
