@@ -83,6 +83,24 @@ public class Net {
      * Bazı CDN'ler (ör. DYG/Kral Pop) jetonlu adrese yönlendiriyor; Android
      * MediaPlayer bu zinciri çözemediği için kanal "açılamadı" görünüyordu.
      */
+    /** Açık bir bağlantının gövdesini (en fazla maxBayt) metin olarak okur. */
+    public static String readText(java.net.HttpURLConnection c, int maxBayt) {
+        try {
+            java.io.InputStream in = c.getInputStream();
+            java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream();
+            byte[] buf = new byte[8192];
+            int n;
+            while ((n = in.read(buf)) > 0) {
+                out.write(buf, 0, n);
+                if (out.size() >= maxBayt) break;
+            }
+            in.close();
+            return new String(out.toByteArray(), "UTF-8");
+        } catch (Throwable e) {
+            return null;
+        }
+    }
+
     public static String follow(String url) {
         if (url == null || !url.startsWith("http")) return url;
         String cur = url;

@@ -275,6 +275,10 @@ public final class AdManager {
             holder.addView(house);
 
             view.setAdListener(new com.google.android.gms.ads.AdListener() {
+                @Override public void onAdImpression() {
+                    AdStats.note(activity, "banner");
+                }
+
                 @Override public void onAdFailedToLoad(LoadAdError error) {
                     Log.w(TAG, "banner dolmadi, kendi barimiz gosteriliyor: " + error.getMessage());
                     view.setVisibility(View.GONE);
@@ -365,6 +369,7 @@ public final class AdManager {
         });
         try {
             ad.show(activity);
+            AdStats.note(activity, "gecis");
         } catch (Throwable t) {
             showingAd = false;
             Log.w(TAG, "gecis reklami gosterilemedi: " + t);
@@ -402,6 +407,7 @@ public final class AdManager {
         });
         try {
             ad.show(activity);
+            AdStats.note(activity, "gecis");
         } catch (Throwable t) {
             showingAd = false;
             loadInterstitial(activity);
@@ -442,6 +448,7 @@ public final class AdManager {
         });
         rewarded = null;
         try {
+            AdStats.note(activity, "odullu");
             ad.show(activity, new com.google.android.gms.ads.OnUserEarnedRewardListener() {
                 @Override public void onUserEarnedReward(
                         com.google.android.gms.ads.rewarded.RewardItem item) {

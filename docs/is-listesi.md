@@ -243,3 +243,11 @@ Durum: 23 Kasım 2026, v9.26 (versionCode 35).
 
 **Not:** #112 (kaynak sağlığını otomatikleştirme) v9.26'daki tam kanal taramasıyla karşılandı sayılabilir;
 `_build/saglik2.tsv` üretimi tekrar kullanılabilir.
+
+---
+
+## Ek liste (v9.27 oturumu)
+
+Kullanıcının 23 Kasım akşam mesajındaki istekler `docs/ISLER-EK-2026-11-23.md` dosyasında
+#131–#145 olarak kaydedildi (reklam kuşağı bilgisi, ölü kanal onarımı, reklam sayacı,
+ülke listeleri taraması, tablet, pazarlama görselleri, ekonomi modu önerisi).

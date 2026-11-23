@@ -66,6 +66,9 @@ public class PlayerActivity extends android.app.Activity {
     private TextView lockHint;
     private TextView muteBtn;
     private TextView qualityBtn;
+    /** Yayın duraklama / reklam kuşağı bilgi şeridi. */
+    private TextView noticeView;
+    private int stallCount = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -121,6 +124,23 @@ public class PlayerActivity extends android.app.Activity {
             @Override public void onClick(View v) { toggleMute(); }
         });
         root.addView(muteBtn, mlp);
+
+        // --- yayın durunca gösterilen bilgi şeridi (reklam kuşağı / yeniden bağlanma) ---
+        noticeView = new TextView(this);
+        noticeView.setTextColor(Color.WHITE);
+        noticeView.setTextSize(13);
+        noticeView.setGravity(Gravity.CENTER);
+        noticeView.setPadding(dp(14), dp(8), dp(14), dp(8));
+        GradientDrawable nbg = new GradientDrawable();
+        nbg.setColor(Color.parseColor("#D9000000"));
+        nbg.setCornerRadius(dp(18));
+        noticeView.setBackground(nbg);
+        noticeView.setVisibility(View.GONE);
+        FrameLayout.LayoutParams nlp = new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        nlp.gravity = Gravity.TOP | Gravity.CENTER_HORIZONTAL;
+        nlp.setMargins(dp(12), dp(92), dp(12), 0);
+        root.addView(noticeView, nlp);
 
         // --- ust bar: buyuk, yazili dugmeler ---
         top = new LinearLayout(this);
@@ -363,6 +383,8 @@ public class PlayerActivity extends android.app.Activity {
                 Prefs.clearFails(PlayerActivity.this, list.get(index).url);
                 autoSkips = 0;   // yayin acildi: sayac sifirlanir
                 fbTried = 0;     // yedek kaynak denemesi de sifirlanir
+                stallCount = 0;
+                hideNotice();
                 if (!tracking) { tracking = true; openedAt = System.currentTimeMillis(); Net.begin(); }
                 ui.removeCallbacks(watchdog);
             }
@@ -433,12 +455,36 @@ public class PlayerActivity extends android.app.Activity {
             if (!video.isPlaying()) return;
             long now = System.currentTimeMillis();
             int pos = video.getCurrentPosition();
-            if (pos != lastPos) { lastPos = pos; lastPosAt = now; return; }
-            if (now - lastPosAt < 15000 || now - lastRestart < 20000) return;
+            if (pos != lastPos) {
+                lastPos = pos;
+                lastPosAt = now;
+                if (stallCount > 0) { stallCount = 0; hideNotice(); }
+                return;
+            }
+            if (now - lastPosAt < 12000 || now - lastRestart < 9000) return;
             lastRestart = now;
             lastPosAt = now;
+            stallCount++;
+            if (stallCount <= 2) {
+                showNotice("⏳ Yayın durakladı · yeniden bağlanıyorum (" + stallCount + "/2)");
+            } else {
+                // Star TV / TV8 gibi kanallarda "dijital reklam kuşağı" karesi yayıncıdan gelir;
+                // uygulama atlayamaz, ama boş siyah ekran yerine durumu söyleyip bekler.
+                showNotice("📺 Yayıncı reklam aralığında olabilir · yayın dönünce kendiliğinden gelecek");
+            }
             play();
         } catch (Exception ignored) { }
+    }
+
+    private void showNotice(String text) {
+        try {
+            noticeView.setText(text);
+            noticeView.setVisibility(View.VISIBLE);
+        } catch (Exception ignored) { }
+    }
+
+    private void hideNotice() {
+        try { noticeView.setVisibility(View.GONE); } catch (Exception ignored) { }
     }
 
     /** Limit dolduysa sorar: devam edilsin mi? */

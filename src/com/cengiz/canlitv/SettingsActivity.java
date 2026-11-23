@@ -210,10 +210,20 @@ public class SettingsActivity extends Activity {
                         render();
                     }
                 });
+        row("🧰", "Ölü kanalları onar",
+                "Açılmayanları yeniden dener, yayını döneni listeye geri ekler",
+                "Onar ›", new View.OnClickListener() {
+                    @Override public void onClick(View v) { repair(); }
+                });
         row("🧪", "Tüm kanalları test et",
                 "Her yayını dener, açılmayanları işaretler (yavaş sürer)",
                 "Başlat ›", new View.OnClickListener() {
                     @Override public void onClick(View v) { healthScan(); }
+                });
+        row("💰", "Reklam sayacım",
+                "Kaç reklam gördün · tahmini kazanç (bu cihaz)",
+                AdStats.shortText(this), new View.OnClickListener() {
+                    @Override public void onClick(View v) { adStatsDialog(); }
                 });
 
         // #102: kullanıcının kendi kanalları (M3U adresi veya dosyadan)
@@ -625,6 +635,40 @@ public class SettingsActivity extends Activity {
                 }).setNegativeButton("Vazgeç", null).show();
     }
 
+    private void repair() {
+        scan = new ProgressDialog(this);
+        scan.setMessage("Ölü kanallar yeniden deneniyor…");
+        scan.setCancelable(false);
+        scan.show();
+        Repair.run(this, new Repair.Callback() {
+            @Override public void done(final int tested, final int revived) {
+                runOnUiThread(new Runnable() {
+                    @Override public void run() {
+                        if (scan != null && scan.isShowing()) scan.dismiss();
+                        render();
+                        String msg = tested == 0
+                                ? "Onarılacak ölü kanal yok — hepsi sağlam görünüyor."
+                                : tested + " ölü kanal denendi, " + revived + " tanesi geri geldi.";
+                        Toast.makeText(SettingsActivity.this, msg, Toast.LENGTH_LONG).show();
+                    }
+                });
+            }
+        });
+    }
+
+    private void adStatsDialog() {
+        new AlertDialog.Builder(this)
+                .setTitle("Reklam sayacım (tahmini)")
+                .setMessage(AdStats.summary(this))
+                .setPositiveButton("Kapat", null)
+                .setNeutralButton("Sıfırla", new DialogInterface.OnClickListener() {
+                    @Override public void onClick(DialogInterface d, int w) {
+                        AdStats.reset(SettingsActivity.this);
+                        render();
+                    }
+                }).show();
+    }
+
     private void healthScan() {
         scan = new ProgressDialog(this);
         scan.setMessage("Kanallar test ediliyor...");
@@ -634,7 +678,7 @@ public class SettingsActivity extends Activity {
             @Override public void run() {
                 int ok = 0, bad = 0;
                 for (Channel c : ChannelRepo.all(SettingsActivity.this)) {
-                    if (probe(c.url)) {
+                    if (Repair.alive(c.url)) {
                         Prefs.clearFails(SettingsActivity.this, c.url);
                         ok++;
                     } else {

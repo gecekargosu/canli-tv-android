@@ -1,30 +1,24 @@
-# Pazarlama klasörü — video ve paylaşım rehberi
+# Pazarlama görselleri (UMAY Multi TV)
 
-Bu klasör senin video çekim alanın. İçindekiler:
+Video/sosyal medya için gerçek uygulama ekran görüntüleri (1080×2400, telefon).
+Yeni görüntüler eklendikçe bu klasöre atılır; dosya adı = içerik.
 
-```
-pazarlama/
-  gorseller/      ikon-512.png, one-cikan-1024x500.png, ekran-1-liste.png
-  metinler.md     TikTok / Instagram / Facebook açıklamaları (kopyala-yapıştır)
-  cekim-plani.md  sahne sahne çekim planı (ne göstereceksin, ne söyleyeceksin)
-```
+| Dosya | İçerik |
+|---|---|
+| 01-ana-liste.png | Ana ekran: 144 kanal, arama, sekmeler (Tümü/Favoriler/Türkçe/Yabancı) |
+| 02-izgara-3lu.png | Oynatıcı (TRT 1 yayını, 360p şerit) |
+| 03-ayarlar.png | Ayarlar üst bölüm: veri kartı, ülke, dil, kalite |
+| 04-ulke-sec.png | Ülke seçimi (Türkiye hazır, diğer ülkeler indirilebilir) |
+| 05-ayarlar-gelismis.png | Ayarlar alt bölüm: ölü kanal gizle/onar, test, reklam sayacı |
+| 06-reklam-sayaci.png | Reklam sayacı penceresi (gösterim + tahmini kazanç) |
+| 07-onarim.png | Ölü kanal onarımı sonrası ayarlar |
+| 08-izgara-eski.png | 3'lü ızgara: TV8 + ATV + Star aynı anda |
+| 09-tv8-yayin.png | TV8 yayını (Zuhal Topal'la Yemekteyiz) |
+| 10-telif-diyalogu.png | Telif/içerik bildirim diyaloğu |
+| 11-kralpop-yayin.png | Kral Pop TV (müzik kanalı) |
+| 12-trtmuzik-yayin.png | TRT Müzik yayını |
+| 13-reklam-gecis.png | Geçiş reklamı ekranı |
+| 14-reklam-ikinci.png | İkinci reklam örneği |
+| 15-kendi-kanallarim.png | "Kendi kanallarım" satırı |
 
-> Not: İndirme linki hazır: **https://umay-multi-tv-gq3zer.freebuff.site/indir**
-> Play'e çıkınca aynı yazıda `https://play.google.com/store/apps/details?id=com.cengiz.canlitv`
-> linkini kullan; ikisi de çalışıyor.
-
-## Video kuralları (algoritma için)
-
-- **Dikey 9:16**, 1080×1920, 20–35 saniye. İlk 2 saniyede "ne işe yarar" görünsün.
-- Ekran kaydı + konuşma yok, sadece **yazı + müzik** en iyi çalışır (TikTok'ta sessiz izleyen çok).
-- Yazılar büyük ve üst-orta bölgede; alt bölge TikTok arayüzü tarafından kapanır.
-- Başlıkta **merak**: "305 kanalı tek uygulamada bedava", "Kumanda gibi: numarayı yaz, kanal açılır".
-- Her videoda **aynı kanca farklı sahne** (algoritma tekrarı sever ama aynı videoyu tekrar atma).
-- 3–5 video üst üste; ilk günün en iyi saatleri 19:00–23:00.
-
-## Yasal/etik uyarı
-
-- Tanıtımda **"ücretsiz"**, "reklam destekli" de; "reklamsız" deme (ödüllü ile 60 dk reklamsız var).
-- Kanal logolarını/başka kanalların yayın görüntülerini **uzun** gösterme; kısa kesit + kendi
-  uygulama arayüzün ağırlıklı olsun. Yayın görüntüsü telifli olabilir.
-- Play linki yokken "yakında Play'de" yaz; indirme linkini profiline koy.
+Radyo listesi/çalar, haber kanalı ve diğer ülke yayın görüntüleri sıradaki turda eklenecek.

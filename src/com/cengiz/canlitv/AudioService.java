@@ -423,7 +423,7 @@ public class AudioService extends Service {
 
         b.setContentTitle(name)
                 .setContentText("Ekran kapalıyken de çalıyor · ⏮ ⏭ ile kanal değiştir")
-                .setSmallIcon(android.R.drawable.ic_media_play)
+                .setSmallIcon(R.mipmap.ic_launcher)
                 .setContentIntent(pi)
                 .setOngoing(true)
                 .setVisibility(Notification.VISIBILITY_PUBLIC);
@@ -438,7 +438,7 @@ public class AudioService extends Service {
                     : new Notification.Builder(AudioService.this);
             nm.notify(NOTIF_ID, b.setContentTitle(name)
                     .setContentText(text)
-                    .setSmallIcon(android.R.drawable.ic_media_play).build());
+                    .setSmallIcon(R.mipmap.ic_launcher).build());
         } catch (Exception ignored) { }
     }
 

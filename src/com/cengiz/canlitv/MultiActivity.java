@@ -524,6 +524,7 @@ public class MultiActivity extends android.app.Activity {
                         if (player != mp) return;
                         prepared = true;
                         startedAt = System.currentTimeMillis();
+                        stalls = 0;
                         label.setVisibility(View.GONE);
                         AudioService.stop(MultiActivity.this);
                         screenOffAudio = false;
@@ -575,6 +576,8 @@ public class MultiActivity extends android.app.Activity {
         }
 
         /** 3 saniyede bir çağrılır: hazırlanmayan, görüntü vermeyen veya donan yayını kurtarır. */
+        int stalls = 0;
+
         void check(long now) {
             if (!surfaceReady || failed) return;
             if (mp == null) {
@@ -594,9 +597,17 @@ public class MultiActivity extends android.app.Activity {
             if (pos != lastPos) {
                 lastPos = pos;
                 lastPosAt = now;
+                if (stalls > 0) { stalls = 0; label.setVisibility(View.GONE); }
                 return;
             }
-            if (now - lastPosAt > 12000) retry();
+            if (now - lastPosAt > 12000) {
+                stalls++;
+                label.setText(stalls >= 2
+                        ? "yayıncı reklam aralığında olabilir · bekleniyor"
+                        : "yayın durakladı · yeniden bağlanıyor…");
+                label.setVisibility(View.VISIBLE);
+                retry();
+            }
         }
 
         private void releasePlayer() {
