@@ -94,6 +94,36 @@ Son güncelleme: 23 Kasım 2026 (v9.4)
 |---|---|---|
 61 | Popüler sıralamada parantezli asıl kanal öne (ATV, ATV Alanya'nın önünde) | ✅ |
 62 | **IP'den ülke önerisi** (ilk açılışta tek sefer sorar, desteklenen 50 ülke) — iş listesi #38 | ✅ |
+63 | **Tek dokunuşla ödüllü video şeridi** ("▶ Reklam izle · 20 dk reklamsız", her ekranda) + süre 20 dk | ✅ (v9.10) |
+
+## H. ÖNCELİK SIRASI (revize — 23 Kasım 2026, v9.10 sonrası)
+
+> Aşağıdaki sıra geçerlidir; B bölümündeki eski numaralar aynı işleri gösterir.
+
+| Sıra | # | İş | Neden bu sırada |
+|---|---|---|---|
+1 | 37 | **Worker cron: günlük yayın sağlık taraması → known-good** | "Kanal açılmıyor"un kök çözümü; kullanıcı ölü link görmez |
+2 | 39 | **ExoPlayer (Media3) geçişi** | "Sürekli takılıyor"un asıl çözümü |
+3 | 56 | Tampon + otomatik kalite düşürme | ExoPlayer ile birlikte yapılır |
+4 | 60 | TR listesine Show/Now/TRT Müzik/TRT Çocuk/TV100/TVNET/Beyaz (doğrulanmış link) | İlk 20 gerçekten "en çok izlenen" olsun |
+5 | 41 | Radyoda ölü istasyon filtresi (listeden de kalksın) | Radyo şikâyeti |
+6 | 40 | Radyo listesini popülerliğe göre sırala (TR) | Aynı mantık radyoda |
+7 | 42 | Yedek (mirror) URL | Tek kaynak ölünce kanal tamamen düşmesin |
+8 | 16 | **Widget** | Onaylanmış özellik, kullanıcıyı geri getirir |
+9 | 17 | **Chromecast** | Onaylanmış özellik, TV deneyimi |
+10 | 19 | Yavaş internette otomatik 360p | Veri dostu |
+11 | 15 | Otomatik ülke (IP) — temel hali #62 ile geldi; kalan: dil eşleme | Global büyüme |
+12 | 18 | EPG (şu an ne var) | Güvenilir kaynak bulunursa |
+13 | 25 | **Hesap silme** | Play zorunluluğu |
+14 | 26 | **UMP/AB rıza ekranı** | AB trafiği için yasal |
+15 | 27 | Mağaza ekran görüntüleri (4-8) | Yükleme için hazır olmalı |
+16 | 33 | İngilizce mağaza metni + ASO | Global |
+17 | 28 | İzleme sayısına göre otomatik sıra | Kişiselleştirme |
+18 | 29-30 | Vektör ikonlar · Arapça RTL | Görsel kalite |
+19 | 31 | Kayıtlar ekranı testi | Test borcu |
+20 | 32 | "Reklamsız/Pro" uygulama içi satın alma | Ek gelir |
+21 | 20-23 | Google girişi · domain/mail · Play yayını · kapalı test | ⛔ dışarıya bağlı |
+22 | 34-36 | Geliştirici adı · app-ads.txt · Play formları | ⛔ Google tarafı |
 
 ## F. v9.7'de tamamlananlar (23 Kasım 2026)
 

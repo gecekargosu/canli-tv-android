@@ -351,7 +351,8 @@ public class MainActivity extends android.app.Activity {
         root.addView(list, new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
 
-        // reklam: sadece listenin altinda banner (oynatma ekraninda yok)
+        // reklam: listenin altinda once "20 dk reklamsız" seridi, sonra banner
+        if (!AdManager.isAdFree(this)) root.addView(AdManager.rewardStrip(this));
         android.view.View banner = AdManager.banner(this);
         if (banner != null) root.addView(banner);
 

@@ -321,6 +321,9 @@ public class PlayerActivity extends android.app.Activity {
         root.addView(lockHint, lhlp);
 
         // --- banner: videonun ALTINDA (uzerine binmez), reklamsiz surede gizli ---
+        if (!AdManager.isAdFree(this)) {
+            root.addView(AdManager.rewardStrip(this));
+        }
         android.view.View adBar = AdManager.banner(this);
         if (adBar != null) {
             LinearLayout holder = new LinearLayout(this);

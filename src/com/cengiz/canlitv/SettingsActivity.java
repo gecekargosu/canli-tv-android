@@ -273,7 +273,7 @@ public class SettingsActivity extends Activity {
         row("📢", "Reklamlar",
                 freeLeft > 0
                         ? "Reklamsız sürüyor · " + freeLeft + " dakika kaldı"
-                        : "Liste altında banner · video izleyip 60 dk reklamsız",
+                        : "Liste altında banner · video izleyip 20 dk reklamsız",
                 freeLeft > 0 ? (freeLeft + " dk") : "Reklamsız ›",
                 new View.OnClickListener() {
                     @Override public void onClick(View v) { adDialog(); }

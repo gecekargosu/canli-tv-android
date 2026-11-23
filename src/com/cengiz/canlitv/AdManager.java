@@ -99,6 +99,7 @@ public final class AdManager {
                     ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
             holder.addView(content);
             if (Prefs.showUsage(activity)) holder.addView(usageBar(activity));
+            if (!isAdFree(activity)) holder.addView(rewardStrip(activity));
             View ad = banner(activity);
             if (ad != null) holder.addView(ad);
             // sistem gezinme cubugu (jest cubugu) banner'in uzerine binmesin:
@@ -186,6 +187,40 @@ public final class AdManager {
         }
     }
 
+    /**
+     * Her ekranin altinda duran, tek dokunusla odullu videoyu baslatan serit.
+     * Kullanici menu aramaz: "▶ Reklam izle · 20 dk reklamsız" yazar, dokunur, izler.
+     */
+    public static TextView rewardStrip(final Activity a) {
+        TextView t = new TextView(a);
+        t.setTextSize(13f);
+        t.setTextColor(Color.parseColor("#0B1220"));
+        t.setBackgroundColor(Color.parseColor("#FFB020"));
+        t.setPadding(dp(a, 10), dp(a, 9), dp(a, 10), dp(a, 9));
+        t.setGravity(android.view.Gravity.CENTER);
+        t.setTypeface(t.getTypeface(), android.graphics.Typeface.BOLD);
+        t.setText("▶  Reklam izle · " + Ads.REWARD_MINUTES + " dk reklamsız");
+        t.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) {
+                showRewarded(a, new Runnable() {
+                    @Override public void run() {
+                        android.widget.Toast.makeText(a,
+                                "Teşekkürler! " + Ads.REWARD_MINUTES + " dakika reklamsız.",
+                                android.widget.Toast.LENGTH_LONG).show();
+                        a.recreate();
+                    }
+                }, new Runnable() {
+                    @Override public void run() {
+                        android.widget.Toast.makeText(a,
+                                "Reklam şu an hazır değil, biraz sonra tekrar dene",
+                                android.widget.Toast.LENGTH_SHORT).show();
+                    }
+                });
+            }
+        });
+        return t;
+    }
+
     /** Reklam dolmadiginda gosterilen kendi barimiz (bos yer birakmamak icin). */
     private static TextView houseBar(final Activity a) {
         TextView t = new TextView(a);
@@ -194,7 +229,25 @@ public final class AdManager {
         t.setBackgroundColor(Color.parseColor("#FFB020"));
         t.setPadding(dp(a, 12), dp(a, 10), dp(a, 12), dp(a, 10));
         t.setGravity(android.view.Gravity.CENTER);
-        t.setText("UMAY Multi TV  ·  60 dk reklamsız izlemek için ★ menüsünden ödüllü videoyu aç");
+        t.setText("▶  Reklam izle · " + Ads.REWARD_MINUTES + " dk reklamsız");
+        t.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) {
+                showRewarded(a, new Runnable() {
+                    @Override public void run() {
+                        android.widget.Toast.makeText(a,
+                                "Teşekkürler! " + Ads.REWARD_MINUTES + " dakika reklamsız.",
+                                android.widget.Toast.LENGTH_LONG).show();
+                        a.recreate();
+                    }
+                }, new Runnable() {
+                    @Override public void run() {
+                        android.widget.Toast.makeText(a,
+                                "Reklam şu an hazır değil, biraz sonra tekrar dene",
+                                android.widget.Toast.LENGTH_SHORT).show();
+                    }
+                });
+            }
+        });
         return t;
     }
 

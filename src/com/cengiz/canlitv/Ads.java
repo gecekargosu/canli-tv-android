@@ -49,7 +49,7 @@ public class Ads {
     /** Kac kanal degisiminden sonra bir gecis reklami. */
     public static final int ZAPS_BEFORE_INTERSTITIAL = 4;
     /** Odullu reklam karsiligi reklamsiz sure. */
-    public static final int REWARD_MINUTES = 60;
+    public static final int REWARD_MINUTES = 20;
     /** Radyoda kac dakika sonra "reklamsiz devam?" teklifi gosterilir (zorlamasiz). */
     public static final int ADFREE_OFFER_MINUTES = 40;
     /** Uygulama acilisinda reklam gosterilmez (acilis reklami kapali). */
