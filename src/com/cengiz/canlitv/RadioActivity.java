@@ -200,7 +200,7 @@ public class RadioActivity extends Activity {
         com.google.android.gms.ads.AdView adBar = AdManager.banner(this);
         if (adBar != null) root.addView(adBar);
 
-        setContentView(root);
+        AdManager.wrap(this, root);
         AdManager.init(this);
         refresh();
 

@@ -106,11 +106,6 @@ public class RadioPlayerActivity extends Activity {
             @Override public void onClick(View v) { sleepDialog(); }
         });
         head.addView(sleepBtn);
-        TextView title = new TextView(this);
-        // ust bardaki dugmeler yazili oldugu icin baslik gosterilmiyor (sikismasin)
-        title.setVisibility(View.GONE);
-        head.addView(title, new LinearLayout.LayoutParams(0,
-                ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
         TextView stopBtn = chip("⏹ Durdur");
         stopBtn.setTextSize(12);
         stopBtn.setOnClickListener(new View.OnClickListener() {

@@ -101,6 +101,16 @@ public final class AdManager {
             if (Prefs.showUsage(activity)) holder.addView(usageBar(activity));
             AdView ad = banner(activity);
             if (ad != null) holder.addView(ad);
+            // sistem gezinme cubugu (jest cubugu) banner'in uzerine binmesin:
+            // ekranin altina cubuk yuksekligi kadar bosluk birak
+            holder.setOnApplyWindowInsetsListener(new View.OnApplyWindowInsetsListener() {
+                @Override public android.view.WindowInsets onApplyWindowInsets(View v,
+                                                                                  android.view.WindowInsets insets) {
+                    int bottom = insets.getSystemWindowInsetBottom();
+                    if (bottom > 0) v.setPadding(0, 0, 0, bottom);
+                    return insets;
+                }
+            });
             activity.setContentView(holder);
         } catch (Throwable t) {
             Log.w(TAG, "wrap hatasi: " + t);
