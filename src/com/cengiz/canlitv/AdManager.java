@@ -73,6 +73,9 @@ public final class AdManager {
         return (int) Math.ceil(ms / 60000.0);
     }
 
+    /** Test modu değişince RequestConfiguration'ın yeniden uygulanması için. */
+    public static void resetForTestMode() { inited = false; }
+
     public static void init(final Activity activity) {
         if (!Ads.SDK_READY || inited) return;
         inited = true;
@@ -85,8 +88,15 @@ public final class AdManager {
                             RequestConfiguration.TAG_FOR_CHILD_DIRECTED_TREATMENT_UNSPECIFIED)
                     .setTagForUnderAgeOfConsent(
                             RequestConfiguration.TAG_FOR_UNDER_AGE_OF_CONSENT_UNSPECIFIED);
-            if (Ads.TEST_MODE) {
-                rc.setTestDeviceIds(Collections.singletonList(Ads.TEST_DEVICE));
+            // Test modu: debug derlemede her zaman, dağıtılan APK'da ise yalnızca
+            // kullanıcı Ayarlar'dan açtıysa. Test cihazında gerçek birimler test reklamı
+            // döndürür: reklam/ödül çalışır, para yazmaz, hesap riski olmaz.
+            if (Ads.TEST_MODE || Prefs.adTestMode(activity)) {
+                java.util.List<String> ids = new java.util.ArrayList<String>();
+                if (Ads.TEST_DEVICE != null && Ads.TEST_DEVICE.length() > 0) ids.add(Ads.TEST_DEVICE);
+                String h = Prefs.adTestHashed(activity);
+                if (h != null && h.length() > 0) ids.add(h);
+                rc.setTestDeviceIds(ids);
             }
             MobileAds.setRequestConfiguration(rc.build());
 

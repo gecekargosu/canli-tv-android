@@ -225,6 +225,11 @@ public class SettingsActivity extends Activity {
                 AdStats.shortText(this), new View.OnClickListener() {
                     @Override public void onClick(View v) { adStatsDialog(); }
                 });
+        row("🧪", "Reklam test modu",
+                "Kendi cihazında test reklamı · para yazmaz, hesap riski olmaz",
+                Prefs.adTestMode(this) ? "Açık" : "Kapalı", new View.OnClickListener() {
+                    @Override public void onClick(View v) { adTestDialog(); }
+                });
 
         // #102: kullanıcının kendi kanalları (M3U adresi veya dosyadan)
         row("➕", "Kendi kanalımı ekle",
@@ -667,6 +672,79 @@ public class SettingsActivity extends Activity {
                         render();
                     }
                 }).show();
+    }
+
+    /**
+     * AdMob test cihazı: reklam kimliğini gösterir, tek dokunuşla test modunu açar.
+     * Test modunda reklamlar açılır ve ödüller tetiklenir; gelir yazmaz, geçersiz trafik riski olmaz.
+     */
+    private void adTestDialog() {
+        final AlertDialog dlg = new AlertDialog.Builder(this)
+                .setTitle("Reklam test modu")
+                .setMessage("Reklam kimliği okunuyor…")
+                .setPositiveButton("Kapat", null)
+                .setNegativeButton("Kimliği kopyala", null)
+                .setNeutralButton(Prefs.adTestMode(this) ? "Testi kapat" : "Testi aç", null)
+                .create();
+        dlg.show();
+        new Thread(new Runnable() {
+            @Override public void run() {
+                final String id = AdsTest.gaid(SettingsActivity.this);
+                final String hash = id == null ? null : AdsTest.md5(id.toUpperCase());
+                runOnUiThread(new Runnable() {
+                    @Override public void run() {
+                        if (id == null) {
+                            dlg.setMessage("Reklam kimliği okunamadı.\n\n"
+                                    + "Android Ayarlar → Google → Reklamlar bölümünden "
+                                    + "kişiselleştirilmiş reklamları açıp tekrar dene.");
+                            dlg.getButton(AlertDialog.BUTTON_NEUTRAL).setEnabled(false);
+                            return;
+                        }
+                        String msg = "Açıkken reklamlar TEST reklamı olur: reklam açılır, "
+                                + "ödül çalışır, ama para yazmaz ve hesabın risk almaz.\n\n"
+                                + "Reklam kimliğin (AdMob konsoluna eklemek için):\n" + id + "\n\n"
+                                + "AdMob → Ayarlar → Test cihazları → Android → bu kimliği yapıştır.\n\n"
+                                + "Uygulama içi test için aşağıdaki düğme yeterli.";
+                        dlg.setMessage(msg);
+                        dlg.getButton(AlertDialog.BUTTON_NEGATIVE).setOnClickListener(
+                                new View.OnClickListener() {
+                                    @Override public void onClick(View v) {
+                                        try {
+                                            android.content.ClipboardManager cm =
+                                                    (android.content.ClipboardManager)
+                                                            getSystemService(CLIPBOARD_SERVICE);
+                                            cm.setPrimaryClip(android.content.ClipData
+                                                    .newPlainText("advertising id", id));
+                                            Toast.makeText(SettingsActivity.this,
+                                                    "Reklam kimliği kopyalandı",
+                                                    Toast.LENGTH_SHORT).show();
+                                        } catch (Exception ignored) { }
+                                    }
+                                });
+                        dlg.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener(
+                                new View.OnClickListener() {
+                                    @Override public void onClick(View v) {
+                                        boolean yeni = !Prefs.adTestMode(SettingsActivity.this);
+                                        Prefs.setAdTestMode(SettingsActivity.this, yeni);
+                                        if (hash != null) {
+                                            Prefs.setAdTestHashed(SettingsActivity.this, hash);
+                                        }
+                                        Toast.makeText(SettingsActivity.this,
+                                                yeni ? "Test modu açık · reklamlar test reklamı "
+                                                        + "olarak gelir (para yazmaz)"
+                                                        : "Test modu kapalı · gerçek reklamlar",
+                                                Toast.LENGTH_LONG).show();
+                                        dlg.dismiss();
+                                        render();
+                                        // RequestConfiguration yeniden okunsun
+                                        AdManager.resetForTestMode();
+                                        recreate();
+                                    }
+                                });
+                    }
+                });
+            }
+        }, "adtest").start();
     }
 
     private void healthScan() {

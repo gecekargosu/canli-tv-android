@@ -58,6 +58,23 @@ public class Prefs {
         sp(c).edit().remove("fail:" + url.hashCode()).apply();
     }
 
+    // --- AdMob test cihazı (kendi telefonunda test reklamı görmek için) ---
+    public static boolean adTestMode(Context c) {
+        return sp(c).getBoolean("adTestMode", false);
+    }
+
+    public static void setAdTestMode(Context c, boolean v) {
+        sp(c).edit().putBoolean("adTestMode", v).apply();
+    }
+
+    public static String adTestHashed(Context c) {
+        return sp(c).getString("adTestHashed", null);
+    }
+
+    public static void setAdTestHashed(Context c, String v) {
+        sp(c).edit().putString("adTestHashed", v).apply();
+    }
+
     public static boolean hideDead(Context c) {
         return sp(c).getBoolean("hideDead", true);
     }
