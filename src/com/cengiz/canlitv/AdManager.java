@@ -220,8 +220,11 @@ public final class AdManager {
             holder.setOnApplyWindowInsetsListener(new View.OnApplyWindowInsetsListener() {
                 @Override public android.view.WindowInsets onApplyWindowInsets(View v,
                                                                                   android.view.WindowInsets insets) {
+                    // P0-6: Android 15/16 zorunlu edge-to-edge → üst barı çentiğin/status barın
+                    // altında bırakma. Alt inset de sistem çubuğu için.
+                    int top = insets.getSystemWindowInsetTop();
                     int bottom = insets.getSystemWindowInsetBottom();
-                    if (bottom > 0) v.setPadding(0, 0, 0, bottom);
+                    if (top > 0 || bottom > 0) v.setPadding(0, top, 0, bottom);
                     return insets;
                 }
             });

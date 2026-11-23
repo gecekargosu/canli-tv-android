@@ -16,7 +16,7 @@ Son kontrol: **23 Kasım 2026** (Play Console ve AdMob konsolu açılıp bakıld
 
 ## 2. Tamamlananlar
 
-- Uygulama v8.0: liste/oynatıcı/çoklu ekran/radyo/50 ülke/4 dil, 305 kanal.
+- Uygulama v8.0: liste/oynatıcı/çoklu ekran/radyo/50 ülke/4 dil, 157 kanal.
 - İsteğe bağlı üyelik: `AccountActivity` + `Api` + `worker.js` + D1 (`users`, `oauth`).
 - Üyelik sunucusu yayında: health / register / verify / resend / login / google uçları.
 - Gizlilik politikası hesap verisiyle güncellendi, yayında.

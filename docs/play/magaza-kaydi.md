@@ -7,7 +7,7 @@ Hepsi Play karakter sınırlarına uygundur (kısa açıklama 80, tam açıklama
 
 | Alan | Değer |
 |---|---|
-| Uygulama adı (30) | `UMAY Multi TV — Canlı TV & Radyo` |
+| Uygulama adı (30) | `UMAY Multi TV: Canlı TV Radyo` |
 | Paket adı | `com.cengiz.canlitv` (AAB'den otomatik gelir, değiştirilemez) |
 | Varsayılan dil | Türkçe |
 | Kategori | Eğlence (Video oynatıcılar ve editörler de olabilir) |
@@ -20,7 +20,7 @@ Hepsi Play karakter sınırlarına uygundur (kısa açıklama 80, tam açıklama
 ## 2. Kısa açıklama (80 karakter)
 
 ```
-305 canlı TV kanalı ve 50 radyo: kanal numarası, favoriler, 3'lü izleme, kayıt.
+157 canlı TV kanalı ve 25 radyo: kanal numarası, favoriler, 3'lü izleme, kayıt.
 ```
 
 ## 3. Tam açıklama (kopyala)
@@ -31,11 +31,11 @@ uygulamada toplar. Kumanda alışkanlığına uygun numaralı kanal sistemi, fav
 çoklu izleme ile hızlı bir TV deneyimi sunar.
 
 🔢 NUMARALI KANAL (KUMANDA GİBİ)
-Üstteki No kutusuna kanal numarasını yaz, Git'e bas: kanal hemen açılır. 305 kanal
+Üstteki No kutusuna kanal numarasını yaz, Git'e bas: kanal hemen açılır. 157 kanal
 Türkçe/yabancı ve tür olarak gruplanmıştır.
 
-📺 305 CANLI KANAL
-TRT 1, TRT 2, TRT Spor, TV8, ATV, Star TV, Kanal D, Show TV, Now TV, Haber Global,
+📺 157 CANLI KANAL
+TRT 1, TRT 2, TRT Spor, TV8, ATV, Star TV, Kanal D, Haber Global,
 NTV, A Haber, Halk TV, Kanal 7, TRT Müzik, TRT Çocuk ve çok daha fazlası.
 🌍 Ülke seç: 50 ülkenin kanalları listeye eklenir (Türkiye gömülü, internet gerekmez).
 
@@ -65,7 +65,7 @@ Türkçe, English, Русский, العربية. Menüler seçtiğin dilde.
 
 NEDEN ÜCRETSİZ?
 Uygulama reklamla ayakta kalır: liste altında küçük bir banner ve seyrek geçiş reklamı.
-Video izleyip 60 dakika reklamsız kullanabilirsin. Yayının üstüne reklam binmez,
+Video izleyip 20 dakika reklamsız (video reklamı kalkar, banner kalır) kullanabilirsin. Yayının üstüne reklam binmez,
 oynatma reklamla kesilmez.
 
 NOT: Kanallar yayıncıların halka açık akışlarıdır; yayınlar zaman zaman kaldırılabilir.
@@ -103,8 +103,8 @@ Ekran görüntüsü sayısı 2–8 arası; ilk ikisi en çok indirme getirir
 
 ## 6. Üst sıralarda çıkmak için (ASO) — sırayla
 
-1. **Başlıkta anahtar kelime:** "UMAY Multi TV — Canlı TV & Radyo" (marka + 2 kelime).
-2. **Kısa açıklamada sayı:** "305 kanal", "50 radyo" tıklama oranını artırır.
+1. **Başlıkta anahtar kelime:** "UMAY Multi TV: Canlı TV Radyo" (marka + 2 kelime).
+2. **Kısa açıklamada sayı:** "157 kanal", "50 radyo" tıklama oranını artırır.
 3. **İlk 2 ekran görüntüsü:** ana ekran ve oynatıcı; üzerine kısa yazı eklenirse
    (Canva'da 1080×1920) dönüşüm yükselir.
 4. **Yorum isteme:** Ayarlar → ⭐ Bizi değerlendir satırı hazır; ilk hafta 10+ yorum

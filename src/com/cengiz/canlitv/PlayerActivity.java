@@ -336,8 +336,10 @@ public class PlayerActivity extends android.app.Activity {
         outer.setOnApplyWindowInsetsListener(new View.OnApplyWindowInsetsListener() {
             @Override public android.view.WindowInsets onApplyWindowInsets(View v,
                                                                               android.view.WindowInsets insets) {
+                // P0-6: üst (çentik/status bar) + alt (gezinme çubuğu) inset
+                int t = insets.getSystemWindowInsetTop();
                 int b = insets.getSystemWindowInsetBottom();
-                if (b > 0) v.setPadding(0, 0, 0, b);
+                if (t > 0 || b > 0) v.setPadding(0, t, 0, b);
                 return insets;
             }
         });

@@ -13,7 +13,7 @@ Geliştirici kimlik doğrulaması **onaylanmış** olmalı; aksi hâlde uygulama
 ## 1. Uygulamayı oluştur
 
 1. Play Console → **Uygulama oluştur**.
-2. Ad: `UMAY Multi TV — Canlı TV & Radyo` · Dil: Türkçe · **Uygulama** · **Ücretsiz**.
+2. Ad: `UMAY Multi TV: Canlı TV Radyo` · Dil: Türkçe · **Uygulama** · **Ücretsiz**.
 3. Beyanlar: "Uygulama, Google Play Geliştirici Programı Politikalarına uyar" işaretle.
 
 ## 2. Mağaza kaydını doldur
