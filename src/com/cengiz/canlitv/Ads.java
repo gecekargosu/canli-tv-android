@@ -44,12 +44,14 @@ public class Ads {
     public static final String REWARDED = TEST_MODE ? REWARDED_TEST : REWARDED_REAL;
 
     // --- politika kurallari (AdMob "yaniltici/zorlayici tik" ihlali olmasin diye) ---
-    /** Iki gecis reklami arasi en az sure. */
-    public static final long INTERSTITIAL_GAP_MS = 10L * 60L * 1000L;
-    /** Kac kanal degisiminden sonra bir gecis reklami. */
-    public static final int ZAPS_BEFORE_INTERSTITIAL = 4;
-    /** Odullu reklam karsiligi reklamsiz sure. */
-    public static final int REWARD_MINUTES = 20;
+    /** Art arda hızlı kanal değişiminde reklamlar üst üste binmesin (en az süre). */
+    public static final long INTERSTITIAL_GAP_MS = 20L * 1000L;
+    /** Her kanal değişiminde bir geçiş reklamı gösterilir. */
+    public static final int ZAPS_BEFORE_INTERSTITIAL = 1;
+    /** İzlerken kaç dakikada bir reklam çıkar (15 dakika). */
+    public static final long AD_INTERVAL_MS = 15L * 60L * 1000L;
+    /** Odullu reklam karsiligi reklamsiz sure (uygulama geneli, kanal bazli değil). */
+    public static final int REWARD_MINUTES = 15;
     /** Radyoda kac dakika sonra "reklamsiz devam?" teklifi gosterilir (zorlamasiz). */
     public static final int ADFREE_OFFER_MINUTES = 40;
     /** Uygulama acilisinda reklam gosterilmez (acilis reklami kapali). */

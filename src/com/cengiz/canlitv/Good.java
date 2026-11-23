@@ -34,12 +34,13 @@ public final class Good {
     private static String read(Context c, String cc) {
         try {
             InputStream in;
-            if ("tr".equals(cc)) {
+            File cached = file(c, cc);
+            if (cached.exists() && cached.length() > 20) {
+                in = new FileInputStream(cached);        // günlük tazelenmiş liste (varsa)
+            } else if ("tr".equals(cc)) {
                 in = c.getAssets().open("good_tr.json");   // TR listesi gömülü
             } else {
-                File f = file(c, cc);
-                if (!f.exists() || f.length() < 20) return null;
-                in = new FileInputStream(f);
+                return null;
             }
             BufferedReader r = new BufferedReader(new InputStreamReader(in, "UTF-8"));
             StringBuilder sb = new StringBuilder();
@@ -50,6 +51,65 @@ public final class Good {
         } catch (Exception e) {
             return null;
         }
+    }
+
+    /**
+     * #101: doğrulanmış kanal listesini günde bir kez sunucudan tazeler.
+     * Açılışta arka planda çalışır; başarısız olursa gömülü/eski liste kullanılmaya devam eder.
+     */
+    public static void refreshIfNeeded(final Context ctx) {
+        final String cc = Prefs.country(ctx);
+        String day = new java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US)
+                .format(new java.util.Date());
+        if (day.equals(Prefs.goodDay(ctx))) return;
+        Prefs.setGoodDay(ctx, day);
+        new Thread(new Runnable() {
+            @Override public void run() { download(ctx, cc); }
+        }, "good-refresh").start();
+    }
+
+    private static void download(Context ctx, String cc) {
+        java.net.HttpURLConnection con = null;
+        try {
+            con = (java.net.HttpURLConnection) new java.net.URL(
+                    "https://umay-multi-tv-gq3zer.freebuff.site/good/" + cc + ".json").openConnection();
+            con.setConnectTimeout(8000);
+            con.setReadTimeout(10000);
+            con.setRequestProperty("User-Agent", "Mozilla/5.0 UMAYMultiTV");
+            if (con.getResponseCode() != 200) return;
+            InputStream in = con.getInputStream();
+            File tmp = new File(ctx.getFilesDir(), "good_" + cc + ".tmp");
+            java.io.FileOutputStream out = new java.io.FileOutputStream(tmp);
+            byte[] buf = new byte[8192];
+            int n;
+            long total = 0;
+            while ((n = in.read(buf)) > 0) {
+                out.write(buf, 0, n);
+                total += n;
+            }
+            out.close();
+            in.close();
+            if (total < 30) { tmp.delete(); return; }
+            // gerçekten kanal listesi mi? (bozuk dosya gömülü listeyi ezmesin)
+            String txt = readFile(tmp);
+            JSONArray items = new JSONObject(txt).optJSONArray("items");
+            if (items == null || items.length() == 0) { tmp.delete(); return; }
+            File target = file(ctx, cc);
+            if (target.exists()) target.delete();
+            tmp.renameTo(target);
+        } catch (Exception ignored) {
+        } finally {
+            if (con != null) try { con.disconnect(); } catch (Exception ignored) { }
+        }
+    }
+
+    private static String readFile(File f) throws Exception {
+        BufferedReader r = new BufferedReader(new InputStreamReader(new FileInputStream(f), "UTF-8"));
+        StringBuilder sb = new StringBuilder();
+        String line;
+        while ((line = r.readLine()) != null) sb.append(line);
+        r.close();
+        return sb.toString();
     }
 
     /**

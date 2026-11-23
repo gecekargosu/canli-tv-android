@@ -66,6 +66,25 @@ public class Net {
         return used > 0 ? used : 0;
     }
 
+    /**
+     * Oynatıcı isteklerinde kullanılan başlıklar.
+     *
+     * Bazı yayıncı CDN'leri (ör. TV8/Daion) tarayıcı olmayan istemcilere canlı yayın yerine
+     * "dijital reklam kuşağı" klibini veriyor. Android'in varsayılan MediaPlayer UA'sı bu
+     * yüzden reklam karesinde takılı kalıyordu. Tarayıcı UA'sı + Accept başlığı ile gerçek
+     * canlı yayın geliyor; bu yüzden bütün oynatıcılar bu başlıkları kullanır.
+     */
+    public static final String PLAYER_UA =
+            "Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 "
+                    + "(KHTML, like Gecko) Chrome/120.0 Mobile Safari/537.36";
+
+    public static java.util.Map<String, String> playerHeaders() {
+        java.util.Map<String, String> h = new java.util.HashMap<String, String>();
+        h.put("User-Agent", PLAYER_UA);
+        h.put("Accept", "*/*");
+        return h;
+    }
+
     public static String mb(long bytes) {
         if (bytes < 1048576L) return (bytes / 1024) + " KB";
         if (bytes < 1073741824L) return String.format(java.util.Locale.getDefault(), "%.1f MB", bytes / 1048576.0);

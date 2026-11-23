@@ -341,6 +341,57 @@ public class Prefs {
                 .putString("adFreeKey", key == null ? "" : key).apply();
     }
 
+    /** Son gösterilen geçiş reklamı (15 dakikalık sayaç için). */
+    public static long lastAdAt(Context c) {
+        return sp(c).getLong("lastAdAt", 0L);
+    }
+
+    public static void setLastAdAt(Context c, long millis) {
+        sp(c).edit().putLong("lastAdAt", millis).apply();
+    }
+
+    /** "Bilinen iyi kanallar" listesinin son tazelenme günü (ülke başına). */
+    public static String goodDay(Context c) {
+        return sp(c).getString("goodDay", "");
+    }
+
+    public static void setGoodDay(Context c, String day) {
+        sp(c).edit().putString("goodDay", day).apply();
+    }
+
+    /** Kullanıcının kendi eklediği TV kanalları: "ad\u0001url" satırları. */
+    public static List<String[]> customTv(Context c) {
+        List<String[]> out = new ArrayList<String[]>();
+        String all = sp(c).getString("customTv", "");
+        if (all.length() == 0) return out;
+        for (String row : all.split("\n")) {
+            int i = row.indexOf('\u0001');
+            if (i <= 0 || i + 1 >= row.length()) continue;
+            out.add(new String[]{row.substring(0, i), row.substring(i + 1)});
+        }
+        return out;
+    }
+
+    public static void addCustomTv(Context c, String name, String url) {
+        if (url == null || url.length() < 6 || name == null) return;
+        String clean = name.replace("\n", " ").replace("\u0001", " ").trim();
+        if (clean.length() == 0) clean = "Kendi kanalım";
+        String all = sp(c).getString("customTv", "");
+        for (String[] r : customTv(c)) if (r[1].equals(url.trim())) return;
+        String row = clean + "\u0001" + url.trim();
+        sp(c).edit().putString("customTv", all.length() == 0 ? row : row + "\n" + all).apply();
+    }
+
+    public static void removeCustomTv(Context c, String url) {
+        StringBuilder sb = new StringBuilder();
+        for (String[] r : customTv(c)) {
+            if (r[1].equals(url)) continue;
+            if (sb.length() > 0) sb.append("\n");
+            sb.append(r[0]).append('\u0001').append(r[1]);
+        }
+        sp(c).edit().putString("customTv", sb.toString()).apply();
+    }
+
     /** IP'den ulke onerisi bir kez soruldu mu? */
     public static boolean countryAsked(Context c) {
         return sp(c).getBoolean("countryAsked", false);

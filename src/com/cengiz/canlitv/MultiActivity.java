@@ -49,7 +49,7 @@ public class MultiActivity extends android.app.Activity {
     private TextView clock;
     private HlsRecorder recorder = new HlsRecorder();
     private int recSlot = 1;
-    private int reloadGen = 0;
+    private boolean foreground = true;
     private final Handler ui = new Handler();
 
     @Override
@@ -187,6 +187,7 @@ public class MultiActivity extends android.app.Activity {
         for (int i = 0; i < 4; i++) slots[i].setChannel(idx[i] % list.size());
         applyAudio();
         setPaneCount(paneCount);
+        ui.postDelayed(watchdog, 6000);
         tracking = true;
         openedAt = System.currentTimeMillis();
         Net.begin();
@@ -211,6 +212,23 @@ public class MultiActivity extends android.app.Activity {
                     .show();
         }
     }
+
+    /**
+     * Her pencerenin sağlığını 3 saniyede bir denetler.
+     * - 15 sn içinde hazırlanamayan yayın → yedek kaynak / taze playlist
+     * - hazır ama görüntü gelmeyen (siyah ekran) yayın → yeniden başlat
+     * - oynarken konumu 12 sn ilerlemeyen (donan) yayın → yeniden bağlan
+     * Böylece ATV gibi boş kalan pencere ve TV8 gibi takılan yayın kendini toparlar.
+     */
+    private final Runnable watchdog = new Runnable() {
+        @Override public void run() {
+            if (foreground) {
+                long now = System.currentTimeMillis();
+                for (Slot s : slots) if (s != null) s.check(now);
+            }
+            ui.postDelayed(this, 3000);
+        }
+    };
 
     private final Runnable tick = new Runnable() {
         @Override public void run() {
@@ -354,6 +372,15 @@ public class MultiActivity extends android.app.Activity {
         boolean surfaceReady = false, on = false;
         final int slotIndex;
 
+        // Her pencere kendi nesil/deneme sayacını tutar. Önceden tek sayaç paylaşılıyordu:
+        // bir pencere hazırlanınca diğerlerinin callback'i "eski" sayılıp iptal ediliyor,
+        // o pencere sonsuza kadar boş kalıyordu (ATV'nin ortada boş kalması).
+        int gen = 0;
+        int attempt = 0;
+        long startedAt = 0;
+        boolean prepared = false, rendered = false, failed = false;
+        long lastPos = -1, lastPosAt = 0;
+
         Slot(int slotIndex) {
             super(MultiActivity.this);
             this.slotIndex = slotIndex;
@@ -428,11 +455,60 @@ public class MultiActivity extends android.app.Activity {
         }
 
         void reload() {
-            release();
+            gen++;
+            attempt = 0;
+            startAttempt();
+        }
+
+        /** Sıradaki kaynağı dener: asıl yayın → yedek kaynaklar → taze playlist. */
+        private void startAttempt() {
+            final int my = gen;
             final Channel c = list.get(chan);
+            failed = false;
+            prepared = false;
+            rendered = false;
+            startedAt = System.currentTimeMillis();
+            lastPos = -1;
+            lastPosAt = startedAt;
+            releasePlayer();
             label.setVisibility(View.GONE);
             if (!surfaceReady) return;
-            final int gen = ++reloadGen;
+
+            if (attempt == 0) {
+                Quality.resolve(MultiActivity.this, c.url, new Quality.UrlCallback() {
+                    @Override public void onUrl(final String url) {
+                        runOnUiThread(new Runnable() {
+                            @Override public void run() { open(url, my); }
+                        });
+                    }
+                });
+                return;
+            }
+            String[] fb = ChannelRepo.fallbacks(c.url);
+            int fi = attempt - 1;
+            if (fb != null && fi < fb.length) {
+                open(fb[fi], my);
+                return;
+            }
+            if (attempt <= 4) {
+                // Aynı kaynağı taze playlist ile dene (CDN oturumu/token yenilenir).
+                label.setText("yeniden bağlanıyor…");
+                label.setVisibility(View.VISIBLE);
+                Quality.resolve(MultiActivity.this, c.url, new Quality.UrlCallback() {
+                    @Override public void onUrl(final String url) {
+                        runOnUiThread(new Runnable() {
+                            @Override public void run() { open(url, my); }
+                        });
+                    }
+                });
+                return;
+            }
+            showFail();
+        }
+
+        private void open(String url, int my) {
+            if (my != gen || !surfaceReady) return;
+            releasePlayer();
             try {
                 final MediaPlayer player = new MediaPlayer();
                 mp = player;
@@ -440,43 +516,94 @@ public class MultiActivity extends android.app.Activity {
                 player.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
                     @Override public void onPrepared(MediaPlayer m) {
                         if (player != mp) return;
+                        prepared = true;
+                        startedAt = System.currentTimeMillis();
+                        label.setVisibility(View.GONE);
                         AudioService.stop(MultiActivity.this);
                         screenOffAudio = false;
                         m.setVolume(on ? 1f : 0f, on ? 1f : 0f);
                         m.start();
                     }
                 });
+                // "Hazır" görünüp görüntü vermeyen yayınları yakalamak için ilk kare bilgisi.
+                player.setOnInfoListener(new MediaPlayer.OnInfoListener() {
+                    @Override public boolean onInfo(MediaPlayer m, int what, int extra) {
+                        if (what == MediaPlayer.MEDIA_INFO_VIDEO_RENDERING_START) rendered = true;
+                        return false;
+                    }
+                });
                 player.setOnErrorListener(new MediaPlayer.OnErrorListener() {
                     @Override public boolean onError(MediaPlayer m, int w, int e) {
-                        label.setText("açılamadı · uzun bas → kanal seç");
-                        label.setVisibility(View.VISIBLE);
+                        if (player != mp) return true;
+                        retry();
                         return true;
                     }
                 });
-                Quality.resolve(MultiActivity.this, c.url, new Quality.UrlCallback() {
-                    @Override public void onUrl(final String url) {
-                        runOnUiThread(new Runnable() {
-                            @Override public void run() {
-                                if (gen != reloadGen || player != mp) return;
-                                try {
-                                    player.setDataSource(url);
-                                    player.prepareAsync();
-                                } catch (Exception e) {
-                                    label.setText("açılamadı · №" + c.no + " " + c.name);
-                                    label.setVisibility(View.VISIBLE);
-                                }
-                            }
-                        });
-                    }
-                });
+                // Tarayıcı UA'sı: TV8 gibi CDN'ler aksi hâlde reklam kuşağı klibi döndürüyor.
+                player.setDataSource(MultiActivity.this, android.net.Uri.parse(url),
+                        Net.playerHeaders());
+                player.prepareAsync();
             } catch (Exception e) {
-                label.setText("açılamadı · №" + c.no + " " + c.name);
+                retry();
             }
         }
 
+        /** Bir sonraki kaynağa geç. */
+        void retry() {
+            if (!surfaceReady || failed) return;
+            attempt++;
+            if (attempt > 8) { showFail(); return; }
+            if (attempt > 1) {
+                label.setText("yeniden bağlanıyor…");
+                label.setVisibility(View.VISIBLE);
+            }
+            startAttempt();
+        }
+
+        void showFail() {
+            failed = true;
+            releasePlayer();
+            Channel c = list.get(chan);
+            label.setText("açılamadı · №" + c.no + " " + c.name + "\nuzun bas → başka kanal");
+            label.setVisibility(View.VISIBLE);
+        }
+
+        /** 3 saniyede bir çağrılır: hazırlanmayan, görüntü vermeyen veya donan yayını kurtarır. */
+        void check(long now) {
+            if (!surfaceReady || failed) return;
+            if (mp == null) {
+                if (startedAt > 0 && now - startedAt > 20000) retry();
+                return;
+            }
+            if (!prepared) {
+                if (now - startedAt > 15000) retry();
+                return;
+            }
+            if (!rendered) {
+                if (now - startedAt > 10000) retry();
+                return;
+            }
+            int pos;
+            try { pos = mp.getCurrentPosition(); } catch (Exception e) { return; }
+            if (pos != lastPos) {
+                lastPos = pos;
+                lastPosAt = now;
+                return;
+            }
+            if (now - lastPosAt > 12000) retry();
+        }
+
+        private void releasePlayer() {
+            try { if (mp != null) { mp.reset(); mp.release(); } } catch (Exception ignored) { }
+            mp = null;
+        }
+
         void release() {
-            reloadGen++;
-            try { if (mp != null) { mp.reset(); mp.release(); mp = null; } } catch (Exception ignored) { }
+            gen++;
+            releasePlayer();
+            prepared = false;
+            rendered = false;
+            failed = false;
         }
 
         @Override public void surfaceCreated(SurfaceHolder h) { surfaceReady = true; reload(); }
@@ -536,9 +663,17 @@ public class MultiActivity extends android.app.Activity {
 
         lv.setOnItemClickListener(new android.widget.AdapterView.OnItemClickListener() {
             @Override public void onItemClick(android.widget.AdapterView<?> p, View v, int pos, long id) {
-                slot.setChannel(idxx.get(pos));
-                saveState();
+                final int picked = idxx.get(pos);
                 dlg.dismiss();
+                // v9.25: kanal değişiminde geçiş reklamı (varsa)
+                AdManager.maybeInterstitial(MultiActivity.this, list.get(picked).url,
+                        new Runnable() {
+                            @Override public void run() {
+                                if (isFinishing()) return;
+                                slot.setChannel(picked);
+                                saveState();
+                            }
+                        });
             }
         });
 
@@ -582,6 +717,7 @@ public class MultiActivity extends android.app.Activity {
     @Override
     protected void onPause() {
         super.onPause();
+        foreground = false;
         if (tracking) {
             tracking = false;
             long bytes = Net.end();
@@ -613,6 +749,7 @@ public class MultiActivity extends android.app.Activity {
     @Override
     protected void onResume() {
         super.onResume();
+        foreground = true;
         for (Slot s : slots) {
             try { if (s.mp != null && !s.mp.isPlaying()) s.mp.start(); } catch (Exception ignored) { }
         }

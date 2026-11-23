@@ -32,10 +32,10 @@ import java.util.Collections;
 /**
  * Reklam yonetimi (tek yer). Kurallar Ads.java icinde.
  *
- * - Banner: kanal listesi, radyo listesi ve oynatici ekraninin ALTINDA (videonun uzerine binmez).
- * - Gecis reklami: 4. acilista bir, iki reklam arasi en az 10 dakika.
- * - Odullu: kullanici "60 dakika reklamsiz" icin kendi ister.
- * - Reklamsiz sure aktifse (Prefs.adFreeUntil) hic reklam gosterilmez.
+ * - Banner: her ekranda, listenin/oynaticinin ALTINDA, her zaman gorunur.
+ * - Gecis reklami: her kanal degisiminde bir + izlerken 15 dakikada bir.
+ * - Reklamsiz sure kanal bazli DEGIL: uygulama geneli (odullu video ile 15 dk).
+ * - Reklamsiz sure aktifse gecis reklami gosterilmez; banner yine kalir.
  * - Reklam yuklenemezse uygulama normal akisina devam eder.
  */
 public final class AdManager {
@@ -53,31 +53,17 @@ public final class AdManager {
 
     private AdManager() { }
 
-    /** Reklamsiz sure (herhangi bir kanal icin) aktif mi? — bilgi/ayar ekranlari icin. */
+    /**
+     * Reklamsız süre aktif mi? v9.25: süre artık **uygulama geneli**dir; kanal başına ayrı
+     * reklamsız pencere yok (kullanıcı her kanalda yeniden reklam sorusu görmesin).
+     */
     public static boolean isAdFree(Context c) {
         return System.currentTimeMillis() < Prefs.adFreeUntil(c);
     }
 
-    /**
-     * Bu kanal/istasyon icin reklamsiz sure aktif mi?
-     * 20 dakikalik odul **kanal bazlidir**: baska kanala gecince yeniden video gerekir.
-     */
+    /** Eski imza korunur: parametre yok sayılır, süre uygulama genelidir. */
     public static boolean isAdFreeFor(Context c, String key) {
-        if (System.currentTimeMillis() >= Prefs.adFreeUntil(c)) return false;
-        String k = Prefs.adFreeKey(c);
-        if (k == null || k.length() == 0) return false;
-        String want = key != null ? key : lastKey(c);
-        return want != null && want.equals(k);
-    }
-
-    /** Ekran bir kanal belirtmiyorsa "en son izlenen kanal" esas alinir. */
-    private static String lastKey(Context c) {
-        try {
-            java.util.List<Channel> l = ChannelRepo.all(c);
-            int i = Prefs.lastIndex(c);
-            if (i >= 0 && i < l.size()) return l.get(i).url;
-        } catch (Exception ignored) { }
-        return null;
+        return isAdFree(c);
     }
 
     /** Reklamsiz kalan dakika (0 = yok). */
@@ -212,7 +198,6 @@ public final class AdManager {
                     ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
             holder.addView(content);
             if (Prefs.showUsage(activity)) holder.addView(usageBar(activity));
-            holder.addView(rewardStrip(activity, key));
             View ad = banner(activity);
             if (ad != null) holder.addView(ad);
             // sistem gezinme cubugu (jest cubugu) banner'in uzerine binmesin:
@@ -304,58 +289,6 @@ public final class AdManager {
         }
     }
 
-    /**
-     * Her ekranin altinda duran, tek dokunusla odullu videoyu baslatan serit.
-     * Kullanici menu aramaz: "▶ Reklam izle · 20 dk reklamsız" yazar, dokunur, izler.
-     */
-    public static TextView rewardStrip(final Activity a) {
-        return rewardStrip(a, null);
-    }
-
-    /**
-     * @param key kanal/istasyon URL'si; 20 dk reklamsiz sure bu kanal icin gecerlidir.
-     *            null ise "herhangi bir kanal" anlaminda calisir.
-     */
-    public static TextView rewardStrip(final Activity a, final String rawKey) {
-        final String key = rawKey != null ? rawKey : lastKey(a);
-        final TextView t = new TextView(a);
-        t.setTextSize(13f);
-        t.setTextColor(Color.parseColor("#0B1220"));
-        t.setBackgroundColor(Color.parseColor("#FFB020"));
-        t.setPadding(dp(a, 10), dp(a, 9), dp(a, 10), dp(a, 9));
-        t.setGravity(android.view.Gravity.CENTER);
-        t.setTypeface(t.getTypeface(), android.graphics.Typeface.BOLD);
-
-        if (isAdFreeFor(a, key)) {
-            int left = adFreeMinutesLeft(a);
-            t.setBackgroundColor(Color.parseColor("#2A3340"));
-            t.setTextColor(Color.parseColor("#8FE3A0"));
-            t.setText("✓  Bu kanalda reklamsız · " + left + " dk kaldı");
-            return t;
-        }
-
-        t.setText("▶  Reklam izle · " + Ads.REWARD_MINUTES + " dk reklamsız");
-        t.setOnClickListener(new View.OnClickListener() {
-            @Override public void onClick(View v) {
-                showRewarded(a, key, new Runnable() {
-                    @Override public void run() {
-                        android.widget.Toast.makeText(a,
-                                "Teşekkürler! Bu kanalda " + Ads.REWARD_MINUTES + " dakika reklamsız.",
-                                android.widget.Toast.LENGTH_LONG).show();
-                        a.recreate();
-                    }
-                }, new Runnable() {
-                    @Override public void run() {
-                        android.widget.Toast.makeText(a,
-                                "Reklam şu an hazır değil, biraz sonra tekrar dene",
-                                android.widget.Toast.LENGTH_SHORT).show();
-                    }
-                });
-            }
-        });
-        return t;
-    }
-
     /** Reklam dolmadiginda gosterilen kendi barimiz (bos yer birakmamak icin). */
     private static TextView houseBar(final Activity a) {
         TextView t = new TextView(a);
@@ -397,20 +330,25 @@ public final class AdManager {
     /** Kanal bazli: key (URL) icin 20 dk reklamsiz sure varsa gecis reklami gosterilmez. */
     public static void maybeInterstitial(final Activity activity, final String key,
                                          final Runnable then) {
-        if (!Ads.SDK_READY || isAdFreeFor(activity, key) || showingAd) {
+        if (!Ads.SDK_READY || isAdFree(activity) || showingAd) {
             then.run();
             return;
         }
-        opens++;
-        boolean due = (opens % Ads.ZAPS_BEFORE_INTERSTITIAL) == 0
-                && (System.currentTimeMillis() - lastInterstitial) >= Ads.INTERSTITIAL_GAP_MS;
+        long now = System.currentTimeMillis();
+        // Aynı anda/art arda zap yapılırsa reklamlar üst üste binmesin.
+        if (now - lastInterstitial < Ads.INTERSTITIAL_GAP_MS) {
+            then.run();
+            return;
+        }
         final InterstitialAd ad = interstitial;
-        if (!due || ad == null) {
+        if (ad == null) {
+            loadInterstitial(activity);
             then.run();
             return;
         }
         interstitial = null;
-        lastInterstitial = System.currentTimeMillis();
+        lastInterstitial = now;
+        Prefs.setLastAdAt(activity, now);
         showingAd = true;
         ad.setFullScreenContentCallback(new FullScreenContentCallback() {
             @Override public void onAdDismissedFullScreenContent() {
@@ -435,7 +373,42 @@ public final class AdManager {
         }
     }
 
-    /** "60 dakika reklamsiz" odullu reklami hazir mi? */
+    /**
+     * İzlerken 15 dakikada bir çıkan reklam. PlayerActivity her saniye çağırır;
+     * reklam hazır değilse sessizce geçer, uygulama akışı durmaz.
+     */
+    public static void maybeTimerAd(final Activity activity) {
+        if (!Ads.SDK_READY || isAdFree(activity) || showingAd) return;
+        long now = System.currentTimeMillis();
+        long last = Prefs.lastAdAt(activity);
+        if (last <= 0) { Prefs.setLastAdAt(activity, now); return; }
+        if (now - last < Ads.AD_INTERVAL_MS) return;
+        final InterstitialAd ad = interstitial;
+        if (ad == null) { loadInterstitial(activity); return; }
+        interstitial = null;
+        lastInterstitial = now;
+        Prefs.setLastAdAt(activity, now);
+        showingAd = true;
+        ad.setFullScreenContentCallback(new FullScreenContentCallback() {
+            @Override public void onAdDismissedFullScreenContent() {
+                showingAd = false;
+                loadInterstitial(activity);
+            }
+
+            @Override public void onAdFailedToShowFullScreenContent(AdError error) {
+                showingAd = false;
+                loadInterstitial(activity);
+            }
+        });
+        try {
+            ad.show(activity);
+        } catch (Throwable t) {
+            showingAd = false;
+            loadInterstitial(activity);
+        }
+    }
+
+    /** "15 dakika reklamsız" odullu reklami hazir mi? */
     public static boolean rewardedReady() {
         return Ads.SDK_READY && rewarded != null;
     }
@@ -473,7 +446,7 @@ public final class AdManager {
                 @Override public void onUserEarnedReward(
                         com.google.android.gms.ads.rewarded.RewardItem item) {
                     long until = System.currentTimeMillis() + Ads.REWARD_MINUTES * 60000L;
-                    Prefs.setAdFreeUntil(activity, until, key);
+                    Prefs.setAdFreeUntil(activity, until);
                     onReward.run();
                 }
             });

@@ -31,6 +31,9 @@ public class SettingsActivity extends Activity {
     private static final int MUTED = Color.parseColor("#9AA4B2");
     private static final int ICONBG = Color.parseColor("#2A3444");
 
+    private static final int REQ_M3U = 1001;
+    private static final String LEGAL_MAIL = "cengizkilic1980@gmail.com";
+
     private LinearLayout body;
     private ProgressDialog scan;
 
@@ -213,6 +216,23 @@ public class SettingsActivity extends Activity {
                     @Override public void onClick(View v) { healthScan(); }
                 });
 
+        // #102: kullanıcının kendi kanalları (M3U adresi veya dosyadan)
+        row("➕", "Kendi kanalımı ekle",
+                "M3U adresi veya kanal linki · listenin en başına gelir",
+                "Ekle ›", new View.OnClickListener() {
+                    @Override public void onClick(View v) { addCustomChannel(); }
+                });
+        row("📄", "M3U dosyasından ekle",
+                "Telefondaki .m3u listesini içe aktar",
+                "İçe aktar ›", new View.OnClickListener() {
+                    @Override public void onClick(View v) { importM3u(); }
+                });
+        row("🗂", "Kendi kanallarım",
+                "Eklediğin kanalları gör, listeden kaldır",
+                "Yönet ›", new View.OnClickListener() {
+                    @Override public void onClick(View v) { manageCustom(); }
+                });
+
         // --- kayit ---
         section("Kayıt");
         row("🎬", "Kayıtlarım", "Telefona kaydettiğin yayınlar",
@@ -250,6 +270,11 @@ public class SettingsActivity extends Activity {
                         startActivity(new Intent(SettingsActivity.this, StatusActivity.class));
                     }
                 });
+        row("©", "Telif / içerik bildir",
+                "Yayın hakkı sende olan kanalı bildir · 24-48 saatte kaldırılır",
+                "Bildir ›", new View.OnClickListener() {
+                    @Override public void onClick(View v) { copyrightDialog(); }
+                });
         row("📱", "Sürüm", "UMAY Multi TV", version(), new View.OnClickListener() {
             @Override public void onClick(View v) {
                 new AlertDialog.Builder(SettingsActivity.this)
@@ -263,7 +288,7 @@ public class SettingsActivity extends Activity {
         row("📢", "Reklamlar",
                 freeLeft > 0
                         ? "Reklamsız sürüyor · " + freeLeft + " dakika kaldı"
-                        : "Liste altında banner · video izleyip 20 dk reklamsız",
+                        : "Banner her zaman · 15 dakikada bir ve her kanal değişiminde reklam",
                 freeLeft > 0 ? (freeLeft + " dk") : "Reklamsız ›",
                 new View.OnClickListener() {
                     @Override public void onClick(View v) { adDialog(); }
@@ -301,11 +326,12 @@ public class SettingsActivity extends Activity {
     /** Reklam bilgisi + odullu "60 dk reklamsiz" + uyelik kisayolu. */
     private void adDialog() {
         int left = AdManager.adFreeMinutesLeft(this);
-        String msg = "Reklamlar sadece şuralarda: kanal/radyo listesinin altında küçük bir banner "
-                + "ve kanal değiştirirken 10 dakikada en fazla bir geçiş reklamı.\n\n"
-                + "Yayının üstüne reklam binmez, oynatma kesilmez."
+        String msg = "Reklamlar şuralarda: listelerin altında küçük bir banner (her zaman görünür), "
+                + "izlerken 15 dakikada bir ve her kanal değişiminde bir geçiş reklamı.\n\n"
+                + "Kanal başına ayrı reklamsız süre yok; süre uygulama genelidir."
                 + (left > 0 ? "\n\nŞu an reklamsız: " + left + " dakika kaldı." : "")
-                + "\n\nKısa bir video izleyip " + Ads.REWARD_MINUTES + " dakika reklamsız kullanabilirsin.\n\n"
+                + "\n\nİstersen kısa bir video izleyip " + Ads.REWARD_MINUTES
+                + " dakika reklamsız izleyebilirsin.\n\n"
                 + "Üyelik gerekmez: hiçbir özellik için giriş istemiyoruz.";
         new AlertDialog.Builder(this)
                 .setTitle("Reklamlar ve üyelik")
@@ -332,6 +358,174 @@ public class SettingsActivity extends Activity {
                 toast("Reklam henüz hazır değil, birkaç saniye sonra tekrar dene.");
             }
         });
+    }
+
+    /** #100: telif / içerik kaldırma bildirimi (24-48 saat süreç). */
+    private void copyrightDialog() {
+        new AlertDialog.Builder(this)
+                .setTitle("Telif / içerik bildirimi")
+                .setMessage("Bir kanalın yayın haklarına sahipsen ve listeden kaldırılmasını\n"
+                        + "istiyorsan bize yaz.\n\n"
+                        + "• Kanallar halka açık yayın adreslerinden listelenir; uygulama yayını barındırmaz.\n"
+                        + "• Bildirimden sonra en geç 24-48 saat içinde ilgili kanal listeden kaldırılır.\n"
+                        + "• E-postaya kanal adı + yayın adresi + hak sahipliği bilgisini ekle.\n\n"
+                        + LEGAL_MAIL)
+                .setPositiveButton("E-posta gönder", new DialogInterface.OnClickListener() {
+                    @Override public void onClick(DialogInterface d, int w) { mailLegal(); }
+                })
+                .setNeutralButton("Adresi kopyala", new DialogInterface.OnClickListener() {
+                    @Override public void onClick(DialogInterface d, int w) {
+                        android.content.ClipboardManager cm = (android.content.ClipboardManager)
+                                getSystemService(CLIPBOARD_SERVICE);
+                        if (cm != null) cm.setPrimaryClip(
+                                android.content.ClipData.newPlainText("e-posta", LEGAL_MAIL));
+                        toast("Kopyalandı: " + LEGAL_MAIL);
+                    }
+                })
+                .setNegativeButton("Kapat", null)
+                .show();
+    }
+
+    private void mailLegal() {
+        Intent i = new Intent(Intent.ACTION_SENDTO,
+                android.net.Uri.parse("mailto:" + LEGAL_MAIL));
+        i.putExtra(Intent.EXTRA_SUBJECT, "UMAY Multi TV — Telif / içerik bildirimi");
+        i.putExtra(Intent.EXTRA_TEXT,
+                "Kanal adı:\nYayın adresi:\nHak sahipliği:\n\nKanalın listeden kaldırılmasını talep ediyorum.");
+        try {
+            startActivity(i);
+        } catch (Exception e) {
+            toast("E-posta uygulaması bulunamadı. Adres: " + LEGAL_MAIL);
+        }
+    }
+
+    /** #102: tek kanal (M3U adresi) ekleme. */
+    private void addCustomChannel() {
+        LinearLayout box = new LinearLayout(this);
+        box.setOrientation(LinearLayout.VERTICAL);
+        box.setPadding(dp(16), dp(8), dp(16), 0);
+
+        final EditText name = new EditText(this);
+        name.setHint("Kanal adı (örn: Kendi kanalım)");
+        name.setSingleLine(true);
+        box.addView(name);
+
+        final EditText url = new EditText(this);
+        url.setHint("https://... .m3u8");
+        url.setInputType(InputType.TYPE_TEXT_VARIATION_URI);
+        url.setSingleLine(true);
+        box.addView(url);
+
+        TextView note = new TextView(this);
+        note.setText("Adres .m3u/.m3u8 listesi veya tek bir yayın linki olabilir. "
+                + "Eklediğin kanal listenin en başında görünür. Kaldırmak için:\n"
+                + "Ayarlar → Kendi kanallarım.");
+        note.setTextColor(MUTED);
+        note.setTextSize(10);
+        note.setPadding(0, dp(6), 0, 0);
+        box.addView(note);
+
+        new AlertDialog.Builder(this)
+                .setTitle("Kendi kanalımı ekle")
+                .setView(box)
+                .setPositiveButton("Ekle", new DialogInterface.OnClickListener() {
+                    @Override public void onClick(DialogInterface d, int w) {
+                        String u = url.getText().toString().trim();
+                        if (!u.startsWith("http")) {
+                            toast("Adres http:// veya https:// ile başlamalı");
+                            return;
+                        }
+                        Prefs.addCustomTv(SettingsActivity.this,
+                                name.getText().toString().trim(), u);
+                        ChannelRepo.reload(SettingsActivity.this);
+                        toast("Kanal eklendi · listenin başında");
+                    }
+                })
+                .setNegativeButton("Vazgeç", null)
+                .show();
+    }
+
+    /** #102: eklenen kanalları listele / kaldır. */
+    private void manageCustom() {
+        final java.util.List<String[]> mine = Prefs.customTv(this);
+        if (mine.isEmpty()) {
+            toast("Henüz kendi kanalın yok. \"Kendi kanalımı ekle\" ile başla.");
+            return;
+        }
+        final String[] names = new String[mine.size()];
+        for (int i = 0; i < mine.size(); i++) names[i] = mine.get(i)[0] + "\n" + mine.get(i)[1];
+        new AlertDialog.Builder(this)
+                .setTitle("Kendi kanallarım (" + mine.size() + ")")
+                .setItems(names, new DialogInterface.OnClickListener() {
+                    @Override public void onClick(DialogInterface d, final int which) {
+                        new AlertDialog.Builder(SettingsActivity.this)
+                                .setTitle(mine.get(which)[0])
+                                .setMessage("Bu kanalı kendi listenden kaldıralım mı?")
+                                .setPositiveButton("Kaldır", new DialogInterface.OnClickListener() {
+                                    @Override public void onClick(DialogInterface dd, int w) {
+                                        Prefs.removeCustomTv(SettingsActivity.this, mine.get(which)[1]);
+                                        ChannelRepo.reload(SettingsActivity.this);
+                                        render();
+                                        toast("Kaldırıldı");
+                                    }
+                                })
+                                .setNegativeButton("Vazgeç", null).show();
+                    }
+                })
+                .setNegativeButton("Kapat", null)
+                .show();
+    }
+
+    /** #102: telefondaki .m3u dosyasından toplu içe aktarma. */
+    private void importM3u() {
+        Intent i = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+        i.addCategory(Intent.CATEGORY_OPENABLE);
+        i.setType("*/*");
+        try {
+            startActivityForResult(i, REQ_M3U);
+        } catch (Exception e) {
+            toast("Dosya seçici açılamadı");
+        }
+    }
+
+    @Override
+    protected void onActivityResult(int req, int res, Intent data) {
+        super.onActivityResult(req, res, data);
+        if (req != REQ_M3U || res != RESULT_OK || data == null || data.getData() == null) return;
+        final android.net.Uri uri = data.getData();
+        toast("Liste okunuyor…");
+        new Thread(new Runnable() {
+            @Override public void run() {
+                int added = 0;
+                try {
+                    java.io.BufferedReader r = new java.io.BufferedReader(
+                            new java.io.InputStreamReader(getContentResolver().openInputStream(uri), "UTF-8"));
+                    String line, name = null;
+                    while ((line = r.readLine()) != null) {
+                        line = line.trim();
+                        if (line.length() == 0) continue;
+                        if (line.startsWith("#EXTINF")) {
+                            int comma = line.lastIndexOf(',');
+                            name = comma >= 0 ? line.substring(comma + 1).trim() : "Kanal";
+                        } else if (!line.startsWith("#") && line.startsWith("http")) {
+                            Prefs.addCustomTv(SettingsActivity.this,
+                                    name == null || name.length() == 0 ? "Kendi kanalım" : name, line);
+                            added++;
+                            name = null;
+                        }
+                    }
+                    r.close();
+                } catch (Exception ignored) { }
+                final int n = added;
+                runOnUiThread(new Runnable() {
+                    @Override public void run() {
+                        ChannelRepo.reload(SettingsActivity.this);
+                        toast(n == 0 ? "Listede uygun kanal bulunamadı"
+                                : n + " kanal eklendi · listenin başında");
+                    }
+                });
+            }
+        }, "m3u-import").start();
     }
 
     private void toast(String s) {

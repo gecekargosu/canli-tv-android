@@ -58,6 +58,10 @@ public class PlayerActivity extends android.app.Activity {
     private boolean locked = false;
     private boolean screenOffAudio = false;
     private boolean muted = false;
+    /** Donma denetimi: son bilinen konum ve son yeniden başlatma zamanı. */
+    private int lastPos = -1;
+    private long lastPosAt = 0;
+    private long lastRestart = 0;
     private android.media.MediaPlayer mp;
     private TextView lockHint;
     private TextView muteBtn;
@@ -332,8 +336,8 @@ public class PlayerActivity extends android.app.Activity {
         root.setLayoutParams(new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
         outer.addView(root);
-        outer.addView(AdManager.rewardStrip(this,
-                index >= 0 && index < list.size() ? list.get(index).url : null));
+        // Reklam kuralı (v9.25): kanal başına "20 dk reklamsız" şeridi kaldırıldı.
+        // Banner her zaman görünür; geçiş reklamı her kanal değişiminde ve 15 dakikada bir.
         android.view.View adBar = AdManager.banner(this);
         if (adBar != null) outer.addView(adBar);
         outer.setOnApplyWindowInsetsListener(new View.OnApplyWindowInsetsListener() {
@@ -375,7 +379,8 @@ public class PlayerActivity extends android.app.Activity {
                             "Yedek kaynak deneniyor…", Toast.LENGTH_SHORT).show();
                     errorView.setVisibility(View.GONE);
                     try {
-                        video.setVideoPath(alt);
+                        video.stopPlayback();
+                        video.setVideoURI(android.net.Uri.parse(alt), Net.playerHeaders());
                         video.start();
                         return true;
                     } catch (Throwable ignored) { }
@@ -413,9 +418,28 @@ public class PlayerActivity extends android.app.Activity {
             clockBar.setText(s + "\n📶 " + Net.mb(Prefs.todayBytes(PlayerActivity.this)
                     + Net.sessionSoFar()) + " bugün");
             checkLimit();
+            checkStall();
+            AdManager.maybeTimerAd(PlayerActivity.this);
             ui.postDelayed(this, 1000);
         }
     };
+
+    /**
+     * Donan yayını kurtar: konum 15 saniye ilerlemezse oynatıcıyı taze playlist ile
+     * yeniden başlatır (canlı kenara döner). TV8'in uzun reklam kuşağında da kendini toparlar.
+     */
+    private void checkStall() {
+        try {
+            if (!video.isPlaying()) return;
+            long now = System.currentTimeMillis();
+            int pos = video.getCurrentPosition();
+            if (pos != lastPos) { lastPos = pos; lastPosAt = now; return; }
+            if (now - lastPosAt < 15000 || now - lastRestart < 20000) return;
+            lastRestart = now;
+            lastPosAt = now;
+            play();
+        } catch (Exception ignored) { }
+    }
 
     /** Limit dolduysa sorar: devam edilsin mi? */
     private void checkLimit() {
@@ -644,8 +668,11 @@ public class PlayerActivity extends android.app.Activity {
         errorView.setVisibility(View.GONE);
         try { video.stopPlayback(); } catch (Exception ignored) { }
         mp = null;
-        video.setVideoPath(url);
+        // Tarayıcı UA'sı: TV8 gibi CDN'ler aksi hâlde reklam kuşağı klibi döndürüyor.
+        video.setVideoURI(android.net.Uri.parse(url), Net.playerHeaders());
         video.requestFocus();
+        lastPos = -1;
+        lastPosAt = System.currentTimeMillis();
         ui.removeCallbacks(watchdog);
         ui.postDelayed(watchdog, 13000);
     }
@@ -719,7 +746,13 @@ public class PlayerActivity extends android.app.Activity {
         finishUsage();
         ui.removeCallbacks(watchdog);
         index = (index + d + list.size()) % list.size();
-        show();
+        // v9.25: her kanal değişiminde geçiş reklamı (varsa) gösterilir.
+        final Channel next = list.get(index);
+        AdManager.maybeInterstitial(this, next.url, new Runnable() {
+            @Override public void run() {
+                if (!isFinishing()) show();
+            }
+        });
     }
 
     private void toggleFav() {

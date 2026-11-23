@@ -197,7 +197,11 @@ doğruysa düzeltildi ya da sıraya alındı, yanlışsa not düşüldü.
 47 | Radyo çalar üst barı yazılı/büyük + dikey başlık kaldırıldı | ✅ |
 48 | Banner sistem gezinme çubuğunun üstünde | ✅ |
 99 | **P0-1/2:** Sunucuda izin listesi (allowlist) — ülke listeleri uygulamaya filtrelenmiş JSON olarak gelsin | Ham iptv-org indirmesi kaldırılacak | ⏳ |
-100 | **P0-1/4:** Ayarlar → "Telif/İçerik bildir" e-postası + 24-48 saat kaldırma süreci | Play Fikri Mülkiyet politikası için | ⏳ |
-101 | **Good-listesi günlük tazeleme** (açılışta günde 1 kez sunucudan `good/<cc>.json`) | Donuk liste sorunu | ⏳ |
-102 | **TV için kendi M3U/URL ekleme** (#79'un TV ayağı) | Radyoda var (#75) | ⏳ |
-103 | **Yedek kaynakları tüm kanallara yay** (ATV dışındakiler için 2. kaynak toplama) | #42 altyapısı hazır | ⏳ |
+100 | **P0-1/4:** Ayarlar → "Telif/İçerik bildir" e-postası + 24-48 saat kaldırma süreci | Play Fikri Mülkiyet politikası için | ✅ v9.25 |
+101 | **Good-listesi günlük tazeleme** (açılışta günde 1 kez sunucudan `good/<cc>.json`) | Donuk liste sorunu | ✅ v9.25 |
+102 | **TV için kendi M3U/URL ekleme** (#79'un TV ayağı) | Radyoda var (#75) | ✅ v9.25 |
+103 | **Yedek kaynakları tüm kanallara yay** (ATV dışındakiler için 2. kaynak toplama) | #42 altyapısı hazır | ◐ v9.25 (TV8/ATV/Show/KanalD/Now) |
+
+104 | **Izgarada boş pencere** (ATV ortada açılmıyordu) | ✅ v9.25 — pencereler tek `reloadGen` sayacını paylaşıyordu; bir pencere hazırlanınca diğerlerinin callback'i iptal oluyordu. Her pencereye kendi nesil sayacı + 3 sn'lik sağlık denetimi (hazırlanmayan / görüntü vermeyen / donan yayını yedek kaynak ve taze playlist ile yeniden başlatır) | Izgara artık kendini toparlıyor |
+105 | **TV8 reklam kuşağında takılma** | ✅ v9.25 — TV8'in "dijital reklam kuşağı" karesi yayıncı tarafında (Daion SSAI); uygulama artık 12 sn ilerlemeyen yayını taze playlist ile yeniden başlatıyor, hata olursa TürkNet/ERC yansısına geçiyor. Oynatıcılara tarayıcı UA'sı eklendi | Reklam arası bitince yayın kendiliğinden dönüyor |
+106 | **Reklam kuralı değişti** (kullanıcı isteği) | ✅ v9.25 — kanal başına 20 dk reklamsız kaldırıldı; uygulama geneli 15 dk. İzlerken 15 dakikada bir + her kanal değişiminde geçiş reklamı. Oyuncu/liste altındaki çift "Reklam izle" şeridi kaldırıldı, banner her zaman görünür | AdMob politikası: 20 sn alt sınır |

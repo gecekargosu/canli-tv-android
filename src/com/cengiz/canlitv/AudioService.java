@@ -206,7 +206,9 @@ public class AudioService extends Service {
             player.setAudioAttributes(new AudioAttributes.Builder()
                     .setUsage(AudioAttributes.USAGE_MEDIA)
                     .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC).build());
-            player.setDataSource(candidate);
+            // Tarayıcı UA'sı: bazı CDN'ler aksi hâlde reklam kuşağı klibi döndürüyor.
+            player.setDataSource(AudioService.this, android.net.Uri.parse(candidate),
+                    Net.playerHeaders());
             player.prepareAsync();
             android.util.Log.i("UmayRadio", "deneme " + attempt + ": " + candidate);
             final MediaPlayer p = player;
