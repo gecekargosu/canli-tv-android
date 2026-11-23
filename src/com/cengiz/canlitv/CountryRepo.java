@@ -108,7 +108,9 @@ public class CountryRepo {
             if (check.isEmpty()) { tmp.delete(); return false; }
             File target = cacheFile(ctx, cc);
             if (target.exists()) target.delete();
-            return tmp.renameTo(target);
+            boolean ok = tmp.renameTo(target);
+            if (ok) fetchGood(ctx, cc);   // "calisan kanallar" listesi (varsa)
+            return ok;
         } catch (Exception e) {
             tmp.delete();
             return false;
@@ -117,8 +119,34 @@ public class CountryRepo {
         }
     }
 
+    /** Sunucudaki doğrulanmış kanal listesini indirir (site/public/good/<cc>.json). */
+    public static void fetchGood(Context ctx, String cc) {
+        HttpURLConnection con = null;
+        try {
+            con = (HttpURLConnection) new URL(
+                    "https://umay-multi-tv-gq3zer.freebuff.site/good/" + cc + ".json").openConnection();
+            con.setConnectTimeout(8000);
+            con.setReadTimeout(8000);
+            con.setRequestProperty("User-Agent", "UMAYMultiTV/9.11");
+            if (con.getResponseCode() != 200) return;
+            InputStream in = con.getInputStream();
+            File tmp = new File(ctx.getFilesDir(), "good_" + cc + ".tmp");
+            FileOutputStream out = new FileOutputStream(tmp);
+            byte[] buf = new byte[8192];
+            int n;
+            while ((n = in.read(buf)) > 0) out.write(buf, 0, n);
+            out.close();
+            in.close();
+            File target = new File(ctx.getFilesDir(), "good_" + cc + ".json");
+            if (target.exists()) target.delete();
+            tmp.renameTo(target);
+        } catch (Exception ignored) { }
+        finally { if (con != null) try { con.disconnect(); } catch (Exception ignored) { } }
+    }
+
     public static void clear(Context ctx, String cc) {
         cacheFile(ctx, cc).delete();
+        new File(ctx.getFilesDir(), "good_" + cc + ".json").delete();
     }
 
     private static String attr(String line, String key, String def) {
