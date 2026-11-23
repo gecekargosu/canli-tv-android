@@ -57,13 +57,13 @@ public final class RadioRepo {
         URLS.clear();
 
         if ("tr".equals(cc)) {
-            readStream(openAsset(c));
+            readStream(c, openAsset(c));
             return;
         }
         File f = cacheFile(c, cc);
         if (f.exists()) {
             try {
-                readStream(new java.io.FileInputStream(f));
+                readStream(c, new java.io.FileInputStream(f));
                 return;
             } catch (Exception e) {
                 Log.w(TAG, "onbellek okunamadi: " + e);
@@ -92,7 +92,7 @@ public final class RadioRepo {
         }
     }
 
-    private static void readStream(java.io.InputStream in) {
+    private static void readStream(Context c, java.io.InputStream in) {
         if (in == null) return;
         try {
             BufferedReader r = new BufferedReader(new InputStreamReader(in, "UTF-8"));
@@ -103,6 +103,8 @@ public final class RadioRepo {
                 if (line.startsWith("#EXTINF")) {
                     info = line.substring(line.indexOf(',') + 1).trim();
                 } else if (!line.startsWith("#") && info != null) {
+                    // 2 kez açılmayan istasyon listeden kalkar (TV ile aynı kural)
+                    if (Prefs.hideDead(c) && Prefs.fails(c, line) >= 2) { info = null; continue; }
                     String[] p = info.split("\\|");
                     NAMES.add(p.length > 0 ? p[0].trim() : "Radyo");
                     META.add(p.length > 1 ? (p[1].trim() + (p.length > 2 ? " · " + p[2].trim() : ""))

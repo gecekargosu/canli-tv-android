@@ -100,7 +100,9 @@ Son güncelleme: 23 Kasım 2026 (v9.4)
 66 | **Banner her zaman görünür** (reklamsız sürede de) + **20 dk ödül kanal/istasyon bazlı** | ✅ (v9.12) |
 67 | **Yetişkin/erotik reklam engeli** — kod: `setMaxAdContentRating(G)` (v9.13) | ✅ kod tarafı; her istekte geçerli |
 68 | **AdMob paneli: Hassas kategoriler** → Flört + Cinsel içerik kapat | ⏳ (panel adımı; "Engelleme kontrolleri" sayfası açık) |
-69 | **Reklam inceleme merkezi** ile şikayet edilen reklamı tek tek engelle | ⏳ (Afterglow gibi spesifik reklamlar için) |
+69 | **Reklam inceleme merkezi** ile şikayet edilen reklamı tek tek engelle | ⏳ (Afterglow gibi spesifik reklamlar için)
+70 | **Radyoda ölü istasyonu listeden kaldır** — #41 | ✅ (v9.14)
+71 | **TR eksik kanallar** — #60 | ⚠️ kısmen: TRT Çocuk/Müzik zaten var; Show TV, Now TV, TV100, Teve2 kaynakta yok (doğrulanmış link gerekli) |
 
 ## H. ÖNCELİK SIRASI (revize — 23 Kasım 2026, v9.10 sonrası)
 
