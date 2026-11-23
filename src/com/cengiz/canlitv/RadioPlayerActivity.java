@@ -55,6 +55,12 @@ public class RadioPlayerActivity extends Activity {
 
     @Override
     protected void onCreate(Bundle b) {
+        // P0-5i: radyodan arka plan çalmaya geçerken de bildirim izni istensin.
+        if (android.os.Build.VERSION.SDK_INT >= 33
+                && checkSelfPermission("android.permission.POST_NOTIFICATIONS")
+                != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(new String[]{"android.permission.POST_NOTIFICATIONS"}, 13);
+        }
         super.onCreate(b);
         load();
         index = Math.max(0, Math.min(names.size() - 1, getIntent().getIntExtra("index", 0)));

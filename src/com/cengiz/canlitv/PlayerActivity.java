@@ -654,13 +654,20 @@ public class PlayerActivity extends android.app.Activity {
         screenOffAudio = false;
         progress.setVisibility(View.VISIBLE);
         errorView.setVisibility(View.GONE);
-        Quality.resolve(this, c.url, new Quality.UrlCallback() {
-            @Override public void onUrl(final String url) {
-                runOnUiThread(new Runnable() {
-                    @Override public void run() { startVideo(url); }
+        // Önce 302 zincirini çöz (Kral Pop gibi jetonlu CDN'ler), SONRA kalite seç:
+        // varyant adresleri son adrese göre çözülmeli, yoksa 404 oluyor.
+        new Thread(new Runnable() {
+            @Override public void run() {
+                final String direct = Net.follow(c.url);
+                Quality.resolve(PlayerActivity.this, direct, new Quality.UrlCallback() {
+                    @Override public void onUrl(final String url) {
+                        runOnUiThread(new Runnable() {
+                            @Override public void run() { startVideo(url); }
+                        });
+                    }
                 });
             }
-        });
+        }, "follow").start();
     }
 
     private void startVideo(String url) {

@@ -78,6 +78,34 @@ public class Net {
             "Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 "
                     + "(KHTML, like Gecko) Chrome/120.0 Mobile Safari/537.36";
 
+    /**
+     * 302/301 yönlendirmelerini kendisi takip eder ve son adresi döndürür.
+     * Bazı CDN'ler (ör. DYG/Kral Pop) jetonlu adrese yönlendiriyor; Android
+     * MediaPlayer bu zinciri çözemediği için kanal "açılamadı" görünüyordu.
+     */
+    public static String follow(String url) {
+        if (url == null || !url.startsWith("http")) return url;
+        String cur = url;
+        try {
+            for (int i = 0; i < 4; i++) {
+                java.net.HttpURLConnection c =
+                        (java.net.HttpURLConnection) new java.net.URL(cur).openConnection();
+                c.setInstanceFollowRedirects(false);
+                c.setConnectTimeout(6000);
+                c.setReadTimeout(6000);
+                c.setRequestProperty("User-Agent", PLAYER_UA);
+                c.setRequestProperty("Accept", "*/*");
+                int code = c.getResponseCode();
+                String loc = c.getHeaderField("Location");
+                c.disconnect();
+                if (code >= 300 && code < 400 && loc != null && loc.length() > 0) {
+                    cur = loc.startsWith("http") ? loc : new java.net.URL(new java.net.URL(cur), loc).toString();
+                } else break;
+            }
+        } catch (Exception ignored) { }
+        return cur;
+    }
+
     public static java.util.Map<String, String> playerHeaders() {
         java.util.Map<String, String> h = new java.util.HashMap<String, String>();
         h.put("User-Agent", PLAYER_UA);

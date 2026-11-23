@@ -5,10 +5,14 @@ import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.graphics.drawable.Icon;
 import android.media.AudioAttributes;
+import android.media.AudioFocusRequest;
+import android.media.AudioManager;
 import android.media.MediaMetadata;
 import android.media.MediaPlayer;
 import android.media.session.MediaSession;
@@ -37,6 +41,13 @@ public class AudioService extends Service {
     private PowerManager.WakeLock wakeLock;
     private WifiManager.WifiLock wifiLock;
     private boolean paused = false;
+
+    // P0-5d: ses odağı + kulaklık çıkarma. Önceden yoktu: arama gelince veya kulaklık
+    // çıkınca yayın hoparlörden devam ediyor, başka uygulamayla ses üst üste biniyordu.
+    private AudioManager audioManager;
+    private AudioFocusRequest focusRequest;
+    private boolean resumeOnFocus = false;
+    private BroadcastReceiver noisyReceiver;
 
     // --- gercek ekolayzir (AudioEffect) ---
     private static android.media.audiofx.Equalizer eq;
@@ -98,6 +109,12 @@ public class AudioService extends Service {
     }
 
     @Override
+    public void onCreate() {
+        super.onCreate();
+        registerNoisyReceiver();
+    }
+
+    @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         if (intent == null) return START_NOT_STICKY;
         String action = intent.getStringExtra("action");
@@ -122,6 +139,7 @@ public class AudioService extends Service {
         if (url != null) {
             name = intent.getStringExtra("name") == null ? "Umay Multi TV" : intent.getStringExtra("name");
             currentUrl = url;
+            requestFocus();
             playUrl(url);
         }
         return START_STICKY;
@@ -179,11 +197,91 @@ public class AudioService extends Service {
     private void toggle() {
         try {
             if (player == null) return;
-            if (player.isPlaying()) { player.pause(); paused = true; }
-            else { player.start(); paused = false; }
+            if (player.isPlaying()) pause(); else resume();
+        } catch (Exception ignored) { }
+    }
+
+    private void pause() {
+        try {
+            if (player != null && player.isPlaying()) player.pause();
+            paused = true;
             updateState();
             startForeground(NOTIF_ID, notification());
         } catch (Exception ignored) { }
+    }
+
+    private void resume() {
+        try {
+            if (player == null) return;
+            requestFocus();
+            player.start();
+            paused = false;
+            updateState();
+            startForeground(NOTIF_ID, notification());
+        } catch (Exception ignored) { }
+    }
+
+    /** Ses odağı ister: arama/başka uygulama sesi öne geçebilsin. */
+    private void requestFocus() {
+        try {
+            if (audioManager == null) audioManager = (AudioManager) getSystemService(AUDIO_SERVICE);
+            if (audioManager == null) return;
+            if (focusRequest == null) {
+                focusRequest = new AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
+                        .setAudioAttributes(new AudioAttributes.Builder()
+                                .setUsage(AudioAttributes.USAGE_MEDIA)
+                                .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC).build())
+                        .setOnAudioFocusChangeListener(
+                                new AudioManager.OnAudioFocusChangeListener() {
+                                    @Override public void onAudioFocusChange(int change) {
+                                        try {
+                                            switch (change) {
+                                                case AudioManager.AUDIOFOCUS_LOSS:
+                                                    resumeOnFocus = false;
+                                                    pause();
+                                                    break;
+                                                case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT:
+                                                    resumeOnFocus = true;
+                                                    pause();
+                                                    break;
+                                                case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK:
+                                                    if (player != null) player.setVolume(0.2f, 0.2f);
+                                                    break;
+                                                case AudioManager.AUDIOFOCUS_GAIN:
+                                                    if (player != null) player.setVolume(1f, 1f);
+                                                    if (resumeOnFocus) { resumeOnFocus = false; resume(); }
+                                                    break;
+                                            }
+                                        } catch (Exception ignored) { }
+                                    }
+                                }).build();
+            }
+            audioManager.requestAudioFocus(focusRequest);
+        } catch (Throwable ignored) { }
+    }
+
+    private void abandonFocus() {
+        try {
+            if (audioManager != null && focusRequest != null)
+                audioManager.abandonAudioFocusRequest(focusRequest);
+        } catch (Throwable ignored) { }
+    }
+
+    /** Kulaklık çıkınca yayını duraklat (hoparlörden yüksek sesle devam etmesin). */
+    private void registerNoisyReceiver() {
+        if (noisyReceiver != null) return;
+        noisyReceiver = new BroadcastReceiver() {
+            @Override public void onReceive(Context c, Intent i) {
+                if (i != null && AudioManager.ACTION_AUDIO_BECOMING_NOISY.equals(i.getAction())) {
+                    resumeOnFocus = false;
+                    pause();
+                }
+            }
+        };
+        try {
+            registerReceiver(noisyReceiver,
+                    new IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY));
+        } catch (Throwable ignored) { }
     }
 
     private int attempt = 0;
@@ -193,12 +291,12 @@ public class AudioService extends Service {
         attemptPlay(url);
     }
 
-    /**
-     * Bazi cihazlarda MediaPlayer https radyo akisinda takilip kaliyor;
-     * 7 saniyede acilmazsa ayni adres http:// ile tekrar denenir.
+        /**
+     * Yayını açar. Takılırsa **aynı (güvenli) adres** bir kez daha denenir; v9.26'dan
+     * itibaren şifresiz http:// adresine düşülmüyor (P0-5g: içerik bütünlüğü).
      */
     private void attemptPlay(final String url) {
-        final String candidate = attempt == 0 ? url : url.replace("https://", "http://");
+        final String candidate = url;
         releasePlayer();
         paused = false;
         try {
@@ -219,9 +317,9 @@ public class AudioService extends Service {
                         boolean playing = false;
                         try { playing = p.isPlaying(); } catch (Exception ignored) { }
                         if (playing) return;
-                        if (attempt == 0 && candidate.startsWith("https://")) {
+                        if (attempt == 0) {
                             attempt = 1;
-                            android.util.Log.w("UmayRadio", "https takildi, http deneniyor");
+                            android.util.Log.w("UmayRadio", "yayin takildi, ayni adres tekrar deneniyor");
                             attemptPlay(currentUrl);
                         } else {
                             android.util.Log.w("UmayRadio", "yayin acilmadi: " + candidate);
@@ -259,7 +357,8 @@ public class AudioService extends Service {
                 PowerManager pm = (PowerManager) getSystemService(POWER_SERVICE);
                 wakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "umay:audio");
                 wakeLock.setReferenceCounted(false);
-                wakeLock.acquire();
+                // P0-5f: süresiz kilit pili bitiriyordu; en fazla 3 saat tut.
+                wakeLock.acquire(3L * 60L * 60L * 1000L);
             }
             if (wifiLock == null) {
                 WifiManager wm = (WifiManager) getApplicationContext()
@@ -267,7 +366,7 @@ public class AudioService extends Service {
                 if (wm != null) {
                     wifiLock = wm.createWifiLock(WifiManager.WIFI_MODE_FULL_HIGH_PERF, "umay:wifi");
                     wifiLock.setReferenceCounted(false);
-                    wifiLock.acquire();
+                    wifiLock.acquire();   // servis kapanınca onDestroy'da bırakılır
                 }
             }
         } catch (Exception ignored) { }
@@ -364,6 +463,9 @@ public class AudioService extends Service {
     @Override
     public void onDestroy() {
         INSTANCE = null;
+        abandonFocus();
+        try { if (noisyReceiver != null) { unregisterReceiver(noisyReceiver); noisyReceiver = null; } }
+        catch (Throwable ignored) { }
         try { if (eq != null) { eq.release(); eq = null; } } catch (Throwable ignored) { }
         releasePlayer();
         try { if (session != null) { session.setActive(false); session.release(); session = null; } } catch (Exception ignored) { }

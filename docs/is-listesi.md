@@ -205,3 +205,41 @@ doğruysa düzeltildi ya da sıraya alındı, yanlışsa not düşüldü.
 104 | **Izgarada boş pencere** (ATV ortada açılmıyordu) | ✅ v9.25 — pencereler tek `reloadGen` sayacını paylaşıyordu; bir pencere hazırlanınca diğerlerinin callback'i iptal oluyordu. Her pencereye kendi nesil sayacı + 3 sn'lik sağlık denetimi (hazırlanmayan / görüntü vermeyen / donan yayını yedek kaynak ve taze playlist ile yeniden başlatır) | Izgara artık kendini toparlıyor |
 105 | **TV8 reklam kuşağında takılma** | ✅ v9.25 — TV8'in "dijital reklam kuşağı" karesi yayıncı tarafında (Daion SSAI); uygulama artık 12 sn ilerlemeyen yayını taze playlist ile yeniden başlatıyor, hata olursa TürkNet/ERC yansısına geçiyor. Oynatıcılara tarayıcı UA'sı eklendi | Reklam arası bitince yayın kendiliğinden dönüyor |
 106 | **Reklam kuralı değişti** (kullanıcı isteği) | ✅ v9.25 — kanal başına 20 dk reklamsız kaldırıldı; uygulama geneli 15 dk. İzlerken 15 dakikada bir + her kanal değişiminde geçiş reklamı. Oyuncu/liste altındaki çift "Reklam izle" şeridi kaldırıldı, banner her zaman görünür | AdMob politikası: 20 sn alt sınır |
+
+---
+
+## v9.26 — KONUŞMA ANALİZİ SONRASI İŞ LİSTESİ (#107–#130)
+
+Kaynak: `docs/KONUSMA-ANALIZI-2026-11-23.md` (91 kullanıcı isteği, A/B/C/D/E listeleri).
+Durum: 23 Kasım 2026, v9.26 (versionCode 35).
+
+### P0 — Riski kapatan işler
+
+| # | İş | Durum |
+|---|---|---|
+| 107 | ExoPlayer/media3'e geçiş (AGP 9 sonrası MediaPlayer riski) | ⏳ |
+| 108 | Sunucu allowlist: uygulama yalnız kendi `good/<cc>.json` listesini kullansın (#99 kalanı) | ⏳ |
+| 109 | Ses servisi kalanları | ◐ v9.26 — audio focus, kulaklık çıkarma, 3 saat wake lock, http düşürmesi kaldırıldı, `isFinishing`, bildirim izni eklendi; **kalan:** bildirim ikonu/dili (h) |
+| 110 | Keystore şifre rotasyonu + Play App Signing | ⛔ Play Console (kullanıcı) |
+| 111 | APK'yı release anahtarıyla imzalama (debug anahtarı yerine) | ⏳ |
+| 113 | app-ads.txt kök alan adı (reklamveren doğrulaması) | ⛔ alan adı (kullanıcı) |
+| 114 | Play Veri Güvenliği formu | ⛔ kullanıcı |
+| 115 | Hukuki telif görüşü | ⛔ avukat (kullanıcı) |
+| 116 | Play yayını | ⛔ geliştirici kimliği onayı (kullanıcı) |
+| 117 | Bildirim izni akışı (Android 13+) | ✅ v9.26 |
+| 118 | Yedekleme kapatma (`allowBackup=false`) | ✅ v9.26 |
+| 119 | Kanal listesi temizliği (12 ölü çıkarıldı, TRT Muzik yinelenen kayıt silindi) | ✅ v9.26 — 157 → 144 |
+| 120 | Kral Pop TV kaynağı + 302 yönlendirme takibi | ✅ v9.26 |
+| 121 | Çentik/yan ekran testi (yatay oynatıcı) | ⏳ |
+| 122 | İlk açılışta izin/onay akışı gözden geçirme | ⏳ |
+| 123 | Uygulama boyutu (şu an 5,1 MB APK) | ⏳ |
+| 124 | Reklam gelirini ölçme (AdMob → Firebase/Analytics) | ⏳ |
+| 125 | Yedek kaynakları tüm kanallara yay (#103 kalanı) | ◐ 5 kanal (TV8/ATV/Show/KanalD/NOW) |
+| 126 | Native reklam / mediation | ⏳ |
+| 127 | "Pro" abonelik | ⏳ |
+| 128 | Favoriler/ayarlar dışa-içe aktarma | ⏳ |
+| 129 | TalkBack / erişilebilirlik | ⏳ |
+| 130 | Açılışta iskelet liste (shimmer) | ⏳ |
+
+**Not:** #112 (kaynak sağlığını otomatikleştirme) v9.26'daki tam kanal taramasıyla karşılandı sayılabilir;
+`_build/saglik2.tsv` üretimi tekrar kullanılabilir.

@@ -193,6 +193,12 @@ public class MultiActivity extends android.app.Activity {
         Net.begin();
         ui.post(tick);
         hideControlsSoon();
+        // P0-5i: ızgaradan arka plan sesine geçerken de bildirim izni istensin.
+        if (android.os.Build.VERSION.SDK_INT >= 33
+                && checkSelfPermission("android.permission.POST_NOTIFICATIONS")
+                != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(new String[]{"android.permission.POST_NOTIFICATIONS"}, 12);
+        }
         if (Net.mobile(this) && !Prefs.mobileOk(this)) {
             new AlertDialog.Builder(this).setTitle("Mobil veri uyarısı")
                     .setMessage("Wi-Fi yok. Çoklu ekran mobil veride hızlı tüketir.\n\nBugün: "
@@ -718,6 +724,8 @@ public class MultiActivity extends android.app.Activity {
     protected void onPause() {
         super.onPause();
         foreground = false;
+        // P0-5c: kapatınca/geri basınca arkada ses devam etmesin.
+        if (isFinishing()) return;
         if (tracking) {
             tracking = false;
             long bytes = Net.end();
