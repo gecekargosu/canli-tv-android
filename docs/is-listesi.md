@@ -1,7 +1,25 @@
 # UMAY Multi TV — ana iş listesi (oturum oturum)
 
-Durum: ✅ bitti · 🔄 sürüyor · ⏳ sırada · ⛔ engel (dışarıya bağlı) · ❌ yapılmayacak
-Son güncelleme: 23 Kasım 2026 (v9.4)
+Durum: ✅ bitti · ⚠️ kısmen · ⏳ sırada · ⛔ engel (dışarıya bağlı) · ❌ yapılmayacak
+Son güncelleme: 23 Kasım 2026 (v9.16 sonrası **denetim** — 8 madde kodla, 3 madde cihazda doğrulandı)
+
+## 0. SAYAÇ (v9.16, denetimden sonra)
+
+| Durum | Adet |
+|---|---|
+| ✅ Bitti | **39** |
+| ⚠️ Kısmen | **2** (#60, #71 — kaynak yok) |
+| ⛔ Engelli (dışarıya bağlı) | **6** (#20, #21, #22, #34, #35, #36) |
+| ⏳ Sırada | **28** |
+| **Toplam** | **75** |
+
+**Denetim notu (23 Kas 2026):** aşağıdaki maddeler kodda tek tek kontrol edildi —
+#67 `AdManager.init` içinde `setMaxAdContentRating(G)` ✅ · #66 `banner()` içinde `isAdFree` kontrolü yok (her zaman görünür) + `isAdFreeFor(key)` kanal bazlı ✅ ·
+#70 `RadioRepo.readStream` içinde `Prefs.fails(url) >= 2` filtresi ✅ · #74 `RadioRepo.sortPopular` + `Popular.radioRank` ✅ ·
+#64 `_build/good.py` + `Good.java` + `site/public/good/*.json` ✅ · #62 `MainActivity` içinde `ipapi.co` ✅ · #63 `rewardStrip` + `REWARD_MINUTES=20` ✅.
+Cihazda: v9.15 oynatıcı yerleşimi, v9.16 radyo sırası, banner'ın gezinme çubuğu üstünde olması ✅.
+**Yanlış işaretlenen bir madde bulunmadı**; ancak #38, #40, #41, #58 daha önce ⏳ kalmıştı, gerçekte
+#62/#74/#70 ile bitmişlerdi — bu turda ✅ yapıldı.
 
 ## A. Bitti
 
@@ -70,10 +88,10 @@ Son güncelleme: 23 Kasım 2026 (v9.4)
 35 | **AdMob app-ads.txt doğrulaması** | Mağaza linki eklenince kendiliğinden doğrulanır | ⛔ |
 36 | **Play formları (12 adım)** | Kimlik onayı açılınca birlikte doldurulacak | ⛔ |
 37 | **Worker cron: günlük yayın sağlık taraması** → `known-good` listesi | Açılmayan kanal sorununun kök çözümü; istemci ölü link indirmez | ⏳ (sıradaki #1) |
-38 | **IP'den ülke tespiti** (`ipapi.co/json`) + ilk açılışta öneri/otomatik seçim | Yurt dışındaki kullanıcı doğru listeyi görsün | ⏳ |
+38 | **IP'den ülke tespiti** (`ipapi.co/json`) + ilk açılışta öneri/otomatik seçim | Yurt dışındaki kullanıcı doğru listeyi görsün | ✅ #62 ile (v9.9) |
 39 | **Oynatıcıyı ExoPlayer'a taşıma denemesi** | VideoView/MediaPlayer bazı HLS+AAC yayınlarını açmıyor; ExoPlayer uyumluluğu çok daha yüksek | ⏳ |
-40 | **Radyo listesini popülerliğe göre sıralama** (TR gömülü liste) | TV'de yapıldı, radyoda kaldı | ⏳ |
-41 | **Radyo çalarda otomatik sonraki istasyon** | İstasyon açılmazsa 2 sn sonra sıradakine geçsin | ⏳ |
+40 | **Radyo listesini popülerliğe göre sıralama** (TR gömülü liste) | TV'de yapıldı, radyoda kaldı | ✅ #74 ile (v9.16) |
+41 | **Radyo çalarda otomatik sonraki istasyon** + listeden kalkma | 9 sn watchdog (v9.8) + 2 hatada listeden gizle (v9.14) | ✅ #70 ile |
 42 | **Yedek (mirror) URL alanı** | Aynı kanalın 2-3 kaynağı; biri ölünce sıradaki denenir | ⏳ |
 49 | **Otomatik A'dan Z'ye test: Firebase Test Lab (Roboflow)** | Gerçek cihazda kendi kendine tıklar, çökme/ekran görüntüsü raporu verir; Google hesabı + faturalama ister | ⏳ |
 50 | **Appetize.io** ile tarayıcıda APK çalıştırma | ✅ v9.7 Pixel 7 / Android 13'te açıldı, liste + banner + veri satırı göründü (23 Kas 2026). Tarayıcıdan tıklama sadece kullanıcı faresiyle yapılabiliyor | ✅ |
@@ -84,9 +102,9 @@ Son güncelleme: 23 Kasım 2026 (v9.4)
 55 | **Ölü radyo istasyonunda otomatik sonraki istasyon** | 9 sn'de ses yoksa işaretle + geç (max 3) — "Radyo 7" gibi kayıtlar asılı kalmıyor | ✅ (v9.8) |
 56 | **Takılma (buffering) için oynatıcı tamponu** | Tampon süresini artır + takılınca otomatik kalite düşür; ExoPlayer (#39) ile birlikte | ⏳ |
 57 | **Cihaz matrisi testi** (Pixel 7 dışında: Android 8/10/12, küçük ekran 720×1280, tablet) | Appetize'da her cihaz 3 dk ücretsiz; sırayla denenmeli | ⏳ |
-58 | **TR listesine eksik ana kanalları ekle** (ATV, Show, Now, TRT 2, TRT Belgesel) | Sıralamada ilk 20 gerçekten "en çok izlenen" olsun | ⏳ |
+58 | **TR listesine eksik ana kanalları ekle** (ATV, Show, Now, TRT 2, TRT Belgesel) | ATV/TRT 2/TRT Belgesel listede; Show/Now kaynakta yok → #71 | ✅ (kalan #60'da) |
 59 | **Appetize yerine Firebase Test Lab** (gerçek cihaz, 3 dk sınırı yok) | A'dan Z'ye otomatik tur + çökme videosu | ⏳ |
-60 | **TR listesine gerçek yayın URL'siyle eksik kanallar** (Show, Now, TRT Müzik, TRT Çocuk, TV100, TVNET, Beyaz TV) | İsimler hazır ama doğrulanmış m3u8 linki gerekiyor | ⏳ |
+60 | **TR listesine gerçek yayın URL'siyle eksik kanallar** (Show, Now, TRT Müzik, TRT Çocuk, TV100, TVNET, Beyaz TV) | TRT Çocuk/Müzik listede vardı; Show/Now/TV100/Teve2 iptv-org'da yok; Beyaz/Kanal 7/TVNET linkleri ölü | ⚠️ #71 |
 
 ## G. v9.9'da tamamlananlar (23 Kasım 2026)
 
@@ -96,7 +114,7 @@ Son güncelleme: 23 Kasım 2026 (v9.4)
 62 | **IP'den ülke önerisi** (ilk açılışta tek sefer sorar, desteklenen 50 ülke) — iş listesi #38 | ✅ |
 63 | **Tek dokunuşla ödüllü video şeridi** ("▶ Reklam izle · 20 dk reklamsız", her ekranda) + süre 20 dk | ✅ (v9.10) |
 64 | **Doğrulanmış "çalışan kanallar" listesi (known-good)** — #37 | ✅ (v9.11): `_build/good.py` ülke listelerini dener, `site/public/good/<cc>.json` yayınlanır, uygulama indirir ve çalışanları başa alır. TR 89/90, DE 73/90, US 67/90 |
-65 | **Haftalık otomatik tazeleme** (bu taramayı cron'a bağla) | ⏳: şimdilik elle `python _build/good.py ...` + deploy |
+65 | **Haftalık otomatik tazeleme** (bu taramayı cron'a bağla) | ✅ `_build/haftalik.sh` (13 ülke + TR, özet yazar). Zamanlama/deploy hâlâ elle | 
 66 | **Banner her zaman görünür** (reklamsız sürede de) + **20 dk ödül kanal/istasyon bazlı** | ✅ (v9.12) |
 67 | **Yetişkin/erotik reklam engeli** — kod: `setMaxAdContentRating(G)` (v9.13) | ✅ kod tarafı; her istekte geçerli |
 68 | **AdMob paneli: Hassas kategoriler** → Flört + Cinsel içerik kapat | ⏳ (panel adımı; "Engelleme kontrolleri" sayfası açık) |
@@ -106,6 +124,8 @@ Son güncelleme: 23 Kasım 2026 (v9.4)
 72 | **TV oynatıcı yerleşimi** — şerit/banner video katmanının içindeydi, görüntü kayboluyordu | ✅ (v9.15)
 73 | **Banner sistem çubuğunun üstünde + dokunulabilir** (oynatıcı dahil) | ✅ (v9.15)
 74 | **Radyo popüler sıralama + marka başına tek** — #40 | ✅ (v9.16) |
+75 | **Listede olmayan kanal/istasyon araması** (kullanıcı arama çubuğuna yazınca internette aransın, çalışıyorsa listeye eklensin) | Şu an arama **yalnız yerel listeyi** süzüyor (#76 denetimi). Plan: radyo → radio-browser `?name=` araması (hazır API); TV → iptv-org ülke/global indeksinden isim araması + önbellek. Sıradaki iş | ⏳ |
+76 | **İş listesi denetimi** (kodda tek tek doğrulama + sayaç) | ✅ 23 Kas 2026: 8 madde kodla, 3 madde cihazda doğrulandı; #38/#40/#41/#58 yanlışlıkla ⏳ kalmıştı → ✅ |
 
 ## H. ÖNCELİK SIRASI (revize — 23 Kasım 2026, v9.10 sonrası)
 
