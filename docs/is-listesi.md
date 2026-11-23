@@ -86,6 +86,14 @@ Son güncelleme: 23 Kasım 2026 (v9.4)
 57 | **Cihaz matrisi testi** (Pixel 7 dışında: Android 8/10/12, küçük ekran 720×1280, tablet) | Appetize'da her cihaz 3 dk ücretsiz; sırayla denenmeli | ⏳ |
 58 | **TR listesine eksik ana kanalları ekle** (ATV, Show, Now, TRT 2, TRT Belgesel) | Sıralamada ilk 20 gerçekten "en çok izlenen" olsun | ⏳ |
 59 | **Appetize yerine Firebase Test Lab** (gerçek cihaz, 3 dk sınırı yok) | A'dan Z'ye otomatik tur + çökme videosu | ⏳ |
+60 | **TR listesine gerçek yayın URL'siyle eksik kanallar** (Show, Now, TRT Müzik, TRT Çocuk, TV100, TVNET, Beyaz TV) | İsimler hazır ama doğrulanmış m3u8 linki gerekiyor | ⏳ |
+
+## G. v9.9'da tamamlananlar (23 Kasım 2026)
+
+| # | İş | Durum |
+|---|---|---|
+61 | Popüler sıralamada parantezli asıl kanal öne (ATV, ATV Alanya'nın önünde) | ✅ |
+62 | **IP'den ülke önerisi** (ilk açılışta tek sefer sorar, desteklenen 50 ülke) — iş listesi #38 | ✅ |
 
 ## F. v9.7'de tamamlananlar (23 Kasım 2026)
 
