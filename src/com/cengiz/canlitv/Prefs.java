@@ -257,6 +257,15 @@ public class Prefs {
         return sp(c).getInt("limitMb", 0);
     }
 
+    /** Kaç kez kanal açıldı (ilk açılışta reklam göstermemek için). */
+    public static int channelOpens(Context c) {
+        return sp(c).getInt("chanOpens", 0);
+    }
+
+    public static void setChannelOpens(Context c, int n) {
+        sp(c).edit().putInt("chanOpens", n).apply();
+    }
+
     public static void setLimitMb(Context c, int mb) {
         sp(c).edit().putInt("limitMb", mb).apply();
     }

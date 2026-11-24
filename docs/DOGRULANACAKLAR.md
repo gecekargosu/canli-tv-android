@@ -173,11 +173,22 @@ dokunma + `uiautomator dump` + `logcat` + ekran görüntüsü. "Kanıt" sütunu 
 
 ## 24 Kasım 2026 — 9.65 hata analizi sonrası doğrulanacaklar
 
-- **D-34 (⏳):** Günlük veri limiti: 1 MB limit gir → kanal aç → uyarı diyalogu
-  ("devam et / vazgeç") ve sayaç sıfırlama.
+- **D-34 (✅ v9.66):** Günlük veri limiti 5 MB girildi → kanal açılışında
+  "Günlük veri limiti doldu · Limit: 5 MB / Kullanılan: 160,2 MB · Devam edilsin mi?"
+  diyalogu (Durdur / Devam et) ve başlıkta "⚠ LİMİT AŞILDI"; test sonunda limit "Yok"a
+  çevrildi. Sayaç sıfırlama (gün dönümü) denenmedi.
 - **D-35 (⏳):** Ölü kanal onarma: listeye yapay ölü URL eklenmiş test listesiyle
   `Repair.run` → "denendi / geri geldi" sayıları.
-- **D-36 (⏳):** "Sadece ses" modu: Wi-Fi kapalıyken ses çalıyor mu, veri sayacı
-  görüntü inmeden artıyor mu?
+- **D-36 (🟡 v9.66):** "Sadece ses" oynatıcıyı kapatıp `media_session` `PLAYING`
+  ile çalmaya devam etti; Wi-Fi kapalı senaryo ve "en düşük varyant" ekran kanıtı yok
+  (kod düzeyinde doğrulandı).
 - **D-37 (⏳):** Ödüllü reklam: kullanıcı elle izleyip "15 dk reklamsız" sayacının
   arttığını ve geçiş reklamının çıkmadığını doğrulamalı.
+
+### 16. yarı (v9.66) — medya motoru, onarım, reklam
+
+| # | Konu | Sonuç / kanıt |
+|---|------|----------------|
+| D-38 | İlk kanal açılışında reklam çıkıyor mu | **✅** yükleme sonrası 1. kanalda reklam yok; 2. kanalda tam ekran reklam normal geldi (`_build/y21s.png` TOD reklamı = 2. açılış). |
+| D-39 | Sadece ses gerçekten düşük veri mi | **🟡** yayın kesintisiz, `PLAYING`; veri farkı video moduna göre düşük ama tek rendition kanalda (3sat) kesin ayrım yapılamadı. |
+| D-40 | Ödül sonrası yayın baştan başlıyor mu | **⏳** ödüllü reklam ağı doldurmadı; kullanıcı elle denemeli. |

@@ -196,7 +196,18 @@ public class AudioService extends Service {
             name = intent.getStringExtra("name") == null ? "Umay Multi TV" : intent.getStringExtra("name");
             currentUrl = url;
             requestFocus();
-            playUrl(url);
+            // M-24: arka plan/"sadece ses" modunda master playlist verilince ABR 1080p'ye
+            // çıkabiliyordu; "en az veri" iddiası yanlıştı. Önce en düşük varyantı seç.
+            Quality.resolveLowest(this, url, new Quality.UrlCallback() {
+                @Override public void onUrl(final String resolved) {
+                    ui.post(new Runnable() {
+                        @Override public void run() {
+                            if (!url.equals(currentUrl)) return;   // bu arada başka istasyon seçildi
+                            playUrl(resolved != null ? resolved : url);
+                        }
+                    });
+                }
+            });
         }
         return START_STICKY;
     }

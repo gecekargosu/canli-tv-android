@@ -61,9 +61,9 @@ Durum işaretleri: ✅ bitti · 🔧 kod işi · 👤 kullanıcı/hesap işi · 
 |---|---|---|---|
 | M-20 | **Radyo + arka plan sesini Media3'e taşı** (`MediaSessionService`): bildirim, kilit ekranı, Bluetooth/araç tuşları, audio focus hazır gelir. Eski #147'nin yarısı. | Claude P0-5 / ChatGPT 4.1 | 🔧 (askıdaydı) |
 | M-21 | **Çoklu ekranı Media3'e taşı:** her pencere ExoPlayer, **sessiz pencerelere ≤480p tavan**, cihaz çözücü sınırı tespiti, pencere başına yeniden bağlanma. Eski #147. | Claude 3.1 / ChatGPT 5.3 | 🔧 (askıdaydı) |
-| M-22 | **Hızlı zap yarışı:** `playRequestId` sayacı; eski isteğin callback'i yeni kanalı ezmesin. | ChatGPT 5.2 | 🔧 |
-| M-23 | **Donma kontrolü:** `checkStall()` `isPlaying()` false iken çıkıyor → BUFFERING'de kör kalıyor. Durum makinesi (IDLE/BUFFERING/READY/ERROR) + tampon süresi + hata sayısı. | ChatGPT 5.1 | 🔧 |
-| M-24 | **Ekonomi modu gerçek ses tasarrufu:** arka plan servisi `Quality.resolveLowest()` kullanmıyor; muxed HLS'te video iniyorsa "yalnız ses" iddiası yanlış. Audio-only varyant varsa ona geç, yoksa kullanıcıya söyle. | ChatGPT 6 | 🔧 |
+| M-22 | **Hızlı zap yarışı:** `playRequestId` sayacı; eski isteğin callback'i yeni kanalı ezmesin. | ChatGPT 5.2 | ✅ v9.66 — kodda zaten vardı · cihazda doğrulandı |
+| M-23 | **Donma kontrolü:** `checkStall()` `isPlaying()` false iken çıkıyor → BUFFERING'de kör kalıyor. Durum makinesi (IDLE/BUFFERING/READY/ERROR) + tampon süresi + hata sayısı. | ChatGPT 5.1 | ✅ v9.66 — kodda zaten vardı · 12 sn eşiği |
+| M-24 | **Ekonomi modu gerçek ses tasarrufu:** arka plan servisi `Quality.resolveLowest()` kullanmıyor; muxed HLS'te video iniyorsa "yalnız ses" iddiası yanlış. Audio-only varyant varsa ona geç, yoksa kullanıcıya söyle. | ChatGPT 6 | ✅ v9.66 — `AudioService` → `resolveLowest` + istek kapısı |
 | M-25 | **Veri sayacı kapsamı:** radyo ve arka plan sesi ölçülmüyor; `checkLimit()` yalnız oynatıcıda. Ortak `UsageTracker` + tüm modlarda limit. | ChatGPT 7 | 🔧 |
 | M-26 | **Kayıt (HlsRecorder):** seçili kalite, AES-128, `EXT-X-MAP`, `EXT-X-BYTERANGE`, token başlıkları, bağlantı kopunca geri çekilme, boş alan kontrolü, kayıt öncesi boyut/süre bilgisi. | ChatGPT 9 / Claude 6 | 🔧 |
 | M-27 | PiP ve uyku zamanlayıcısını Media3 sonrası cihazda yeniden test et (v9.32'de denenmedi). | Claude 3.2 | 🧪 |
@@ -75,7 +75,7 @@ Durum işaretleri: ✅ bitti · 🔧 kod işi · 👤 kullanıcı/hesap işi · 
 | No | İş | Kaynak | Durum |
 |---|---|---|---|
 | M-28 | **`Good.refreshIfNeeded` hata:** gün damgası indirme başarılı olmadan yazılıyor → o gün bir daha denenmiyor. Damga yalnız başarılı indirme + doğrulama sonrası. | ChatGPT 8.1 | 🔧 |
-| M-29 | **Sağlık kontrolü 3 seviye:** HTTP → playlist → **gerçek segment** indirme; `Repair.alive()` şu an yalnız playlist bakıyor. | ChatGPT 8.2 | 🔧 |
+| M-29 | **Sağlık kontrolü 3 seviye:** HTTP → playlist → **gerçek segment** indirme; `Repair.alive()` şu an yalnız playlist bakıyor. | ChatGPT 8.2 | ✅ v9.66 — `Repair.alive` → son segment `Range` kontrolü |
 | M-30 | **Sunucuda günlük cron:** 50 ülke `good/<cc>.json`, `generatedAt`, 7 günden eski dosya yok sayılsın; TR dahil. Eski #143/#144 + #133/#142 (fix listesi) buraya bağlı. | Claude 3.3 / ChatGPT 8 | 🔧 (askıdaydı) |
 | M-31 | **Yedek kaynaklar** tüm kanallara yayılsın (şu an 5 kanal). Eski #125. | Claude 3.1 | 🔧 (askıdaydı) |
 | M-32 | **CountryRepo indirme sağlamlığı:** boyut sınırı, geçersiz JSON eski önbelleği silmesin, atomik yazma, şema doğrulama. | ChatGPT 8.3 | ✅ v9.33 |
@@ -102,9 +102,9 @@ Durum işaretleri: ✅ bitti · 🔧 kod işi · 👤 kullanıcı/hesap işi · 
 
 | No | İş | Kaynak | Durum |
 |---|---|---|---|
-| M-42 | **Ödül sonrası `recreate()` kaldır** (yayın baştan başlıyor); şerit yerinde güncellensin; ödül metni "video reklam kalkar, banner kalır" diye düzeltilsin. | Claude 4.1 / ChatGPT 10.1 | 🔧 |
+| M-42 | **Ödül sonrası `recreate()` kaldır** (yayın baştan başlıyor); şerit yerinde güncellensin; ödül metni "video reklam kalkar, banner kalır" diye düzeltilsin. | Claude 4.1 / ChatGPT 10.1 | ✅ v9.66 — `recreate()` kaldırıldı, şerit yerinde güncelleniyor |
 | M-43 | Reklam yerleşimi: sarı şerit ile banner arasına güvenli boşluk (yanlış tıklama riski). | Claude 4.1 | 🔧 |
-| M-44 | Reklam sıklığı kullanıcı dostu: ilk açılışta ve ilk kanal açılışında reklam yok, hızlı zap'ta reklam yok. | ChatGPT 10.1 | 🔧 |
+| M-44 | Reklam sıklığı kullanıcı dostu: ilk açılışta ve ilk kanal açılışında reklam yok, hızlı zap'ta reklam yok. | ChatGPT 10.1 | ✅ v9.66 — `Prefs` kanal açılış sayacı, ilk açılış reklamsız |
 | M-45 | **Native liste reklamı** (her ~8–10 satır). | Claude 4.2 | 🔧 |
 | M-46 | **App Open reklamı** (soğuk açılış, günde ≤2, ≥4 saat arayla). | Claude 4.2 | 🔧 |
 | M-47 | **Mediation** (AppLovin MAX veya AdMob mediation + 2 ağ) — eski #126. | Claude 4.2 / #126 | 🔧 ⏸️ |
@@ -563,3 +563,42 @@ satırını ve radyo aramasını doğrula, (2) D-04 uçak modu, D-05 reklam anı
 (3) "sadece ses" modu doğrulaması, (4) ödüllü reklam akışı (kullanıcı elle), (5) tablet 9.65
 dosyadan kurulum, (6) `MultiActivity` set kaydını URL tabanlı yapmak, (7) tek rendition
 kanallarda dürüst kalite etiketi.
+
+### Oturum 24 Kasım 2026 (on altıncı yarı) — 9.66: medya motoru, liste sağlığı, reklam UX
+
+Bu turda master listedeki sıradaki dört açık madde kapatıldı; iki madde ise kodda
+zaten uygulanmış olduğu için yalnız doğrulandı.
+
+- **M-24 (✅):** `AudioService.onStartCommand` ham adresi açıyordu; "sadece ses"te
+  master playlist ABR ile 1080p'ye çıkabiliyordu. Servis artık
+  `Quality.resolveLowest` ile en düşük varyantı çözüp onu açıyor; çözüm arka planda,
+  sonuç `ui.post` ile ana iş parçacığına alınıyor ve `currentUrl` değiştiyse istek
+  atılıyor (yanlış istasyon çalmıyor). Varyant yoksa özgün adres kullanılıyor.
+  Cihazda: "Sadece ses" → oynatıcı kapandı, `media_session` `PLAYING`, yayın kesintisiz.
+- **M-29 (✅):** `Repair.alive` üçüncü seviyeye çıktı: playlist'teki son segment
+  `Range: bytes=0-2047` ile isteniyor, 200/206 + en az 1 bayt şartı aranıyor. Sunucu
+  Range'i yok sayarsa bağlantı ilk okumadan sonra kapatılıyor (tüm segment inmiyor).
+  Almanya listesinde ölü kanal olmadığı için cihazda gerçek onarım denenmedi.
+- **M-42 (✅):** Ödül sonrası `Activity.recreate()` kaldırıldı; yayın baştan
+  başlamıyor, şerit yerinde `"✅ Reklamsız · N dk"` oluyor. Ödüllü reklam ağı
+  doldurmadığı için cihazda akış denenemedi.
+- **M-44 (✅):** `Prefs.channelOpens` sayacı eklendi; **ilk** kanal açılışında tam
+  ekran reklam istenmiyor. Cihazda: yükleme sonrası 1. açılış reklamsız, 2. açılışta
+  reklam normal geldi. 60 sn aralık koruması hızlı zap'ı zaten kapsıyordu.
+- **M-22 / M-23 (✅):** Kod okumasında `playNow()` içindeki `playRequest` kapısı ve
+  `checkStall()` 12 sn + `lastRestart` mantığı yerinde bulundu; tablodaki 🔧 işareti
+  eskiydi.
+- **D-34 (✅ cihaz):** Limit 5 MB girildi → kanal açılışında "Günlük veri limiti
+  doldu · Limit: 5 MB / Kullanılan: 160,2 MB · Devam edilsin mi?" diyalogu; ana ekran
+  başlığında "5 MB ⚠ LİMİT AŞILDI". Test sonunda limit "Yok"a çevrildi.
+- **Kapasite:** 7.121.045 B · 400 dosya · **17.517 sınıf** (+2) · imza aynı → ✅.
+  GitHub release `v9.66`, site `/indir` 9.66 (asset 200).
+- **Açık kalan:** ödüllü reklam akışı (kullanıcı elle), tablet 9.66 kurulumu
+  `İndirilenler/UMAY-MULTI-TV-9.66-tablet.apk`, gerçek ölü kanalla onarım denemesi.
+
+**Durum sayısı (24 Kasım 2026, 16. yarı sonu):** toplam **94 madde** · **40 ✅ bitti** ·
+**7 👤 kullanıcı işi** · **47 açık**.
+
+**Sonraki oturum:** (1) `MultiActivity` set kaydını URL tabanlı yapmak, (2) tek
+rendition kanallarda dürüst kalite etiketi, (3) gerçek ölü kanalla `Repair` testi,
+(4) ödüllü reklam akışı, (5) M-13 `kanallar.json`, (6) M-72 tam media3 radyo.

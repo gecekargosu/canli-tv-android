@@ -78,9 +78,47 @@ public class Repair {
                 }
                 return false;
             }
-            return body.contains("#EXTINF");
+            return body.contains("#EXTINF") && segmentOk(body, url);
         } catch (Throwable e) {
             return false;
+        }
+    }
+
+    /**
+     * M-29 (3. seviye): playlist "200" dönse bile segment sunucuda olmayabilir.
+     * Son segmentin ilk baytlarını isteyip gerçekten veri geldiğini doğrular.
+     */
+    private static boolean segmentOk(String body, String playlistUrl) {
+        HttpURLConnection c = null;
+        try {
+            String seg = null;
+            String[] lines = body.split("\n");
+            for (int i = lines.length - 1; i >= 0; i--) {
+                String line = lines[i].trim();
+                if (line.length() > 0 && !line.startsWith("#")) { seg = line; break; }
+            }
+            if (seg == null) return false;
+            String base = playlistUrl.substring(0, playlistUrl.lastIndexOf('/') + 1);
+            String segUrl = seg.startsWith("http") ? seg : base + seg;
+            if (!seg.contains("?") && playlistUrl.contains("?"))
+                segUrl += "?" + playlistUrl.substring(playlistUrl.indexOf('?') + 1);
+            c = (HttpURLConnection) new URL(segUrl).openConnection();
+            c.setConnectTimeout(7000);
+            c.setReadTimeout(7000);
+            c.setInstanceFollowRedirects(true);
+            c.setRequestProperty("User-Agent", Net.PLAYER_UA);
+            c.setRequestProperty("Range", "bytes=0-2047");
+            int code = c.getResponseCode();
+            if (code != 200 && code != 206) return false;
+            java.io.InputStream in = c.getInputStream();
+            byte[] buf = new byte[512];
+            int n = in.read(buf);
+            in.close();
+            return n > 0;
+        } catch (Throwable t) {
+            return false;
+        } finally {
+            if (c != null) try { c.disconnect(); } catch (Exception ignored) { }
         }
     }
 }

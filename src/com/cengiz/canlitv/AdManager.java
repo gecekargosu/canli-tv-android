@@ -396,10 +396,11 @@ public final class AdManager {
             @Override public void onClick(View v) {
                 showRewarded(a, new Runnable() {
                     @Override public void run() {
+                        // M-42: recreate() yayını/ekranı baştan başlatıyordu; şerit yerinde güncellenir.
+                        t.setText("✅ Reklamsız · " + adFreeMinutesLeft(a) + " dk");
                         android.widget.Toast.makeText(a,
                                 "Teşekkürler! " + Ads.REWARD_MINUTES + " dakika reklamsız.",
                                 android.widget.Toast.LENGTH_LONG).show();
-                        a.recreate();
                     }
                 }, new Runnable() {
                     @Override public void run() {
@@ -429,6 +430,13 @@ public final class AdManager {
             return;
         }
         long now = System.currentTimeMillis();
+        // M-44: ilk kanal açılışında reklam gösterilmez; sonraki açılışlarda normal akış.
+        int opens = Prefs.channelOpens(activity);
+        Prefs.setChannelOpens(activity, opens + 1);
+        if (opens < 1) {
+            then.run();
+            return;
+        }
         // Aynı anda/art arda zap yapılırsa reklamlar üst üste binmesin.
         if (now - lastInterstitial < Ads.INTERSTITIAL_GAP_MS) {
             then.run();
