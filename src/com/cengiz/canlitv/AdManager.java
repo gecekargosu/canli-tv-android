@@ -305,6 +305,9 @@ public final class AdManager {
             final android.widget.FrameLayout holder = new android.widget.FrameLayout(activity);
             holder.setLayoutParams(new LinearLayout.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+            // Yükseklik her zaman dursun: reklam yüklenirken/yüklenemezken bar kaybolmasın.
+            holder.setMinimumHeight(dp(activity, 56));
+            holder.setBackgroundColor(Color.parseColor("#0B1220"));
 
             final TextView house = houseBar(activity);
             holder.addView(house);
@@ -325,9 +328,15 @@ public final class AdManager {
                         view.setAdSize(size != null ? size : AdSize.BANNER);
                         holder.addView(view, 0, new android.widget.FrameLayout.LayoutParams(
                                 ViewGroup.LayoutParams.MATCH_PARENT,
-                                ViewGroup.LayoutParams.WRAP_CONTENT));
-                        house.setVisibility(View.GONE);
+                                size != null ? size.getHeightInPixels(activity) : dp(activity, 56)));
+                        // Kendi barımız reklam GERÇEKTEN yükleninceye kadar kalsın.
+                        house.setVisibility(View.VISIBLE);
                         view.setAdListener(new com.google.android.gms.ads.AdListener() {
+                            @Override public void onAdLoaded() {
+                                house.setVisibility(View.GONE);
+                                view.setVisibility(View.VISIBLE);
+                            }
+
                             @Override public void onAdImpression() {
                                 AdStats.note(activity, "banner");
                             }

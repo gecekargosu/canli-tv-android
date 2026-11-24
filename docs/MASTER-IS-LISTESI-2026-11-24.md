@@ -248,6 +248,33 @@ radyo dayanıklılığı). M-20 tam media3 geçişi henüz yapılmadı.
 M-21 çoklu ekran, M-16 eşik kontrolü, M-11 mağaza görselleri. **Bugün hepsi bitmez** (yaklaşık
 20+ madde kaldı; mağaza görselleri ve Play yayını kullanıcı işi).
 
+### Oturum 24 Kasım 2026 (üçüncü yarı) — reklam barı, radyo tasarımı, Play evrakı (v9.44 → v9.45)
+
+**Bu oturumda biten: 3 madde**
+
+- **Banner barı (✅):** Bar artık her ekranda **sabit** (ana ekran, radyo listesi/çaları, ayarlar,
+  ülke, kayıtlar, çoklu ekran, hakkında). Ana ekran ve hakkında ekranında hiç yoktu, eklendi.
+  Kök neden iki tane: (1) ana ekranda banner listenin içine ekleniyordu, kaydırınca kayboluyordu;
+  (2) reklam yüklenirken kendi barımız erken gizleniyor, AdView yüksekliği 0 kalınca bar boş
+  görünüyordu. Artık bar min. 56 dp ve **onAdLoaded**'da değişiyor; "No fill" olursa 60 sn sonra
+  yeniden deniyor. Cihazda doğrulandı.
+- **Radyo paneli (✅):** Boş çerçeve yerine "● CANLI YAYIN" + istasyon adı + "MP3 · 128 kbps ·
+  Türkiye" + "UMAY RADYO · canlı akış" içeren panel; cihazda GENÇ KRAL FM ile doğrulandı.
+- **Play evrakı (✅ doküman):** `docs/play/PLAY-YAYIN-HAZIRLIK.md` — teknik zorunluluklar, mağaza
+  kaydı, beyanlar, **Data safety tablosu**, hukuki belgeler ve sıralı yayın adımları.
+  Siteye **Kullanım Koşulları** (`/kullanim-kosullari.html`) ve **Telif/İçerik Kaldırma**
+  (`/telif-bildirimi.html`) sayfaları eklendi.
+
+**Banner geliri tespiti:** Cihaz logunda banner için sürekli `No fill.` görülüyor; geçiş ve ödüllü
+reklamlar doluyor. Yani bar şu an **gelir üretmiyor** (kendi tanıtım barımız gösteriliyor). Sebep
+hesabın "sınırlı reklam sunumu" durumunda olması (Play mağaza bağlantısı gerekiyor). Play yayını
+sonrası banner stoğu açılmalı; M-60 ile bağlantılı.
+
+**Yayın:** GitHub `v9.45`, site `/indir` 9.45, `releases/v9.45/`, zip 9.45.
+
+**Sonraki oturum:** Play Console adımları (M-09 Data Safety, M-10 app-ads.txt kök alan adı, M-57/58
+mağaza görselleri), M-20/M-72 tam media3, M-25 radyo sayacı, M-15 sunucu filtresi.
+
 ---
 
 ## EK MADDELER (24 Kasım 2026, kullanıcı geri bildirimi)

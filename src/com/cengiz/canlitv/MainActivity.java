@@ -352,11 +352,8 @@ public class MainActivity extends android.app.Activity {
         root.addView(list, new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
 
-        // reklam: listenin altinda yalnizca banner (v9.25: kanal başına reklamsız şerit kaldırıldı)
-        android.view.View banner = AdManager.banner(this);
-        if (banner != null) root.addView(banner);
-
-        setContentView(root);
+        // reklam: alt bar sabit dursun (liste kaydırılınca kaybolmasın)
+        AdManager.wrap(this, root);
         AdManager.init(this);
         handleExtras(getIntent());
         refresh();

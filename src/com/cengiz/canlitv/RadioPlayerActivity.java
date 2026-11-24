@@ -124,23 +124,53 @@ public class RadioPlayerActivity extends Activity {
         head.addView(stopBtn);
         root.addView(head);
 
+        // --- radyo paneli: bos cerceve yerine istasyon bilgisi + canli yayin etiketi ---
+        android.widget.FrameLayout panel = new android.widget.FrameLayout(this);
         RadioArt art = new RadioArt(this);
-        root.addView(art, new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, dp(210)));
+        panel.addView(art, new ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+
+        LinearLayout overlay = new LinearLayout(this);
+        overlay.setOrientation(LinearLayout.VERTICAL);
+        overlay.setGravity(Gravity.CENTER);
+        overlay.setPadding(dp(26), dp(30), dp(26), dp(18));
+
+        TextView live = new TextView(this);
+        live.setText("● CANLI YAYIN");
+        live.setTextColor(ORANGE);
+        live.setTextSize(10);
+        live.setTypeface(live.getTypeface(), android.graphics.Typeface.BOLD);
+        live.setLetterSpacing(0.12f);
+        live.setGravity(Gravity.CENTER);
+        overlay.addView(live);
 
         nameView = new TextView(this);
         nameView.setTextColor(TEXT);
-        nameView.setTextSize(22);
+        nameView.setTextSize(21);
         nameView.setGravity(Gravity.CENTER);
         nameView.setTypeface(nameView.getTypeface(), android.graphics.Typeface.BOLD);
-        nameView.setPadding(0, dp(8), 0, 0);
-        root.addView(nameView);
+        nameView.setPadding(0, dp(6), 0, dp(2));
+        nameView.setShadowLayer(8f, 0f, 2f, Color.parseColor("#000000"));
+        overlay.addView(nameView);
 
         metaView = new TextView(this);
-        metaView.setTextColor(MUTED);
-        metaView.setTextSize(12);
+        metaView.setTextColor(Color.parseColor("#C7D2E0"));
+        metaView.setTextSize(11);
         metaView.setGravity(Gravity.CENTER);
-        root.addView(metaView);
+        overlay.addView(metaView);
+
+        TextView freq = new TextView(this);
+        freq.setText("UMAY RADYO · canlı akış");
+        freq.setTextColor(MUTED);
+        freq.setTextSize(9);
+        freq.setGravity(Gravity.CENTER);
+        freq.setPadding(0, dp(10), 0, 0);
+        overlay.addView(freq);
+
+        panel.addView(overlay, new android.widget.FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        root.addView(panel, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, dp(210)));
 
         statusView = new TextView(this);
         statusView.setTextColor(ORANGE);
@@ -547,12 +577,7 @@ public class RadioPlayerActivity extends Activity {
             p.setColor(NAVY);
             canvas.drawCircle(body.left + body.width() * 0.40f, body.bottom - body.height() * 0.22f, 20, p);
 
-            // marka
-            p.setColor(Color.parseColor("#F5F7FA"));
-            p.setTextSize(20);
-            p.setFakeBoldText(true);
-            canvas.drawText("UMAY RADYO", body.left + body.width() * 0.34f,
-                    body.bottom - body.height() * 0.10f, p);
+            // marka adı panelde yazıyor; çizimde tekrar etmiyoruz.
         }
     }
 

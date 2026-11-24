@@ -243,7 +243,7 @@ public class AboutActivity extends Activity {
         });
         body.addView(close2, lp());
 
-        setContentView(scroll);
+        AdManager.wrap(this, scroll);
     }
 
     private LinearLayout.LayoutParams lp() {
