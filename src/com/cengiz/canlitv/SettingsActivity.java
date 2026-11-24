@@ -279,7 +279,7 @@ public class SettingsActivity extends Activity {
 
         // --- radyo ---
         section("Radyo");
-        row("📻", "Radyo", "49 internet radyosu · ekran kapalıyken de çalar",
+        row("📻", "Radyo", "Seçili ülkenin radyoları · ekran kapalıyken de çalar",
                 "Aç ›", new View.OnClickListener() {
                     @Override public void onClick(View v) {
                         startActivity(new Intent(SettingsActivity.this, RadioActivity.class));
@@ -630,7 +630,8 @@ public class SettingsActivity extends Activity {
     private void shareApp() {
         Intent i = new Intent(Intent.ACTION_SEND);
         i.setType("text/plain");
-        i.putExtra(Intent.EXTRA_TEXT, "UMAY Multi TV — 305 canlı TV kanalı ve 49 radyo:\n"
+        int tv = ChannelRepo.all(this).size();
+        i.putExtra(Intent.EXTRA_TEXT, "UMAY Multi TV — " + tv + " canlı TV kanalı ve radyo:\n"
                 + "https://play.google.com/store/apps/details?id=" + getPackageName());
         try {
             startActivity(Intent.createChooser(i, "Uygulamayı paylaş"));
@@ -821,22 +822,6 @@ public class SettingsActivity extends Activity {
         }).start();
     }
 
-    private boolean probe(String url) {
-        java.net.HttpURLConnection con = null;
-        try {
-            con = (java.net.HttpURLConnection) new java.net.URL(url).openConnection();
-            con.setConnectTimeout(6000);
-            con.setReadTimeout(6000);
-            con.setRequestProperty("User-Agent", "VLC/3.0");
-            int code = con.getResponseCode();
-            return code >= 200 && code < 400;
-        } catch (Exception e) {
-            return false;
-        } finally {
-            if (con != null) try { con.disconnect(); } catch (Exception ignored) { }
-        }
-    }
-
     private void openMain(String key, Object value) {
         Intent i = new Intent(this, MainActivity.class);
         i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
@@ -938,4 +923,15 @@ public class SettingsActivity extends Activity {
     }
 
     private int dp(int v) { return (int) (v * getResources().getDisplayMetrics().density); }
+
+    @Override
+    protected void onDestroy() {
+        // HATA (tur 2): tarama sürerken geri çıkılırsa ProgressDialog pencere sızıntısı
+        // (WindowLeaked) ve kapanmış ekrana Toast/dismiss → BadTokenException oluyordu.
+        if (scan != null && scan.isShowing()) {
+            try { scan.dismiss(); } catch (Exception ignored) { }
+        }
+        scan = null;
+        super.onDestroy();
+    }
 }

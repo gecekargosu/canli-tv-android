@@ -104,7 +104,14 @@ public class RecordingsActivity extends Activity {
             Uri q = MediaStore.Video.Media.EXTERNAL_CONTENT_URI;
             String[] cols = {MediaStore.Video.Media._ID, MediaStore.Video.Media.DISPLAY_NAME,
                     MediaStore.Video.Media.SIZE, MediaStore.Video.Media.DURATION};
-            String where = MediaStore.Video.Media.RELATIVE_PATH + " LIKE ?";
+            // HATA (tur 1): RELATIVE_PATH sütunu API 29+; Android 8/9'da sorgu hata veriyor
+            // ve kayıtlar hiç görünmüyordu. Eski sürümlerde DATA yoluna bak.
+            String where;
+            if (Build.VERSION.SDK_INT >= 29) {
+                where = MediaStore.Video.Media.RELATIVE_PATH + " LIKE ?";
+            } else {
+                where = MediaStore.Video.Media.DATA + " LIKE ?";
+            }
             Cursor c = getContentResolver().query(q, cols, where,
                     new String[]{"%TV-Kayitlari%"}, MediaStore.Video.Media.DATE_ADDED + " DESC");
             if (c != null) {
@@ -114,7 +121,9 @@ public class RecordingsActivity extends Activity {
                     long size = c.getLong(2);
                     long dur = c.getLong(3);
                     names.add(name);
-                    metas.add((dur / 1000 / 60) + " dk · " + Net.mb(size));
+                    // HATA (tur 4): .ts kayıtlarda MediaStore DURATION=0 geliyor,
+                    // listede her kayıt "0 dk" görünüyordu.
+                    metas.add((dur > 0 ? (dur / 1000 / 60) + " dk · " : "") + Net.mb(size));
                     uris.add(Uri.withAppendedPath(q, String.valueOf(id)));
                 }
                 c.close();

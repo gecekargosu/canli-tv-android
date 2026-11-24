@@ -103,7 +103,7 @@ public class CountryRepo {
     public static int count(Context ctx, String cc) {
         try {
             if ("tr".equals(cc)) return load(ctx, cc).size();
-            if (cacheFile(ctx, cc).length() < 200) return 0;
+            if (cacheFile(ctx, cc).length() < 20) return 0;
             return load(ctx, cc).size();
         } catch (Throwable t) {
             return 0;

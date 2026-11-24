@@ -132,6 +132,27 @@ public class AudioService extends Service {
         ctx.stopService(new Intent(ctx, AudioService.class));
     }
 
+    /**
+     * Uyku zamanlayıcısı. HATA (tur 2): sayaç ekranda tutuluyordu; kullanıcı listeye
+     * dönünce (onDestroy) iptal oluyor ve radyo sabaha kadar çalıyordu. Sayaç artık
+     * servisde: ekran kapansa da süre sonunda yayın durur. 0 = iptal.
+     */
+    public static void sleepIn(Context ctx, long ms) {
+        pendingSleep = ms;
+        if (INSTANCE == null) return;
+        Intent i = new Intent(ctx, AudioService.class);
+        i.putExtra("action", "sleep");
+        i.putExtra("sleepMs", ms);
+        if (Build.VERSION.SDK_INT >= 26) ctx.startForegroundService(i);
+        else ctx.startService(i);
+    }
+
+    /** Kalan uyku süresi (ms); sayaç yoksa 0. */
+    public static long sleepLeft() {
+        return INSTANCE == null || INSTANCE.sleepAt <= 0 ? 0
+                : Math.max(0, INSTANCE.sleepAt - System.currentTimeMillis());
+    }
+
     @Override
     public void onCreate() {
         super.onCreate();
@@ -152,9 +173,20 @@ public class AudioService extends Service {
 
         INSTANCE = this;
         createChannel();
+        if (pendingSleep > 0) {
+            sleepAt = System.currentTimeMillis() + pendingSleep;
+            pendingSleep = 0;
+            armSleep();
+        }
         ensureSession();
         startForeground(NOTIF_ID, notification());
 
+        if ("sleep".equals(action)) {
+            long ms = intent.getLongExtra("sleepMs", 0);
+            sleepAt = ms > 0 ? System.currentTimeMillis() + ms : 0;
+            armSleep();
+            return START_STICKY;
+        }
         if ("next".equals(action)) { step(1); return START_STICKY; }
         if ("prev".equals(action)) { step(-1); return START_STICKY; }
         if ("toggle".equals(action)) { toggle(); return START_STICKY; }
@@ -209,13 +241,25 @@ public class AudioService extends Service {
         if (l.isEmpty()) return;
         int idx = -1;
         for (int i = 0; i < l.size(); i++) if (l.get(i).url.equals(currentUrl)) { idx = i; break; }
-        // calan sey TV listesinde yoksa (radyo) yanlislikla TV kanalina atlamasin
-        if (idx < 0) return;
-        idx = (idx + d + l.size()) % l.size();
-        Channel c = l.get(idx);
-        name = c.name;
-        currentUrl = c.url;
-        playUrl(c.url);
+        if (idx >= 0) {
+            idx = (idx + d + l.size()) % l.size();
+            Channel c = l.get(idx);
+            name = c.name;
+            currentUrl = c.url;
+            playUrl(c.url);
+            return;
+        }
+        // HATA (tur 2): radyo çalarken bildirimdeki ⏮⏭ hiçbir şey yapmıyordu
+        // (URL TV listesinde yok). Radyo listesinde ara ve orada ilerle.
+        RadioRepo.ensure(this);
+        int r = -1;
+        for (int i = 0; i < RadioRepo.URLS.size(); i++)
+            if (RadioRepo.URLS.get(i).equals(currentUrl)) { r = i; break; }
+        if (r < 0 || RadioRepo.URLS.isEmpty()) return;
+        r = (r + d + RadioRepo.URLS.size()) % RadioRepo.URLS.size();
+        name = RadioRepo.NAMES.get(r);
+        currentUrl = RadioRepo.URLS.get(r);
+        playUrl(currentUrl);
     }
 
     private void toggle() {
@@ -322,6 +366,24 @@ public class AudioService extends Service {
     private int passiveTries = 0;
     private long playStartedAt = 0;
     private final android.os.Handler ui = new android.os.Handler(android.os.Looper.getMainLooper());
+    private long sleepAt = 0;
+    private static long pendingSleep = 0;
+    private final Runnable sleepStop = new Runnable() {
+        @Override public void run() {
+            sleepAt = 0;
+            notifyText("Uyku zamanlayıcı: yayın durduruldu");
+            try { if (player != null) player.stop(); } catch (Throwable ignored) { }
+            stopSelf();
+        }
+    };
+
+    private void armSleep() {
+        ui.removeCallbacks(sleepStop);
+        if (sleepAt <= 0) return;
+        long left = sleepAt - System.currentTimeMillis();
+        if (left <= 0) { ui.post(sleepStop); return; }
+        ui.postDelayed(sleepStop, left);
+    }
     private long lastPos = -1;
     private long lastRx = -1;
     private int stallTicks = 0;
@@ -342,16 +404,19 @@ public class AudioService extends Service {
                     int pos = p.getCurrentPosition();
                     // Ağdan veri gelmiyorsa yayın sessizce takılmış demektir (tampon bitince ses kesilir).
                     long rx = android.net.TrafficStats.getUidRxBytes(android.os.Process.myUid());
-                    if (lastRx < 0) lastRx = rx;
+                    // HATA (tur 1): once lastRx güncelleniyor, sonra (rx - lastRx) ölçülüyordu;
+                    // fark her zaman 0 çıkıyor ve radyo 12 saniyede bir kendini yeniden
+                    // başlatıyordu. Farkı güncellemeden ÖNCE al.
+                    long delta = (lastRx < 0 || rx < lastRx) ? 0 : rx - lastRx;
+                    lastRx = rx;
                     // M-25: radyo dinlerken harcanan veriyi günlük sayaca yaz.
-                    if (rx > lastRx) {
-                        pendingBytes += (rx - lastRx);
-                        lastRx = rx;
+                    if (delta > 0) {
+                        pendingBytes += delta;
                         if (pendingBytes > 1048576L) flushUsage();
                     }
-                    // 12 sn'de 8 KB'den az veri geldiyse yayın akışı durmuş demektir
+                    // 4 sn'de 8 KB'den az veri geldiyse yayın akışı durmuş demektir
                     // (128 kbps radyo saniyede ~16 KB indirir).
-                    boolean noData = rx >= 0 && (rx - lastRx) < 8000;
+                    boolean noData = delta < 2000;   // 16 kbps ses ~2 KB/sn
                     if (pos == lastPos || noData) {
                         stallTicks++;
                         if (stallTicks >= 3) {
@@ -529,6 +594,7 @@ public class AudioService extends Service {
                         stallTicks = 0;
                         ui.removeCallbacks(monitor);
                         ui.postDelayed(monitor, 4000L);
+                        armSleep();
                         updateState();
                     try { startForeground(NOTIF_ID, notification()); } catch (Exception ignored) { }
                 }

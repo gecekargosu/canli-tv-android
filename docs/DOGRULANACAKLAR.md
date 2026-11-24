@@ -170,3 +170,14 @@ dokunma + `uiautomator dump` + `logcat` + ekran görüntüsü. "Kanıt" sütunu 
 | D-31 | 30'dan az kanallı ülke "yakında" mı kalıyor | **✅** Azerbaycan **3 kanal** ile indi ve "hazır" göründü (`_build/t16s.png`). |
 | D-32 | Bilgi kartı ve yeni sıralama | **✅** "Kanal açılmıyor mu?" kartı Türkçe metinle görünür; Türkiye/UK/AZ üstte, sonra "indir" (`_build/t14s.png`). |
 | D-33 | Mobil veri kapalıyken indirme | **⏳** bu oturumda denenmedi (Wi-Fi açıkken test edildi). |
+
+## 24 Kasım 2026 — 9.65 hata analizi sonrası doğrulanacaklar
+
+- **D-34 (⏳):** Günlük veri limiti: 1 MB limit gir → kanal aç → uyarı diyalogu
+  ("devam et / vazgeç") ve sayaç sıfırlama.
+- **D-35 (⏳):** Ölü kanal onarma: listeye yapay ölü URL eklenmiş test listesiyle
+  `Repair.run` → "denendi / geri geldi" sayıları.
+- **D-36 (⏳):** "Sadece ses" modu: Wi-Fi kapalıyken ses çalıyor mu, veri sayacı
+  görüntü inmeden artıyor mu?
+- **D-37 (⏳):** Ödüllü reklam: kullanıcı elle izleyip "15 dk reklamsız" sayacının
+  arttığını ve geçiş reklamının çıkmadığını doğrulamalı.

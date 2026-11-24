@@ -121,6 +121,6 @@ public class ChannelRepo {
     /** Kanal listesinde URL'yi arar. */
     public static int indexOfUrl(String url) {
         for (int i = 0; i < CHANNELS.size(); i++) if (CHANNELS.get(i).url.equals(url)) return i;
-        return 0;
+        return -1;   // HATA (tur 1): 0 dönünce bulunamayan kanal 1. kanalı açıyordu
     }
 }

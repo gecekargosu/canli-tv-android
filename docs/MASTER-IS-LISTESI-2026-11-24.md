@@ -514,3 +514,52 @@ satırını ve radyo aramasını doğrula, (2) D-04 uçak modu, D-05 reklam anı
 **Sonraki oturum:** (1) tablet 9.64 kurulumu (dosyadan), (2) D-05 reklam sonrası canlıya dönüş,
 (3) kanal sayısı düşük ülkeler (SE 11, PH 9, AZ 3, OM 5, DZ 6) için ek doğrulanmış kaynak,
 (4) M-72 tam media3 radyo, (5) M-13 `kanallar.json` beslemesi.
+
+
+### Oturum 24 Kasım 2026 (on beşinci yarı) — 9.65: satır satır hata analizi
+
+**Bu oturumda biten: 6 madde + 4 tur düzeltme + cihaz senaryosu (TR/US/DE)**
+
+- **M-88 (✅):** Radyo **12 saniyede bir kendini yeniden başlatıyordu**. `AudioService.monitor`
+  içinde `lastRx` önce güncelleniyor, sonra `rx - lastRx` ölçülüyordu; fark hep 0 →
+  "yayın takıldı" sanılıp yeniden bağlanılıyordu. Fark güncellemeden önce alınıyor,
+  eşik 8 KB → 2 KB (16 kbps yayınlar için). Cihazda 26 sn log: tek yeniden bağlanma yok.
+- **M-89 (✅):** **Uyku zamanlayıcıları kalıcı değildi.** Radyo sayacı ekranın Handler'ında
+  tutuluyordu; "◀ Liste" deyince `onDestroy` siliyordu → radyo sabaha kadar çalıyordu.
+  Sayaç `AudioService`'e taşındı (`sleepIn/sleepLeft`, `pendingSleep`). TV sayacı
+  `Prefs.sleepUntil` ile saklanıyor. Bildirimdeki ⏮⏭ radyoda çalışmıyordu (yalnız TV
+  listesinde arıyordu) — radyo listesi eklendi; cihazda GENÇ KRAL FM → Süper FM.
+- **M-90 (✅):** **Çökme korumaları.** Boş liste: `idx % list.size()` (ArithmeticException),
+  `Slot.setChannel(size-1)`, `list.get(index)`, `names.get(0)`. Ayrıca `ChannelRepo.all()`
+  statik listeyi döndürdüğü için ülke değişince arkadaki oynatıcı/çoklu ekran/radyo
+  çöküyordu — ekranlar kendi kopyasını tutuyor. `indexOfUrl` -1 döndürüyor.
+- **M-91 (✅):** **Ülke indirmesi çökmesi.** `CountryActivity.pick()` indirme sonrası
+  `CountryRepo.fetchGood()` ağ çağrısını UI iş parçacığında yapıyordu →
+  `NetworkOnMainThreadException`. Arka plana alındı; ABD 263, Almanya 113 kanal indi, çökme yok.
+- **M-92 (✅):** **Android 8/9'da kayıtlar görünmüyordu.** `RELATIVE_PATH` sütunu API 29+;
+  API<29 için `DATA LIKE` sorgusu. Kayıtlarım'da ".ts → 0 dk" sorunu da giderildi.
+- **M-93 (✅):** **Reklam rızası fail-closed.** `loadInterstitial`, `loadRewarded`,
+  `maybeTimerAd` artık `adsAllowed` olmadan çalışmıyor. Jetonlu CDN'lerde master→varyant
+  `?token` taşınması (`Quality`, `Repair`, `HlsRecorder`), ülke başına `goodDay`,
+  `CountryRepo.count` eşiği (200→20 bayt), Hakkında sürümü, sabit "305 kanal/49 radyo"
+  metinleri, `ProgressDialog` sızıntıları, ölü `probe()` aynı turda düzeltildi.
+- **Doküman:** `docs/HATA-ANALIZI-2026-11-24.md` — 12 maddelik kontrol listesi, 24 bulgu,
+  tur kayıtları, TR/US/DE cihaz sonuç tablosu, sonraki tura devredenler.
+- **Cihaz senaryosu (9.65, telefon):** temiz kurulum → TR 145 kanal, TRT Haber 360p,
+  16 sn kayıt (12,6 MB) + Kayıtlarım; TR radyo 25 istasyon, bildirimden sonraki,
+  15 dk uyku; ABD 263 kanal (ABC KAAL), Almanya 113 kanal (3sat), DE radyo 22 (SWR3);
+  uçak benzeri ağ kesintisi → "yeniden bağlanıyorum (1/3)" → ağ gelince döndü;
+  PiP `mode=pinned`; 3'lü çoklu ekran; favori filtresi. `FATAL` yok.
+- **Açık kalan (yeni):** 3sat gibi **tek rendition** yayınlarda 360p veri düşürmüyor
+  (kaynak ~8 Mbps); ayrı "sadece ses kaydı" yok; günlük limit uyarısı canlı denenmedi;
+  `MultiActivity` set kaydı indeks tutuyor (ülke değişince set kayabilir).
+- **Kapasite:** 7.119.765 B · 400 dosya · **17.515 sınıf** (+0) · imza aynı → ✅.
+  GitHub release `v9.65`, site `/indir` 9.65.
+
+**Durum sayısı (24 Kasım 2026, 15. yarı sonu):** toplam **94 madde** · **34 ✅ bitti** ·
+**7 👤 kullanıcı işi** · **53 açık**.
+
+**Sonraki oturum:** (1) günlük limit uyarısı canlı testi, (2) ölü kanal onarma (yapay ölü URL),
+(3) "sadece ses" modu doğrulaması, (4) ödüllü reklam akışı (kullanıcı elle), (5) tablet 9.65
+dosyadan kurulum, (6) `MultiActivity` set kaydını URL tabanlı yapmak, (7) tek rendition
+kanallarda dürüst kalite etiketi.

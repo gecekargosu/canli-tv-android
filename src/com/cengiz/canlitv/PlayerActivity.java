@@ -89,9 +89,19 @@ public class PlayerActivity extends android.app.Activity {
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_USER);
         audio = (AudioManager) getSystemService(AUDIO_SERVICE);
 
-        list = ChannelRepo.all(this);
+        // HATA (tur 4): ChannelRepo.all() statik listeyi döndürüyor; kullanıcı başka ülkeye
+        // geçince liste boşalıyor ve arkadaki oynatıcı list.get(index) ile çöküyordu.
+        list = new java.util.ArrayList<Channel>(ChannelRepo.all(this));
         index = getIntent().getIntExtra("index", Prefs.lastIndex(this));
         if (index < 0 || index >= list.size()) index = 0;
+        // HATA (tur 1): liste boşsa list.get(index) çöküyordu (ülke listesi inmediyse).
+        if (list.isEmpty()) {
+            Toast.makeText(this, "Kanal listesi boş. Ayarlar → Ülke bölümünden liste indir.",
+                    Toast.LENGTH_LONG).show();
+            finish();
+            return;
+        }
+        sleepUntil = Prefs.sleepUntil(this);
 
         FrameLayout root = new FrameLayout(this);
         root.setBackgroundColor(Color.BLACK);
@@ -450,6 +460,7 @@ public class PlayerActivity extends android.app.Activity {
                 long kalan = sleepUntil - System.currentTimeMillis();
                 if (kalan <= 0) {
                     sleepUntil = 0;
+                    Prefs.setSleepUntil(PlayerActivity.this, 0);
                     Toast.makeText(PlayerActivity.this, "Uyku zamanlayıcısı: kapatılıyor", Toast.LENGTH_SHORT).show();
                     AudioService.stop(PlayerActivity.this);
                     finish();
@@ -652,7 +663,7 @@ public class PlayerActivity extends android.app.Activity {
         new AlertDialog.Builder(this)
                 .setTitle("Günlük veri limiti doldu")
                 .setMessage("Limit: " + lim + " MB\nKullanılan: " + Net.mb(used)
-                        + "\n\nDevam edilsin mi? (mobil veridesin)")
+                        + "\n\nDevam edilsin mi?")
                 .setCancelable(false)
                 .setPositiveButton("Devam et", new DialogInterface.OnClickListener() {
                     @Override public void onClick(DialogInterface d, int w) { }
@@ -676,10 +687,17 @@ public class PlayerActivity extends android.app.Activity {
                 .setTitle("Ne zaman kapansın?")
                 .setItems(items, new DialogInterface.OnClickListener() {
                     @Override public void onClick(DialogInterface d, int which) {
-                        if (which == items.length - 1) { sleepUntil = 0; return; }
+                        if (which == items.length - 1) {
+                            sleepUntil = 0;
+                            Prefs.setSleepUntil(PlayerActivity.this, 0);
+                            Toast.makeText(PlayerActivity.this, "Zamanlayıcı iptal edildi",
+                                    Toast.LENGTH_SHORT).show();
+                            return;
+                        }
                         if (which == 6) { askClockTime(); return; }
                         int[] mins = {15, 30, 45, 60, 90, 120};
                         sleepUntil = System.currentTimeMillis() + mins[which] * 60000L;
+                        Prefs.setSleepUntil(PlayerActivity.this, sleepUntil);
                         Toast.makeText(PlayerActivity.this, mins[which] + " dakika sonra kapanacak",
                                 Toast.LENGTH_SHORT).show();
                     }
@@ -704,6 +722,7 @@ public class PlayerActivity extends android.app.Activity {
                             if (c.getTimeInMillis() <= System.currentTimeMillis())
                                 c.add(java.util.Calendar.DAY_OF_MONTH, 1);
                             sleepUntil = c.getTimeInMillis();
+                            Prefs.setSleepUntil(PlayerActivity.this, sleepUntil);
                             Toast.makeText(PlayerActivity.this, "Saat " + String.format("%02d:%02d", h, mi)
                                     + " de kapanacak", Toast.LENGTH_LONG).show();
                         } catch (Exception e) {
@@ -993,6 +1012,7 @@ public class PlayerActivity extends android.app.Activity {
     }
 
     private void step(int d) {
+        if (list.isEmpty()) return;
         finishUsage();
         ui.removeCallbacks(watchdog);
         index = (index + d + list.size()) % list.size();

@@ -144,7 +144,10 @@ public class HlsRecorder {
                 for (int j = i + 1; j < lines.length; j++) {
                     String c = lines[j].trim();
                     if (c.length() == 0 || c.startsWith("#")) continue;
-                    return c.startsWith("http") ? c : base + c;
+                    String v = c.startsWith("http") ? c : base + c;
+                    if (!c.contains("?") && url.contains("?"))
+                        v += "?" + url.substring(url.indexOf('?') + 1);
+                    return v;
                 }
             }
         }

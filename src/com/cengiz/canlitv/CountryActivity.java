@@ -39,6 +39,7 @@ public class CountryActivity extends Activity {
 
     private BaseAdapter adapter;
     private String selected;
+    private ProgressDialog dlg;
 
     /** Gorunen sira ve ulke basina kanal sayisi (her satirda dosya okumayalim). */
     private final List<String> order = new ArrayList<String>();
@@ -286,13 +287,16 @@ public class CountryActivity extends Activity {
             finish();
             return;
         }
-        final ProgressDialog dlg = new ProgressDialog(this);
+        dlg = new ProgressDialog(this);
         dlg.setMessage(Lang.t(this, "downloading"));
         dlg.setCancelable(false);
         dlg.show();
         new Thread(new Runnable() {
             @Override public void run() {
                 final int st = CountryRepo.downloadStatus(CountryActivity.this, code);
+                // HATA (tur 3): fetchGood bir ağ çağrısı ve UI iş parçacığında çağrılıyordu;
+                // ülke indirmesi bitince NetworkOnMainThreadException ile çöküyordu.
+                if (st == CountryRepo.DL_OK) CountryRepo.fetchGood(CountryActivity.this, code);
                 runOnUiThread(new Runnable() {
                     @Override public void run() {
                         if (dlg.isShowing()) dlg.dismiss();
@@ -310,8 +314,7 @@ public class CountryActivity extends Activity {
                                     Toast.LENGTH_LONG).show();
                             return;
                         }
-                        // M-85: indirilen ülkenin "çalışan kanallar önce" sırası hemen kurulsun
-                        CountryRepo.fetchGood(CountryActivity.this, code);
+                        // M-85: "çalışan kanallar önce" dosyası yukarıda arka planda indirildi
                         Prefs.setCountry(CountryActivity.this, code);
                         ChannelRepo.reload(CountryActivity.this);
                         finish();
@@ -344,4 +347,13 @@ public class CountryActivity extends Activity {
     }
 
     private int dp(int v) { return (int) (v * getResources().getDisplayMetrics().density); }
+
+    @Override
+    protected void onDestroy() {
+        if (dlg != null && dlg.isShowing()) {
+            try { dlg.dismiss(); } catch (Exception ignored) { }
+        }
+        dlg = null;
+        super.onDestroy();
+    }
 }

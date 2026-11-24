@@ -403,12 +403,21 @@ public class Prefs {
     }
 
     /** "Bilinen iyi kanallar" listesinin son tazelenme günü (ülke başına). */
-    public static String goodDay(Context c) {
-        return sp(c).getString("goodDay", "");
+    public static String goodDay(Context c, String cc) {
+        return sp(c).getString("goodDay_" + cc, "");
     }
 
-    public static void setGoodDay(Context c, String day) {
-        sp(c).edit().putString("goodDay", day).apply();
+    public static void setGoodDay(Context c, String cc, String day) {
+        sp(c).edit().putString("goodDay_" + cc, day).apply();
+    }
+
+    /** Uyku zamanlayıcısı (epoch ms; 0 = kapalı). Ekran yeniden kurulsa da kaybolmaz. */
+    public static long sleepUntil(Context c) {
+        return sp(c).getLong("sleepUntil", 0L);
+    }
+
+    public static void setSleepUntil(Context c, long ms) {
+        sp(c).edit().putLong("sleepUntil", ms).apply();
     }
 
     /** Kullanıcının kendi eklediği TV kanalları: "ad\u0001url" satırları. */

@@ -486,7 +486,8 @@ public final class AdManager {
      * reklam hazır değilse sessizce geçer, uygulama akışı durmaz.
      */
     public static void maybeTimerAd(final Activity activity) {
-        if (!Ads.SDK_READY || isAdFree(activity) || showingAd) return;
+        // HATA (tur 3): rıza yokken de zamanlanmış reklam gösterilebiliyordu.
+        if (!Ads.SDK_READY || !adsAllowed || isAdFree(activity) || showingAd) return;
         long now = System.currentTimeMillis();
         long last = Prefs.lastAdAt(activity);
         if (last <= 0) { Prefs.setLastAdAt(activity, now); return; }
@@ -568,7 +569,7 @@ public final class AdManager {
     }
 
     private static void loadInterstitial(final Activity activity) {
-        if (!Ads.SDK_READY || interstitial != null || loadingInterstitial) return;
+        if (!Ads.SDK_READY || !adsAllowed || interstitial != null || loadingInterstitial) return;
         loadingInterstitial = true;
         try {
             InterstitialAd.load(activity, Ads.INTERSTITIAL, new AdRequest.Builder().build(),
@@ -591,7 +592,7 @@ public final class AdManager {
     }
 
     private static void loadRewarded(final Activity activity) {
-        if (!Ads.SDK_READY || rewarded != null || loadingRewarded) return;
+        if (!Ads.SDK_READY || !adsAllowed || rewarded != null || loadingRewarded) return;
         loadingRewarded = true;
         try {
             RewardedAd.load(activity, Ads.REWARDED, new AdRequest.Builder().build(),

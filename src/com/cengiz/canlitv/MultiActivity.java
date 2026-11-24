@@ -57,7 +57,14 @@ public class MultiActivity extends android.app.Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-        list = ChannelRepo.all(this);
+        list = new ArrayList<Channel>(ChannelRepo.all(this));   // ülke değişse de bu ekran etkilenmesin
+        // HATA (tur 1): boş listede idx % list.size() ArithmeticException veriyordu.
+        if (list.isEmpty()) {
+            Toast.makeText(this, "Kanal listesi boş. Ayarlar → Ülke bölümünden liste indir.",
+                    Toast.LENGTH_LONG).show();
+            finish();
+            return;
+        }
 
         int start = getIntent().getIntExtra("start", -1);
         String saved = getIntent().getStringExtra("set");
@@ -350,6 +357,10 @@ public class MultiActivity extends android.app.Activity {
             return;
         }
         int s = Math.max(0, Math.min(3, slotNo - 1));
+        if (slots[s].chan < 0 || slots[s].chan >= list.size()) {
+            Toast.makeText(this, "Bu ekranda kanal yok", Toast.LENGTH_SHORT).show();
+            return;
+        }
         Channel c = list.get(slots[s].chan);
         btn.setText("⏹ durdur");
         recorder.start(this, c.url, "ekran" + (s + 1) + "_" + c.name, new HlsRecorder.Listener() {
@@ -782,8 +793,11 @@ public class MultiActivity extends android.app.Activity {
             int sec = (int) ((System.currentTimeMillis() - openedAt) / 1000);
             if (sec > 2) {
                 long per = bytes / Math.max(1, paneCount);
-                for (int i = 0; i < paneCount; i++)
-                    Prefs.addUsage(this, list.get(slots[i].chan).url, per, sec);
+                for (int i = 0; i < paneCount && i < slots.length; i++) {
+                    int ch = slots[i].chan;
+                    if (ch >= 0 && ch < list.size())
+                        Prefs.addUsage(this, list.get(ch).url, per, sec);
+                }
             }
         }
         // ekran kapaninca / uygulamadan cikinca sesli devam: sesi acik pencerenin akisi servise devredilir

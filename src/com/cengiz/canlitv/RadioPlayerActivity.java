@@ -34,7 +34,7 @@ public class RadioPlayerActivity extends Activity {
     private static boolean loaded = false;
 
     private int index = 0;
-    private TextView nameView, metaView, statusView;
+    private TextView nameView, metaView, statusView, sleepLabel;
     private EqView eqView;
     private final Handler ui = new Handler();
     private boolean playing = true;
@@ -48,9 +48,10 @@ public class RadioPlayerActivity extends Activity {
     private void load() {
         // secilen ulkenin radyolari (TR gomulu, digerleri onbellekten)
         RadioRepo.ensure(this);
-        names = RadioRepo.NAMES;
-        metas = RadioRepo.META;
-        urls = RadioRepo.URLS;
+        // kopya: ülke değişince RadioRepo listeleri boşalır (çökme koruması)
+        names = new java.util.ArrayList<String>(RadioRepo.NAMES);
+        metas = new java.util.ArrayList<String>(RadioRepo.META);
+        urls = new java.util.ArrayList<String>(RadioRepo.URLS);
     }
 
     @Override
@@ -63,6 +64,13 @@ public class RadioPlayerActivity extends Activity {
         }
         super.onCreate(b);
         load();
+        // HATA (tur 1): ülkenin radyo listesi henüz inmemişse names.get(0) çöküyordu.
+        if (names.isEmpty()) {
+            Toast.makeText(this, "Radyo listesi hazır değil. Radyo ekranından yeniden dene.",
+                    Toast.LENGTH_LONG).show();
+            finish();
+            return;
+        }
         index = Math.max(0, Math.min(names.size() - 1, getIntent().getIntExtra("index", 0)));
 
         ScrollView scroll = new ScrollView(this);
@@ -106,7 +114,8 @@ public class RadioPlayerActivity extends Activity {
         head.addView(quit);
 
         // uyku zamanlayici: gece dinlerken belirli sure sonra durdur
-        TextView sleepBtn = chip("⏱ Uyku");
+        final TextView sleepBtn = chip("⏱ Uyku");
+        sleepLabel = sleepBtn;
         sleepBtn.setTextSize(12);
         sleepBtn.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View v) { sleepDialog(); }
@@ -323,30 +332,21 @@ public class RadioPlayerActivity extends Activity {
         }, Ads.ADFREE_OFFER_MINUTES * 60000L);
     }
 
-    private final Runnable stopTimer = new Runnable() {
-        @Override public void run() {
-            AudioService.stop(RadioPlayerActivity.this);
-            playing = false;
-            Toast.makeText(RadioPlayerActivity.this, "Uyku zamanlayıcı: radyo durduruldu",
-                    Toast.LENGTH_LONG).show();
-        }
-    };
-
-    /** Uyku zamanlayici: 15/30/60/90 dakika sonra radyoyu durdurur. */
+    /** Uyku zamanlayici: 15/30/60/90 dakika sonra radyoyu durdurur (servis tarafında). */
     private void sleepDialog() {
         final String[] opts = {"15 dakika", "30 dakika", "60 dakika", "90 dakika", "Kapat"};
         new android.app.AlertDialog.Builder(this)
                 .setTitle("Uyku zamanlayıcı")
                 .setItems(opts, new android.content.DialogInterface.OnClickListener() {
                     @Override public void onClick(android.content.DialogInterface d, int w) {
-                        ui.removeCallbacks(stopTimer);
                         if (w == 4) {
+                            AudioService.sleepIn(RadioPlayerActivity.this, 0);
                             Toast.makeText(RadioPlayerActivity.this, "Zamanlayıcı kapalı",
                                     Toast.LENGTH_SHORT).show();
                             return;
                         }
                         int min = new int[]{15, 30, 60, 90}[w];
-                        ui.postDelayed(stopTimer, min * 60000L);
+                        AudioService.sleepIn(RadioPlayerActivity.this, min * 60000L);
                         Toast.makeText(RadioPlayerActivity.this,
                                 min + " dakika sonra radyo duracak", Toast.LENGTH_LONG).show();
                     }
@@ -423,6 +423,8 @@ public class RadioPlayerActivity extends Activity {
         playing = true;
         stationRetries = 0;
         customStatus = false;
+        if (sleepLabel != null)
+            sleepLabel.setText(AudioService.sleepLeft() > 0 ? "⏱" : "⏱ Uyku");
         ui.removeCallbacks(radioWatchdog);
         ui.postDelayed(radioWatchdog, 15000);
     }

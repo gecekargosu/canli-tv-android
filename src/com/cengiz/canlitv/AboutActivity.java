@@ -287,7 +287,7 @@ public class AboutActivity extends Activity {
         try {
             return getPackageManager().getPackageInfo(getPackageName(), 0).versionName;
         } catch (Exception e) {
-            return "9.30";
+            return BuildConfig.VERSION_NAME;
         }
     }
 

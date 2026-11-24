@@ -71,6 +71,8 @@ public class Repair {
                     String s = lines[i].trim();
                     if (s.length() == 0 || s.startsWith("#")) continue;
                     String v = s.startsWith("http") ? s : base + s;
+                    if (!s.contains("?") && url.contains("?"))
+                        v += "?" + url.substring(url.indexOf('?') + 1);
                     denenen++;
                     if (alive(v)) return true;
                 }

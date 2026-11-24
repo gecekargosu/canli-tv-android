@@ -61,13 +61,13 @@ public final class Good {
         final String cc = Prefs.country(ctx);
         String day = new java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US)
                 .format(new java.util.Date());
-        if (day.equals(Prefs.goodDay(ctx))) return;
+        if (day.equals(Prefs.goodDay(ctx, cc))) return;
         // M-28: gün damgası yalnız BAŞARILI indirmede yazılır; aksi hâlde internet
         // bir kez kopunca o gün bir daha denenmiyordu.
         final String stamp = day;
         new Thread(new Runnable() {
             @Override public void run() {
-                if (download(ctx, cc)) Prefs.setGoodDay(ctx, stamp);
+                if (download(ctx, cc)) Prefs.setGoodDay(ctx, cc, stamp);
             }
         }, "good-refresh").start();
     }

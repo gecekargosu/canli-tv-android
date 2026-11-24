@@ -63,10 +63,13 @@ public class Quality {
                             for (int j = i + 1; j < lines.length; j++) {
                                 String c = lines[j].trim();
                                 if (c.length() == 0 || c.startsWith("#")) continue;
+                                String vurl = c.startsWith("http") ? c : base + c;
+                                // HATA (tur 1): master "?token=..." taşıyorsa varyant da taşımalı.
+                                if (!c.contains("?") && playlistUrl.contains("?"))
+                                    vurl += "?" + playlistUrl.substring(playlistUrl.indexOf('?') + 1);
                                 out.add(new Variant(
                                         res.length() == 0 ? ("varyant " + (out.size() + 1)) : res,
-                                        c.startsWith("http") ? c : base + c,
-                                        height));
+                                        vurl, height));
                                 break;
                             }
                         }
