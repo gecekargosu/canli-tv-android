@@ -160,6 +160,15 @@ public class CountryActivity extends Activity {
         root.addView(list, new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
         AdManager.wrap(this, root);
+        // M-84: hangi ülkelerin listesi var, sunucudan bir kez öğren (~1 KB)
+        CountryRepo.syncIndex(this);
+        root.postDelayed(new Runnable() {
+            @Override public void run() {
+                if (list != null && list.getAdapter() instanceof android.widget.BaseAdapter) {
+                    ((android.widget.BaseAdapter) list.getAdapter()).notifyDataSetChanged();
+                }
+            }
+        }, 2500);
     }
 
     private void pick(final String code, final boolean force) {

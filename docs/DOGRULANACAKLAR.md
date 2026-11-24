@@ -153,3 +153,9 @@ dokunma + `uiautomator dump` + `logcat` + ekran görüntüsü. "Kanıt" sütunu 
 |---|------|-------|
 | D-08 | Ülke ekranı “yakında” | **✅** sunucuda listesi olmayan ülke (Suriye, Yunanistan) artık “yakında · liste henüz yok”; dokunuş ağa çıkmıyor (`_build/cs3.jpg`). |
 | D-26 | Ülke indirme sessiz başarısızlığı | **✅ düzeltildi (M-83)** — 404 artık kullanıcıya sebep olarak gösteriliyor. |
+
+### 13. yarı (v9.63) — ülke dizini
+
+| # | Konu | Sonuç |
+|---|------|-------|
+| D-27 | Eksik ülkeler otomatik “yakında” görünüyor mu | **✅** ülke ekranı açılınca 41 ülke kendiliğinden “yakında · liste henüz yok”; listesi olan 10 ülke “indir” (`_build/ul2.jpg`). |

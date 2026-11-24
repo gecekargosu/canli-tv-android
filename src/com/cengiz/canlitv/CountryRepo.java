@@ -28,6 +28,48 @@ public class CountryRepo {
         return GOOD_BASE + cc + ".json";
     }
 
+    /**
+     * M-84: sunucudaki hazır ülke listesini bir kez çeker (~1 KB) ve listede olmayan
+     * ülkeleri "yakında" olarak işaretler. Böylece kullanıcı 41 ülkeye tek tek dokunup
+     * boşuna beklemez.
+     */
+    public static void syncIndex(final Context ctx) {
+        new Thread(new Runnable() {
+            @Override public void run() {
+                HttpURLConnection con = null;
+                try {
+                    con = (HttpURLConnection) new URL(GOOD_BASE + "index.json").openConnection();
+                    con.setConnectTimeout(8000);
+                    con.setReadTimeout(8000);
+                    con.setRequestProperty("User-Agent", "Mozilla/5.0 UMAYMultiTV");
+                    if (con.getResponseCode() != 200) return;
+                    java.io.InputStream in = con.getInputStream();
+                    java.io.ByteArrayOutputStream bo = new java.io.ByteArrayOutputStream();
+                    byte[] buf = new byte[4096];
+                    int n;
+                    while ((n = in.read(buf)) > 0) bo.write(buf, 0, n);
+                    in.close();
+                    org.json.JSONObject root = new org.json.JSONObject(
+                            new String(bo.toByteArray(), "UTF-8"));
+                    org.json.JSONArray arr = root.optJSONArray("codes");
+                    if (arr == null) return;
+                    java.util.Set<String> have = new java.util.HashSet<String>();
+                    for (int i = 0; i < arr.length(); i++) have.add(arr.optString(i, ""));
+                    if (have.isEmpty()) return;
+                    for (String[] row : Countries.LIST) {
+                        String cc = row[0];
+                        if (!have.contains(cc) && !isReady(ctx, cc)) {
+                            Prefs.markCountryMiss(ctx, cc);
+                        }
+                    }
+                } catch (Throwable ignored) {
+                } finally {
+                    if (con != null) con.disconnect();
+                }
+            }
+        }, "country-index").start();
+    }
+
     public static File cacheFile(Context ctx, String cc) {
         return new File(ctx.getFilesDir(), "country_" + cc + ".m3u");
     }

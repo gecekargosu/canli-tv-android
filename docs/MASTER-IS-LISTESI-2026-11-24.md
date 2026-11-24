@@ -343,6 +343,7 @@ M-11 mağaza görselleri, M-57/58 mağaza metinleri.
 | M-81 | **Çoklu ekran kalitesi ve veri sayacı:** MediaPlayer'da track sınırı olmadığı için master playlist 1080p'ye çıkabiliyordu; artık 360p varyantı seçiliyor. Ayrıca çoklu ekranda günlük veri sayacı hiç artmıyordu (yalnız ExoPlayer sayıyordu) — `TrafficStats` farkı eklendi. | ✅ v9.61 (cihazda: 3 pencere ≈650 kbps/kanal; sayaç 643,5 → 661,0 MB) |
 | M-82 | **"Ne var, ne yok?" ekranı güncellendi:** 25 satır, güncel ürünle eşlendi (çoklu ekran/ağ toparlanma, radyo kapatma şeridi, A/V senkron 360p, veri sayacı, sürüm bilgisi, Play durumu + olmayanların nedeni). | ✅ v9.61 (cihazda görüldü) |
 | M-83 | **Ülke seçiminde "indir" sessizce başarısızdı:** sunucuda listesi olmayan ülke 404 dönüyordu; satır artık **"yakında · liste henüz yok"** yazıyor, tekrar dokunmak ağa çıkmıyor. | ✅ v9.62 (cihazda: Suriye/Yunanistan) |
+| M-84 | **Ülke dizini:** sunucuda `good/index.json` (~100 B) eklendi; uygulama açılışta bir kez çekip **listesi olmayan 41 ülkeyi** otomatik "yakında · liste henüz yok" yapıyor. 51 ülkeden **10'unda liste var** (br, de, gb, in, mx, ru, sa, se, tr, us). | ✅ v9.63 (cihazda doğrulandı) |
 
 ### Oturum 24 Kasım 2026 (yedinci yarı) — A/V senkron + 12 maddelik test (v9.55)
 
@@ -463,3 +464,18 @@ satırını ve radyo aramasını doğrula, (2) D-04 uçak modu, D-05 reklam anı
 
 **Sonraki oturum (kota az):** (1) D-05 reklam sonrası dönüş (test reklamıyla),
 (2) tablet 9.62 kurulumu, (3) M-72 tam media3 radyo, (4) M-13 `kanallar.json`.
+
+### Oturum 24 Kasım 2026 (on üçüncü yarı) — 9.63: ülke dizini
+
+**Bu oturumda biten: 1 madde**
+
+- **M-84 (✅):** “Kaç ülkede TV yok?” sorusu ürüne girdi: 51 ülkeden **10'unda liste var**,
+  **41'inde yok**. Sunucuya `good/index.json` eklendi; uygulama ülke ekranı açılınca bu dizini
+  bir kez (~100 bayt) çekip eksik ülkeleri kendiliğinden “yakında · liste henüz yok” yapıyor.
+  Cihazda doğrulandı (Azerbaycan/Avusturya/BAE “yakında”, Almanya/ABD “indir”).
+
+**Durum sayısı (24 Kasım 2026, 13. yarı sonu):** toplam **85 madde** · **25 ✅ bitti** ·
+**7 👤 kullanıcı işi** · **53 açık**.
+
+**Sonraki oturum:** (1) D-05 reklam sonrası dönüş, (2) tablet 9.63 kurulumu,
+(3) M-72 tam media3 radyo, (4) M-13 `kanallar.json` beslemesi.
