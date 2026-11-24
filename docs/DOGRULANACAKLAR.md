@@ -209,3 +209,12 @@ dokunma + `uiautomator dump` + `logcat` + ekran görüntüsü. "Kanıt" sütunu 
 | D-45 | Sayaç anahtarı değişince eski veri korunuyor mu | **✅** Ana listede kanal başına sayaçlar aynı (304,8 MB · 110,9 MB · 117,1 MB); taşıma ilk okumada yapıldı. |
 | D-46 | Kalite etiketi yayının gerçek çözünürlüğünü mü gösteriyor | **✅** Tercih 360p iken 3sat'ta düğme **720p**. |
 | D-47 | Çok varyantlı kanalda tercih hâlâ uygulanıyor mu | **⏳** TR kanalında ayrıca denenmedi. |
+
+### 19. yarı (v9.69) — reklam yerleşimi, set uyarısı, ayar tazeleme
+
+| # | Konu | Sonuç / kanıt |
+|---|------|----------------|
+| D-44 | Ülke değişince kayıtlı set doğru davranıyor mu | **✅** Ülke Türkiye'ye alındı, Almanya seti açıldı → "4 kanal bu listede yok" uyarısı + TR kanallarıyla açıldı (`_build/y42t.jpg`). |
+| D-48 | Şerit ile banner arasında güvenli boşluk | **✅** 6 dp boşluk eklendi; ana ekran görüntüsünde şerit kullanım çubuğundan ayrık. |
+| D-49 | Ülke değişince Ayarlar satırı tazeleniyor mu | **✅** TR→DE dönüşünde satır hemen "Almanya" (eski sürümde bayat kalıyordu). |
+| D-50 | Ölü kanal onarımı gerçek ölü URL ile | **⏳** hâlâ denenmedi (yapay ölü URL'li test listesi gerekiyor). |

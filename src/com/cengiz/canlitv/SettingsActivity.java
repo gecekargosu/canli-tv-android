@@ -24,6 +24,9 @@ import android.widget.Toast;
  */
 public class SettingsActivity extends Activity {
 
+    /** Ülke satırının değeri: CountryActivity'den dönünce tazelenir. */
+    private TextView countryValue;
+
     private static final int BG = Color.parseColor("#11151C");
     private static final int CARD = Color.parseColor("#1B2230");
     private static final int ACCENT = Color.parseColor("#FF7A18");
@@ -135,7 +138,7 @@ public class SettingsActivity extends Activity {
 
         // --- genel: ulke + dil ---
         section(Lang.t(this, "general"));
-        row("🌍", Lang.t(this, "country"), Lang.t(this, "country_sub"),
+        countryValue = row("🌍", Lang.t(this, "country"), Lang.t(this, "country_sub"),
                 Countries.flag(Prefs.country(this)) + " " + Countries.name(Prefs.country(this), false),
                 new View.OnClickListener() {
                     @Override public void onClick(View v) {
@@ -842,7 +845,8 @@ public class SettingsActivity extends Activity {
         body.addView(t);
     }
 
-    private void row(String icon, String title, String desc, String value,
+    /** Satırı ekler ve sağdaki değer TextView'ini döndürür (onResume'da tazelemek için). */
+    private TextView row(String icon, String title, String desc, String value,
                      View.OnClickListener click) {
         LinearLayout row = new LinearLayout(this);
         row.setOrientation(LinearLayout.HORIZONTAL);
@@ -887,6 +891,17 @@ public class SettingsActivity extends Activity {
 
         if (click != null) row.setOnClickListener(click);
         body.addView(row, marginBottom(6));
+        return v;
+    }
+
+    @Override protected void onResume() {
+        super.onResume();
+        // HATA: ülke ekranından dönünce satır hâlâ eski ülkeyi gösteriyordu
+        // (değer yalnız onCreate'de yazılıyordu).
+        if (countryValue != null) {
+            String cc = Prefs.country(this);
+            countryValue.setText(Countries.flag(cc) + " " + Countries.name(cc, false));
+        }
     }
 
     private LinearLayout.LayoutParams marginBottom(int d) {

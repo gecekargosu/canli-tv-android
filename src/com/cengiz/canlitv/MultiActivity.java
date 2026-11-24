@@ -51,6 +51,8 @@ public class MultiActivity extends android.app.Activity {
     private HlsRecorder recorder = new HlsRecorder();
     private int recSlot = 1;
     private boolean foreground = true;
+    /** Kayıtlı sette olup güncel listede bulunamayan kanal sayısı (kullanıcıya söylenir). */
+    private int missingChannels = 0;
     private final Handler ui = new Handler();
 
     @Override
@@ -82,7 +84,7 @@ public class MultiActivity extends android.app.Activity {
                 String mask = p[2];
                 for (int i = 0; i < 4 && i < mask.length(); i++) aud[i] = mask.charAt(i) == '1';
                 cnt = Integer.parseInt(p[3].trim());
-                if (p.length > 4) resolveUrls(p[4], idx);
+                if (p.length > 4) missingChannels = resolveUrls(p[4], idx);
             } catch (Exception ignored) { }
         }
         for (int i = 0; i < 4; i++) audible[i] = aud[i];
@@ -207,6 +209,15 @@ public class MultiActivity extends android.app.Activity {
         watchNetwork();
         ui.postDelayed(watchdog, 6000);
         tracking = true;
+        if (missingChannels > 0) {
+            final int n = missingChannels;
+            ui.postDelayed(new Runnable() {
+                @Override public void run() {
+                    Toast.makeText(MultiActivity.this, "Kayıtlı setteki " + n
+                            + " kanal bu listede yok (kaldırılmış olabilir)", Toast.LENGTH_LONG).show();
+                }
+            }, 1200);
+        }
         openedAt = System.currentTimeMillis();
         Net.begin();
         ui.post(tick);
@@ -418,18 +429,22 @@ public class MultiActivity extends android.app.Activity {
      * Kaydedilmiş set: kanal adreslerini indekse çevirir.
      * Adres alanı yoksa (eski kayıtlar) indeks kullanılır.
      */
-    private void resolveUrls(String field, int[] idx) {
-        if (field == null || !field.startsWith("u:")) return;
+    private int resolveUrls(String field, int[] idx) {
+        if (field == null || !field.startsWith("u:")) return 0;
         String[] parts = field.substring(2).split(",");
+        int missing = 0;
         for (int i = 0; i < 4 && i < parts.length; i++) {
             String url;
             try { url = java.net.URLDecoder.decode(parts[i], "UTF-8"); }
             catch (Exception e) { continue; }
             if (url.length() == 0) continue;
+            boolean found = false;
             for (int k = 0; k < list.size(); k++) {
-                if (list.get(k).url.equals(url)) { idx[i] = k; break; }
+                if (list.get(k).url.equals(url)) { idx[i] = k; found = true; break; }
             }
+            if (!found) missing++;   // setteki kanal listeden kalkmis
         }
+        return missing;
     }
 
     /**

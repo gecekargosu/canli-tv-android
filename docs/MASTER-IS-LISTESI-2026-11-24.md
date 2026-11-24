@@ -103,7 +103,7 @@ Durum işaretleri: ✅ bitti · 🔧 kod işi · 👤 kullanıcı/hesap işi · 
 | No | İş | Kaynak | Durum |
 |---|---|---|---|
 | M-42 | **Ödül sonrası `recreate()` kaldır** (yayın baştan başlıyor); şerit yerinde güncellensin; ödül metni "video reklam kalkar, banner kalır" diye düzeltilsin. | Claude 4.1 / ChatGPT 10.1 | ✅ v9.66 — `recreate()` kaldırıldı, şerit yerinde güncelleniyor |
-| M-43 | Reklam yerleşimi: sarı şerit ile banner arasına güvenli boşluk (yanlış tıklama riski). | Claude 4.1 | 🔧 |
+| M-43 | Reklam yerleşimi: sarı şerit ile banner arasına güvenli boşluk (yanlış tıklama riski). | Claude 4.1 | ✅ v9.69 — şerit ile banner arasına 6dp boşluk |
 | M-44 | Reklam sıklığı kullanıcı dostu: ilk açılışta ve ilk kanal açılışında reklam yok, hızlı zap'ta reklam yok. | ChatGPT 10.1 | ✅ v9.66 — `Prefs` kanal açılış sayacı, ilk açılış reklamsız |
 | M-45 | **Native liste reklamı** (her ~8–10 satır). | Claude 4.2 | 🔧 |
 | M-46 | **App Open reklamı** (soğuk açılış, günde ≤2, ≥4 saat arayla). | Claude 4.2 | 🔧 |
@@ -350,6 +350,8 @@ M-11 mağaza görselleri, M-57/58 mağaza metinleri.
 | M-94 | **3'lü izleme setleri bozuktu:** "★ set" ile kaydedilen set `ad:` öneki yüzünden hiç geri yüklenmiyordu; kayıt indeks tuttuğu için ülke/liste değişince başka kanal açılıyordu. Önek ayrıştırması düzeltildi, kayda kanal adresleri eklendi (`u:` alanı), eski kayıtlar uyumlu. | Claude 17. yarı | ✅ v9.67 (cihazda: Test Seti → 2. pencere arte→ADRIA) |
 | M-95 | **Çoklu ekran paneli ekrana sığmıyordu:** "★ set" ve sonrası 1280 px'de görünmüyordu, set kaydetmek imkânsızdı. Panel yatay kaydırılabilir; set listesinde ham kod yerine set adı yazılıyor. | Claude 17. yarı | ✅ v9.67 (cihazda: ★ set görünür, ad "Test Seti") |
 | M-96 | **Kalite etiketi tercihi gösteriyordu:** tek varyantlı kanalda (3sat) yayın 720p inerken düğme "360p" yazıyordu. Etiket artık oynatıcının gerçek yüksekliği (`onVideoSizeChanged`); düğme metni yayın hazır olunca güncelleniyor. | Claude 18. yarı | ✅ v9.68 (cihazda: 3sat → 720p) |
+| M-97 | **Kayıtlı sette bulunamayan kanal sessizce yutuluyordu:** setteki kanal listeden kalkmışsa uygulama başka kanalı açıyor, kullanıcı neden farklı yayın gördüğünü anlamıyordu. Artık "kayıtlı setteki N kanal bu listede yok" uyarısı veriliyor, kalan pencereler eşleşen kanallarla açılıyor. | Claude 19. yarı | ✅ v9.69 (cihazda: TR listesinde DE seti → "4 kanal bu listede yok") |
+| M-98 | **Ayarlar’da ülke değeri bayat kalıyordu:** `SettingsActivity` değeri yalnız `onCreate`’de yazıyordu; ülke değiştirip geri dönünce satır eski ülkeyi gösteriyordu. `onResume`’da tazeleniyor. | Claude 19. yarı | ✅ v9.69 (cihazda: TR→DE dönüşünde satır hemen "Almanya") |
 
 ### Oturum 24 Kasım 2026 (yedinci yarı) — A/V senkron + 12 maddelik test (v9.55)
 
@@ -661,3 +663,36 @@ adrese taşımak (M-65), (2) tek rendition kanallarda dürüst kalite etiketi,
 **Sonraki oturum:** (1) tek varyantlı kanallarda "bu kanal yalnız 720p yayınlıyor" bilgisi
 (kalite diyalogunda), (2) gerçek ölü kanalla `Repair` testi, (3) M-13 `kanallar.json`,
 (4) M-72 media3 radyo, (5) kayıtlı sette bulunamayan kanal uyarısı.
+
+### Oturum 24 Kasım 2026 (on dokuzuncu yarı) — 9.69: reklam yerleşimi, set uyarısı, ayar tazeleme
+
+**Sayım düzeltmesi:** önceki yarı raporlarındaki "✅ bitti" sayıları elle tutuluyordu ve
+şişmişti. Bu yarıda liste tablosu **programla sayıldı**: tabloda 93 madde + rapor
+içindeki M-88…M-93 (7 madde) = **100 madde**. Doğru durum: **50 ✅** ·
+**50 açık** (41 kod · 7 kullanıcı · 2 cihaz testi).
+Aşağıdaki madde satırları bu sayıma göre güncellendi.
+
+- **M-43 (✅):** Reklam şeridi (sarı "Reklam izle") banner alanına yapışıktı; banner
+  yüklenirken/başarısızken kullanıcı banner yerine şeride dokunup farkında olmadan
+  reklam açabiliyordu. Şeride 6 dp üst boşluk verildi.
+- **M-97 (✅):** Kayıtlı setteki kanal güncel listede yoksa uygulama sessizce başka
+  kanalı açıyordu. `resolveUrls` artık eşleşmeyenleri sayıyor ve çoklu ekran açılırken
+  "Kayıtlı setteki N kanal bu listede yok (kaldırılmış olabilir)" uyarısı gösteriliyor.
+  **Cihazda:** ülke Türkiye'ye alındı, Almanya kanallarıyla kaydedilmiş "Test Seti"
+  açıldı → "4 kanal bu listede yok" uyarısı + TR kanallarıyla açıldı (çökme yok).
+  Bu aynı zamanda D-44'ü (ülke değişince set) fiilen denemiş oldu.
+- **M-98 (✅):** `SettingsActivity` ülke değerini yalnız `onCreate`'de yazıyordu;
+  ülke değiştirip geri dönünce satır eski ülkeyi gösteriyordu (cihazda TR'ye geçildiği
+  hâlde "Almanya" yazıyordu). Değer `onResume`'da tazeleniyor; cihazda TR→DE dönüşünde
+  satır hemen "Almanya" oldu.
+- **Kapasite:** aşağıdaki sürüm notunda; sınıf sayısı değişmedi.
+- **Açık kalan:** tek varyantlı kanallarda kalite tercihi uygulanamıyor (etiket doğru);
+  gerçek ölü kanalla `Repair` testi; M-13 `kanallar.json`; M-72 media3 radyo;
+  ödüllü reklam akışı (kullanıcı elle); tablet 9.69 kurulumu.
+
+**Durum sayısı (24 Kasım 2026, 19. yarı sonu):** toplam **100 madde** · **50 ✅ bitti** ·
+**50 açık** (41 kod · 7 kullanıcı · 2 cihaz testi).
+
+**Sonraki oturum:** (1) gerçek ölü kanalla `Repair` testi (yapay ölü URL'li test listesi),
+(2) M-13 `kanallar.json`, (3) M-72 media3 radyo, (4) M-33 `ChannelRepo` değişmez liste,
+(5) tek varyantlı kanal bilgisi kalite diyalogunda.

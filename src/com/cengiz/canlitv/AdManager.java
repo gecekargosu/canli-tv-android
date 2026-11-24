@@ -324,7 +324,14 @@ public final class AdManager {
             holder.setBackgroundColor(Color.parseColor("#0B1220"));
 
             final TextView house = houseBar(activity);
-            holder.addView(house);
+            // M-43: şerit banner alanına yapışıktı; banner yüklenirken/başarısızken
+            // kullanıcı banner yerine şeride dokunup farkında olmadan reklam açıyordu.
+            android.widget.FrameLayout.LayoutParams houseLp =
+                    new android.widget.FrameLayout.LayoutParams(
+                            ViewGroup.LayoutParams.MATCH_PARENT,
+                            ViewGroup.LayoutParams.WRAP_CONTENT);
+            houseLp.topMargin = dp(activity, 6);
+            holder.addView(house, houseLp);
 
             // M-03: rıza yoksa reklam isteği GÖNDERİLMEZ. Yerine kendi tanıtım barımız kalır;
             // rıza sonradan gelirse AdManager bekleyen banner'ı yükler.
