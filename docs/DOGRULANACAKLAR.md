@@ -105,3 +105,13 @@ dokunma + `uiautomator dump` + `logcat` + ekran görüntüsü. "Kanıt" sütunu 
 | D-19 | Ayarlar'da sürüm yazıyor mu | **⏳** kod hazır (M-79); ekranda kurulum sonrası bakılacak |
 | D-20 | Radyo aramasında yabancı sonuçlar (Kentville vb.) | **⏳** kelime başı filtresi eklendi (M-15); cihazda doğrulanacak |
 | D-18 | (önceki) yabancı istasyon sonuçları | **✅ kod düzeltmesi yapıldı**, doğrulama D-20'de |
+
+### Tablet kurulum notu (24 Kasım 2026, 9.57)
+
+- Tablette eski **9.29** farklı imzayla kuruluydu; kullanıcı onayıyla kaldırıldı (`pm list packages` → kayıt yok).
+- `adb install` HyperOS tarafından engellendi: **`INSTALL_FAILED_USER_RESTRICTED`** (Ayarlar →
+  Geliştirici seçenekleri → **USB ile yükleme** kapalı / Mi hesabı doğrulaması gerekli).
+- APK tablete kopyalandı: `/sdcard/Download/UMAY-MULTI-TV-9.57-TABLET.apk`
+  (bilgisayarda da `İndirilenler/UMAY-MULTI-TV-9.57-tablet.apk`).
+- Kurulum: tablette **Dosyalar → İndirilenler → UMAY-MULTI-TV-9.57-TABLET.apk** → aç → kur.
+- İleride adb ile kurmak için tablette "USB ile yükleme" açılmalı.
