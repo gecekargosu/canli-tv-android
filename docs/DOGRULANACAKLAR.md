@@ -218,3 +218,12 @@ dokunma + `uiautomator dump` + `logcat` + ekran görüntüsü. "Kanıt" sütunu 
 | D-48 | Şerit ile banner arasında güvenli boşluk | **✅** 6 dp boşluk eklendi; ana ekran görüntüsünde şerit kullanım çubuğundan ayrık. |
 | D-49 | Ülke değişince Ayarlar satırı tazeleniyor mu | **✅** TR→DE dönüşünde satır hemen "Almanya" (eski sürümde bayat kalıyordu). |
 | D-50 | Ölü kanal onarımı gerçek ölü URL ile | **⏳** hâlâ denenmedi (yapay ölü URL'li test listesi gerekiyor). |
+
+### 20. yarı (v9.70) — kayıt sağlamlaştırma, liste yarışı
+
+| # | Konu | Sonuç / kanıt |
+|---|------|----------------|
+| D-51 | Kayıt kalite tercihini izliyor mu (360p vs 1080p boyut) | **⏳** ölçülemedi: player'daki banner/geçiş reklamları dokunuşları mağaza uygulamasına yutuyor. Kod `Quality.pick` kullanıyor; elle ölçüm gerekiyor. |
+| D-52 | fMP4 / byte-range kanalda kayıt uyarısı | **⏳** böyle bir kanal bulunamadı; uyarı yolu kodda hazır. |
+| D-53 | Kayıt başlat/durdur/tekrar başlat | **✅** 3sat'ta iki kayıt alındı (2,77 MB + 6,66 MB), bitiş bildirimi geldi, çökme yok. "Önceki kayıt kapanıyor" yarışı yalnız kod düzeyinde denetlendi. |
+| D-54 | Ülke değişimi sırasında liste/radyo yarışı | **✅** `snapshot()` sonrası 113 kanal listesi, Ayarlar taraması ve radyo akışı normal; `ConcurrentModificationException` yok. |

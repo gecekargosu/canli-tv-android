@@ -31,7 +31,8 @@ public class Repair {
             @Override public void run() {
                 int tested = 0, revived = 0;
                 try {
-                    List<Channel> all = ChannelRepo.all(ctx);
+                    // M-33: arka plan işi canlı listeyi dolaşmasın (ülke değişimi yarışı).
+                    List<Channel> all = ChannelRepo.snapshot(ctx);
                     for (Channel c : all) {
                         if (c == null || c.url == null) continue;
                         if (Prefs.fails(ctx, c.url) < 2) continue;   // sağlam kanalları yorma

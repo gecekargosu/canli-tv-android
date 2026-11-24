@@ -787,7 +787,8 @@ public class PlayerActivity extends android.app.Activity {
                 });
             }
         });
-        recButton.setTextColor(Color.parseColor("#FF5252"));
+        // Renk yalnız gerçekten başladığında (onInfo) kırmızıya döner; eskiden istek
+        // yutulsa bile düğme kırmızı kalıyordu.
         Toast.makeText(this, "Kayıt başladı → Movies/TV-Kayitlari", Toast.LENGTH_SHORT).show();
     }
 

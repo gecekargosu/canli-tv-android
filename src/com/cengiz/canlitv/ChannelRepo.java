@@ -61,7 +61,17 @@ public class ChannelRepo {
         return loadedCountry;
     }
 
-    public static List<Channel> all(Context ctx) {
+    /**
+     * M-33: liste canlı tutuluyor; arka plan işleri (onarım, tarama, radyo servisi)
+     * dolaşırken ülke değişirse liste boşalıp yeniden doluyor ve
+     * ConcurrentModificationException / yanlış indeks çıkıyordu. Arka plan işleri
+     * {@link #snapshot(Context)} ile kopya üzerinde çalışır.
+     */
+    public static List<Channel> snapshot(Context ctx) {
+        return new ArrayList<Channel>(all(ctx));
+    }
+
+    public static synchronized List<Channel> all(Context ctx) {
         String cc = Prefs.country(ctx);
         if (!cc.equals(loadedCountry)) {
             CHANNELS.clear();
@@ -83,13 +93,13 @@ public class ChannelRepo {
     }
 
     /** Ulke veya dil degisince listeyi sifirdan yukler. */
-    public static void reload(Context ctx) {
+    public static synchronized void reload(Context ctx) {
         loadedCountry = "";
         all(ctx);
     }
 
     /** Kullanicinin degistirdigi kumanda numaralarini uygular. */
-    public static void applyNumbers(Context ctx) {
+    public static synchronized void applyNumbers(Context ctx) {
         for (Channel c : CHANNELS) {
             int ov = Prefs.noOverride(ctx, c.url);
             c.no = ov > 0 ? ov : c.baseNo;
@@ -119,7 +129,7 @@ public class ChannelRepo {
     }
 
     /** Kanal listesinde URL'yi arar. */
-    public static int indexOfUrl(String url) {
+    public static synchronized int indexOfUrl(String url) {
         for (int i = 0; i < CHANNELS.size(); i++) if (CHANNELS.get(i).url.equals(url)) return i;
         return -1;   // HATA (tur 1): 0 dönünce bulunamayan kanal 1. kanalı açıyordu
     }

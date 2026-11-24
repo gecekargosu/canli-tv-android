@@ -243,7 +243,8 @@ public class AudioService extends Service {
     }
 
     private List<Channel> list() {
-        if (channels == null) channels = ChannelRepo.all(this);
+        // M-33: canlı liste yerine kopya — ülke değişince liste boşalırken adım atmasın.
+        if (channels == null) channels = ChannelRepo.snapshot(this);
         return channels;
     }
 

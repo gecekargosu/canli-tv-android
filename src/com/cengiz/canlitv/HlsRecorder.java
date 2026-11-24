@@ -34,10 +34,20 @@ public class HlsRecorder {
     private Listener listener;
     private String savedPath = "";
 
-    public boolean isRunning() { return running; }
+    /**
+     * M-26: eski kaydın iş parçacığı kapanırken (son segmenti yazıyor) yeni kayıt
+     * isteği sessizce yutuluyordu; düğme kırmızı kalıp kullanıcı kayıtta sanıyordu.
+     */
+    public boolean isRunning() {
+        return running || (worker != null && worker.isAlive());
+    }
 
     public void start(final Context ctx, final String playlistUrl, final String baseName, Listener l) {
-        if (running) return;
+        listener = l;
+        if (isRunning()) {
+            if (l != null) l.onError("Önceki kayıt kapanıyor, bir saniye sonra tekrar dene");
+            return;
+        }
         running = true;
         listener = l;
 
@@ -48,9 +58,22 @@ public class HlsRecorder {
                 long total = 0;
                 Uri pendingUri = null;
                 try {
-                    String media = resolveMediaPlaylist(playlistUrl);
+                    String media = resolveMediaPlaylist(ctx, playlistUrl);
                     if (media == null) { fail("Yayin adresi okunamadi"); return; }
                     if (media.contains("METHOD=AES-128")) { fail("Sifreli yayin kaydedilemiyor"); return; }
+                    // M-26: fMP4 (EXT-X-MAP) ve byte-range yayinlar .ts konteynerine
+                    // yazilamaz; eskiden dosya "kaydedildi" gorunup acilmiyordu.
+                    if (media.contains("#EXT-X-MAP")) {
+                        fail("Bu kanal parcali (fMP4) yayin veriyor; kayit desteklenmiyor"); return;
+                    }
+                    if (media.contains("#EXT-X-BYTERANGE")) {
+                        fail("Bu kanal byte-range yayin veriyor; kayit desteklenmiyor"); return;
+                    }
+                    // M-26: yer kontrolu - kayit ortasinda "yer yok" ile kesilmesin.
+                    long free = freeBytes();
+                    if (free >= 0 && free < 500L * 1048576L) {
+                        fail("Yer yok: " + (free / 1048576L) + " MB bos, en az 500 MB gerekli"); return;
+                    }
 
                     String safe = baseName.replaceAll("[^A-Za-z0-9]+", "_");
                     String fname = safe + "_" + System.currentTimeMillis() + ".ts";
@@ -77,12 +100,21 @@ public class HlsRecorder {
 
                     List<String> seen = new ArrayList<String>();
                     String base = media.substring(0, media.lastIndexOf('/') + 1);
+                    String token = media.contains("?")
+                            ? media.substring(media.indexOf('?')) : "";
+                    int tokenLen = token.length();
                     info("Kayit basladi (ses dahil)");
 
                     while (running) {
                         String pl = fetch(media);
                         if (pl == null) { sleep(3000); continue; }
                         if (pl.contains("METHOD=AES-128")) { fail("Sifreli yayin kaydedilemiyor"); return; }
+                        if (pl.contains("#EXT-X-MAP")) {
+                            fail("Yayin fMP4'e gecti; kayit desteklenmiyor"); return;
+                        }
+                        if (pl.contains("#EXT-X-BYTERANGE")) {
+                            fail("Yayin byte-range'e gecti; kayit desteklenmiyor"); return;
+                        }
 
                         int target = 6;
                         java.util.regex.Matcher m = java.util.regex.Pattern
@@ -95,6 +127,9 @@ public class HlsRecorder {
                             if (seen.contains(line)) continue;
                             seen.add(line);
                             String segUrl = line.startsWith("http") ? line : base + line;
+                            // M-26: master "?token=..." tasiyorsa segment de tasimali
+                            // (jetonlu CDN'lerde segment 403 veriyordu).
+                            if (!line.contains("?") && tokenLen > 0) segUrl += token;
                             byte[] data = fetchBytes(segUrl);
                             if (data != null) {
                                 out.write(data);
@@ -133,25 +168,47 @@ public class HlsRecorder {
         if (listener != null) listener.onError(s);
     }
 
-    private String resolveMediaPlaylist(String url) {
+    /**
+     * Master playlist ise **kalite tercihine uygun** varyanti secer (M-26).
+     * Eskiden her zaman ilk varyant (genelde 1080p) indiriliyordu; 360p tercih eden
+     * kullanici kayitta saatte GB'larca veri harciyordu.
+     */
+    private String resolveMediaPlaylist(Context ctx, String url) {
         String txt = fetch(url);
         if (txt == null) return null;
         if (!txt.contains("#EXT-X-STREAM-INF")) return url;
         String base = url.substring(0, url.lastIndexOf('/') + 1);
+        String token = url.contains("?") ? url.substring(url.indexOf('?')) : "";
         String[] lines = txt.split("\n");
+        List<Quality.Variant> variants = new ArrayList<Quality.Variant>();
         for (int i = 0; i < lines.length; i++) {
-            if (lines[i].startsWith("#EXT-X-STREAM-INF")) {
-                for (int j = i + 1; j < lines.length; j++) {
-                    String c = lines[j].trim();
-                    if (c.length() == 0 || c.startsWith("#")) continue;
-                    String v = c.startsWith("http") ? c : base + c;
-                    if (!c.contains("?") && url.contains("?"))
-                        v += "?" + url.substring(url.indexOf('?') + 1);
-                    return v;
-                }
+            if (!lines[i].startsWith("#EXT-X-STREAM-INF")) continue;
+            int height = 0;
+            java.util.regex.Matcher m = java.util.regex.Pattern
+                    .compile("RESOLUTION=(\\d+)x(\\d+)").matcher(lines[i]);
+            if (m.find()) height = Integer.parseInt(m.group(2));
+            for (int j = i + 1; j < lines.length; j++) {
+                String c = lines[j].trim();
+                if (c.length() == 0 || c.startsWith("#")) continue;
+                String v = c.startsWith("http") ? c : base + c;
+                if (!c.contains("?") && token.length() > 0) v += token;
+                variants.add(new Quality.Variant(height > 0 ? height + "p" : "varyant", v, height));
+                break;
             }
         }
-        return url;
+        if (variants.isEmpty()) return url;
+        int pref = Prefs.economy(ctx) ? -1 : Prefs.maxHeight(ctx);
+        String chosen = Quality.pick(variants, pref);
+        return chosen == null ? url : chosen;
+    }
+
+    /** Kayit hedefinde kalan bos alan (bayt); bilinmiyorsa -1. */
+    private long freeBytes() {
+        try {
+            return new android.os.StatFs(
+                    Environment.getExternalStorageDirectory().getAbsolutePath())
+                    .getAvailableBytes();
+        } catch (Throwable t) { return -1; }
     }
 
     private String fetch(String url) {

@@ -65,7 +65,7 @@ Durum işaretleri: ✅ bitti · 🔧 kod işi · 👤 kullanıcı/hesap işi · 
 | M-23 | **Donma kontrolü:** `checkStall()` `isPlaying()` false iken çıkıyor → BUFFERING'de kör kalıyor. Durum makinesi (IDLE/BUFFERING/READY/ERROR) + tampon süresi + hata sayısı. | ChatGPT 5.1 | ✅ v9.66 — kodda zaten vardı · 12 sn eşiği |
 | M-24 | **Ekonomi modu gerçek ses tasarrufu:** arka plan servisi `Quality.resolveLowest()` kullanmıyor; muxed HLS'te video iniyorsa "yalnız ses" iddiası yanlış. Audio-only varyant varsa ona geç, yoksa kullanıcıya söyle. | ChatGPT 6 | ✅ v9.66 — `AudioService` → `resolveLowest` + istek kapısı |
 | M-25 | **Veri sayacı kapsamı:** radyo ve arka plan sesi ölçülmüyor; `checkLimit()` yalnız oynatıcıda. Ortak `UsageTracker` + tüm modlarda limit. | ChatGPT 7 | ✅ v9.67 — `AudioService.flushUsage/checkLimit` + `MultiActivity.countData` kodda vardi |
-| M-26 | **Kayıt (HlsRecorder):** seçili kalite, AES-128, `EXT-X-MAP`, `EXT-X-BYTERANGE`, token başlıkları, bağlantı kopunca geri çekilme, boş alan kontrolü, kayıt öncesi boyut/süre bilgisi. | ChatGPT 9 / Claude 6 | 🔧 |
+| M-26 | **Kayıt (HlsRecorder):** seçili kalite, AES-128, `EXT-X-MAP`, `EXT-X-BYTERANGE`, token başlıkları, bağlantı kopunca geri çekilme, boş alan kontrolü, kayıt öncesi boyut/süre bilgisi. | ChatGPT 9 / Claude 6 | ✅ v9.70 — kalite tercihine uygun varyant, token segmentlere taşınıyor, fMP4/byte-range ve yer yok net uyarı; "önceki kayıt kapanıyor" yarışı kapatıldı. Yapılmayan: AES-128 çözme, kayıt öncesi boyut/süre tahmini |
 | M-27 | PiP ve uyku zamanlayıcısını Media3 sonrası cihazda yeniden test et (v9.32'de denenmedi). | Claude 3.2 | 🧪 |
 
 ---
@@ -79,7 +79,7 @@ Durum işaretleri: ✅ bitti · 🔧 kod işi · 👤 kullanıcı/hesap işi · 
 | M-30 | **Sunucuda günlük cron:** 50 ülke `good/<cc>.json`, `generatedAt`, 7 günden eski dosya yok sayılsın; TR dahil. Eski #143/#144 + #133/#142 (fix listesi) buraya bağlı. | Claude 3.3 / ChatGPT 8 | 🔧 (askıdaydı) |
 | M-31 | **Yedek kaynaklar** tüm kanallara yayılsın (şu an 5 kanal). Eski #125. | Claude 3.1 | 🔧 (askıdaydı) |
 | M-32 | **CountryRepo indirme sağlamlığı:** boyut sınırı, geçersiz JSON eski önbelleği silmesin, atomik yazma, şema doğrulama. | ChatGPT 8.3 | ✅ v9.33 |
-| M-33 | Kanal listesi güvenliği: `ChannelRepo` değişmez liste + tek yükleme noktası, sıralama arka planda; UI/servis iş parçacığı yarışı. | Claude 6 | 🔧 |
+| M-33 | Kanal listesi güvenliği: `ChannelRepo` değişmez liste + tek yükleme noktası, sıralama arka planda; UI/servis iş parçacığı yarışı. | Claude 6 | ✅ v9.70 — `snapshot()` + `synchronized` yükleme; onarım/tarama/radyo servisi kopya üzerinde çalışıyor (radio, Settings tarama, Repair) |
 
 ---
 
@@ -696,3 +696,35 @@ Aşağıdaki madde satırları bu sayıma göre güncellendi.
 **Sonraki oturum:** (1) gerçek ölü kanalla `Repair` testi (yapay ölü URL'li test listesi),
 (2) M-13 `kanallar.json`, (3) M-72 media3 radyo, (4) M-33 `ChannelRepo` değişmez liste,
 (5) tek varyantlı kanal bilgisi kalite diyalogunda.
+
+### Oturum 24 Kasım 2026 (yirminci yarı) — 9.70: kayıt sağlamlaştırma + liste yarışı
+
+- **M-26 (✅ büyük ölçüde):** `HlsRecorder`
+  - Master playlist artık **kalite tercihine göre** varyant seçiyor (`Quality.pick`);
+    eskiden her zaman ilk (genelde 1080p) varyant indiriliyordu, 360p tercih eden
+    kullanıcı kayıtta saatte GB'larca veri harcıyordu.
+  - Master adresindeki `?token=...` **segment adreslerine taşınıyor**; jetonlu
+    CDN'lerde segment 403 alıp kaydın sessizce boş kalması engellendi.
+  - **fMP4 (`EXT-X-MAP`)** ve **byte-range** yayınlar artık net uyarıyla reddediliyor;
+    eskiden .ts dosyası "kaydedildi" görünüp açılmıyordu.
+  - Kayıt öncesi **boş alan** kontrolü (en az 500 MB).
+  - **Yarış:** eski kaydın iş parçacığı kapanırken yeni kayıt isteği sessizce
+    yutuluyor, düğme kırmızı kalıyordu → `isRunning()` iş parçacığını da sayıyor,
+    istek reddedilirse "Önceki kayıt kapanıyor..." uyarısı çıkıyor, düğme rengi
+    yalnız gerçek başlangıçta kırmızıya dönüyor.
+  - **Cihazda:** 3sat kaydı iki kez alındı (2,77 MB ve 6,66 MB dosyalar oluştu,
+    "Kayıt durduruluyor..." ve bitiş bildirimi geldi), çökme yok.
+  - **Yapılmayan:** AES-128 şifre çözme (hâlâ reddediliyor), kayıt öncesi boyut/süre
+    tahmini. Kalite tercihi A/B ölçümü (360p vs 1080p dosya boyutu) yapılamadı:
+    oyun/mağaza reklamları dokunuşları yutuyor.
+- **M-33 (✅):** `ChannelRepo` yüklemesi `synchronized`, yeni `snapshot()` eklendi;
+  arka plan işleri (radyo servisi, kanal taraması, onarım) canlı liste yerine kopya
+  dolaşıyor. Ülke değişimi sırasında `ConcurrentModificationException` /
+  yanlış indeks riski kalktı. Cihazda ana liste 113 kanal, Ayarlar ve radyo akışı
+  normal çalıştı.
+
+**Durum sayısı (24 Kasım 2026, 20. yarı sonu):** toplam **102 madde** · **54 ✅ bitti** ·
+**48 açık** (39 kod · 7 kullanıcı · 2 cihaz testi).
+
+**Sonraki oturum:** (1) gerçek ölü kanalla `Repair` testi (D-50), (2) M-13 `kanallar.json`,
+(3) M-72 media3 radyo, (4) M-34 i18n, (5) M-37 inset/çentik.

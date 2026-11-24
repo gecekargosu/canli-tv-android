@@ -801,7 +801,8 @@ public class SettingsActivity extends Activity {
         new Thread(new Runnable() {
             @Override public void run() {
                 int ok = 0, bad = 0;
-                for (Channel c : ChannelRepo.all(SettingsActivity.this)) {
+                // M-33: tarama arka planda; canlı liste yerine kopya.
+                for (Channel c : ChannelRepo.snapshot(SettingsActivity.this)) {
                     if (Repair.alive(c.url)) {
                         Prefs.clearFails(SettingsActivity.this, c.url);
                         ok++;
