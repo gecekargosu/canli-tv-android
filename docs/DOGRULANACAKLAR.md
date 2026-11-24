@@ -227,3 +227,10 @@ dokunma + `uiautomator dump` + `logcat` + ekran görüntüsü. "Kanıt" sütunu 
 | D-52 | fMP4 / byte-range kanalda kayıt uyarısı | **⏳** böyle bir kanal bulunamadı; uyarı yolu kodda hazır. |
 | D-53 | Kayıt başlat/durdur/tekrar başlat | **✅** 3sat'ta iki kayıt alındı (2,77 MB + 6,66 MB), bitiş bildirimi geldi, çökme yok. "Önceki kayıt kapanıyor" yarışı yalnız kod düzeyinde denetlendi. |
 | D-54 | Ülke değişimi sırasında liste/radyo yarışı | **✅** `snapshot()` sonrası 113 kanal listesi, Ayarlar taraması ve radyo akışı normal; `ConcurrentModificationException` yok. |
+
+### 21. yarı — D-50 araştırması (v9.70 üzerinde)
+
+| # | Konu | Sonuç / kanıt |
+|---|------|----------------|
+| D-50 | Gerçek ölü kanalla `Repair` testi | **🔧 Kısmen.** Masaüstünde 4 ölü kanal bulundu (#15 BLK, #100 RFO bağlantı yok; #16 BTL, #48 iSTUFF 403). Cihazda BLK açıldı: kanal **hiç hata üretmiyor**, 50-80 sn boyunca "yeniden bağlanıyorum" döngüsünde kalıyor, `addFail` çağrılmıyor → onarım hiç devreye giremiyor. Ayrıntı ve kök nedenler M-99'da. Düzeltme yazıldı ama cihazda doğrulanamadı, geri alındı. |
+| D-55 | 9.70 gerileme kontrolü (ölü kanal düzeltmesi geri alındıktan sonra) | **✅** Kaynaktan derlenen APK `releases/v9.70/CanliTV-9.70.apk` ile birebir (0 bayt fark), cihaza yeniden kuruldu. |

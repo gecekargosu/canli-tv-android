@@ -352,6 +352,7 @@ M-11 mağaza görselleri, M-57/58 mağaza metinleri.
 | M-96 | **Kalite etiketi tercihi gösteriyordu:** tek varyantlı kanalda (3sat) yayın 720p inerken düğme "360p" yazıyordu. Etiket artık oynatıcının gerçek yüksekliği (`onVideoSizeChanged`); düğme metni yayın hazır olunca güncelleniyor. | Claude 18. yarı | ✅ v9.68 (cihazda: 3sat → 720p) |
 | M-97 | **Kayıtlı sette bulunamayan kanal sessizce yutuluyordu:** setteki kanal listeden kalkmışsa uygulama başka kanalı açıyor, kullanıcı neden farklı yayın gördüğünü anlamıyordu. Artık "kayıtlı setteki N kanal bu listede yok" uyarısı veriliyor, kalan pencereler eşleşen kanallarla açılıyor. | Claude 19. yarı | ✅ v9.69 (cihazda: TR listesinde DE seti → "4 kanal bu listede yok") |
 | M-98 | **Ayarlar’da ülke değeri bayat kalıyordu:** `SettingsActivity` değeri yalnız `onCreate`’de yazıyordu; ülke değiştirip geri dönünce satır eski ülkeyi gösteriyordu. `onResume`’da tazeleniyor. | Claude 19. yarı | ✅ v9.69 (cihazda: TR→DE dönüşünde satır hemen "Almanya") |
+| M-99 | **Ölü kanal sonsuz "yükleniyor" çemberinde kalıyor (D-50 bulgusu):** sunucusu tamamen erişilemez kanal (ör. BLK Regional TV) `onPlayerError` üretmiyor; oynatıcı sürekli "Bağlantı sorunu · yeniden bağlanıyorum (1/3)" / "Yayın durakladı (1/2)" döngüsünde kalıyor, ilerleme olmadığı hâlde **hiç başarısız işaretlenmiyor**. Sonuç: kanal listede kalıcı oluyor, "ölü kanalları gizle" ve "onar" hiç devreye girmiyor. Kök nedenler: (1) `playNow()` her yeni denemede `sameRetries`i sıfırlıyor, yani "3 kez dene sonra ölü say" hiç tamamlanmıyor; (2) ağ `onAvailable` geri çağrısı da sayacı sıfırlıyordu; (3) `checkStall` hiç oynamamış kanalda "yayıncı reklam aralığı" mesajıyla sonsuza kadar bekliyor; (4) watchdog vazgeçtiğinde `Prefs.addFail` çağırmıyordu. | Claude 21. yarı | 🔧 v9.71 adayı — düzeltme yazıldı ancak cihazda hâlâ sonsuz çember görüldüğü için **geri alındı**; zaman tabanlı (45 sn, `onReady` hiç gelmediyse) ölü sayma yaklaşımı denenip doğrulanacak |
 
 ### Oturum 24 Kasım 2026 (yedinci yarı) — A/V senkron + 12 maddelik test (v9.55)
 
@@ -728,3 +729,35 @@ Aşağıdaki madde satırları bu sayıma göre güncellendi.
 
 **Sonraki oturum:** (1) gerçek ölü kanalla `Repair` testi (D-50), (2) M-13 `kanallar.json`,
 (3) M-72 media3 radyo, (4) M-34 i18n, (5) M-37 inset/çentik.
+
+### Oturum 24 Kasım 2026 (yirmi birinci yarı) — D-50 araştırması
+
+Bu yarıda sürüm çıkarılmadı: D-50 (gerçek ölü kanalla onarım testi) yapılırken **yeni ve
+ağır bir kusur** bulundu, düzeltme denemeleri cihazda doğrulanamadığı için geri alındı.
+
+**Test düzeneği:** Almanya listesindeki 120 kanal masaüstünde tek tek yoklandı; dört ölü
+kanal çıktı — #15 BLK Regional TV (DNS/bağlantı yok), #100 RFO (bağlantı yok),
+#16 BTL TV ve #48 iSTUFF (HTTP 403). Cihazda BLK Regional TV açıldı.
+
+**Bulgular:**
+1. Ölü kanal **hiç hata üretmiyor**: oynatıcı "Bağlantı sorunu · yeniden bağlanıyorum"
+   ve "Yayın durakladı · yeniden bağlanıyorum (1/2)" arasında dönüp duruyor; 50-80 saniye
+   sonra bile hata ekranı çıkmıyor, `Prefs.addFail` çağrılmıyor.
+2. Bu yüzden **"ölü kanalları gizle" (2 hata eşiği) ve "ölü kanalları onar" hiç
+   çalışmıyor** — kanal listede kalıcı kalıyor. Onarım ekranı "onarılacak ölü kanal yok"
+   diyor, çünkü hiçbir kanal ölü işaretlenmemiş.
+3. Kök nedenler kodda bulundu: `playNow()` her denemede `sameRetries`i sıfırlıyor
+   ("3 kez dene, sonra ölü say" hiç tamamlanmıyor); ağ `onAvailable` geri çağrısı da
+   sayacı sıfırlıyordu; `checkStall` hiç oynamamış kanalda "yayıncı reklam aralığı"
+   mesajıyla sonsuza kadar bekliyor; watchdog'un vazgeçme dalı `addFail` çağırmıyordu.
+4. Bu dört nokta için düzeltme yazıldı ve derlendi (watchdog'da `addFail`, ağ yeniden
+   bağlanma sayacı, zaman tabanlı 45 sn ölü sayma, `checkStall` hiç-oynamadı dalı), ancak
+   **cihazda sonsuz çember sürdü**. Doğrulanmamış kod yayınlanmadı: değişiklik geri
+   alındı, cihaza 9.70 yeniden kuruldu (`verify-apk`: 0 bayt fark).
+
+**Yeni madde:** M-99 (yukarıdaki kök nedenlerle birlikte) — bir sonraki yarıda zaman
+tabanlı ölü sayma `onReady` yokluğuna bağlanarak yeniden yazılıp **gerçek ölü kanalla**
+doğrulanacak; sonra D-50 kapanacak.
+
+**Durum sayısı (24 Kasım 2026, 21. yarı sonu):** toplam **103 madde** · **54 ✅ bitti** ·
+**49 açık** (40 kod · 7 kullanıcı · 2 cihaz testi).
