@@ -64,7 +64,7 @@ Durum işaretleri: ✅ bitti · 🔧 kod işi · 👤 kullanıcı/hesap işi · 
 | M-22 | **Hızlı zap yarışı:** `playRequestId` sayacı; eski isteğin callback'i yeni kanalı ezmesin. | ChatGPT 5.2 | ✅ v9.66 — kodda zaten vardı · cihazda doğrulandı |
 | M-23 | **Donma kontrolü:** `checkStall()` `isPlaying()` false iken çıkıyor → BUFFERING'de kör kalıyor. Durum makinesi (IDLE/BUFFERING/READY/ERROR) + tampon süresi + hata sayısı. | ChatGPT 5.1 | ✅ v9.66 — kodda zaten vardı · 12 sn eşiği |
 | M-24 | **Ekonomi modu gerçek ses tasarrufu:** arka plan servisi `Quality.resolveLowest()` kullanmıyor; muxed HLS'te video iniyorsa "yalnız ses" iddiası yanlış. Audio-only varyant varsa ona geç, yoksa kullanıcıya söyle. | ChatGPT 6 | ✅ v9.66 — `AudioService` → `resolveLowest` + istek kapısı |
-| M-25 | **Veri sayacı kapsamı:** radyo ve arka plan sesi ölçülmüyor; `checkLimit()` yalnız oynatıcıda. Ortak `UsageTracker` + tüm modlarda limit. | ChatGPT 7 | 🔧 |
+| M-25 | **Veri sayacı kapsamı:** radyo ve arka plan sesi ölçülmüyor; `checkLimit()` yalnız oynatıcıda. Ortak `UsageTracker` + tüm modlarda limit. | ChatGPT 7 | ✅ v9.67 — `AudioService.flushUsage/checkLimit` + `MultiActivity.countData` kodda vardi |
 | M-26 | **Kayıt (HlsRecorder):** seçili kalite, AES-128, `EXT-X-MAP`, `EXT-X-BYTERANGE`, token başlıkları, bağlantı kopunca geri çekilme, boş alan kontrolü, kayıt öncesi boyut/süre bilgisi. | ChatGPT 9 / Claude 6 | 🔧 |
 | M-27 | PiP ve uyku zamanlayıcısını Media3 sonrası cihazda yeniden test et (v9.32'de denenmedi). | Claude 3.2 | 🧪 |
 
@@ -74,7 +74,7 @@ Durum işaretleri: ✅ bitti · 🔧 kod işi · 👤 kullanıcı/hesap işi · 
 
 | No | İş | Kaynak | Durum |
 |---|---|---|---|
-| M-28 | **`Good.refreshIfNeeded` hata:** gün damgası indirme başarılı olmadan yazılıyor → o gün bir daha denenmiyor. Damga yalnız başarılı indirme + doğrulama sonrası. | ChatGPT 8.1 | 🔧 |
+| M-28 | **`Good.refreshIfNeeded` hata:** gün damgası indirme başarılı olmadan yazılıyor → o gün bir daha denenmiyor. Damga yalnız başarılı indirme + doğrulama sonrası. | ChatGPT 8.1 | ✅ v9.67 — `Good` damgasi yalniz basarili indirmede yaziliyor |
 | M-29 | **Sağlık kontrolü 3 seviye:** HTTP → playlist → **gerçek segment** indirme; `Repair.alive()` şu an yalnız playlist bakıyor. | ChatGPT 8.2 | ✅ v9.66 — `Repair.alive` → son segment `Range` kontrolü |
 | M-30 | **Sunucuda günlük cron:** 50 ülke `good/<cc>.json`, `generatedAt`, 7 günden eski dosya yok sayılsın; TR dahil. Eski #143/#144 + #133/#142 (fix listesi) buraya bağlı. | Claude 3.3 / ChatGPT 8 | 🔧 (askıdaydı) |
 | M-31 | **Yedek kaynaklar** tüm kanallara yayılsın (şu an 5 kanal). Eski #125. | Claude 3.1 | 🔧 (askıdaydı) |
@@ -347,6 +347,8 @@ M-11 mağaza görselleri, M-57/58 mağaza metinleri.
 | M-85 | **"Az kanal = yakında" eşiği kaldırıldı:** 30 kanal şartı yerine **1+ kanal = hazır**. İndirme hatası 404 (liste yok) ve ağ hatası olarak ayrıldı; ağ hatası ülkeyi "yakında" işaretlemiyor, sunucuya liste eklenince eski işaret siliniyor. Listeler **10 ülke/~673 kanaldan 55 ülke/3.434 kanala** çıktı; her aday master→en düşük varyant zinciriyle sınandı. | ✅ v9.64 (cihazda: Birleşik Krallık 111, Azerbaycan 3 kanal indi) |
 | M-86 | **Ülke sırası:** listesi hazır ülkeler üstte (Türkiye ilk, kanal sayısına göre), sonra indirilebilenler, en sonda "yakında" olanlar. | ✅ v9.64 (cihazda görüldü) |
 | M-87 | **Kullanıcı bilgilendirmesi:** ülke ekranına TR/EN/RU/AR **"Kanal açılmıyor mu?"** kartı — reklam kuşağı, IP değişikliği, kanal kapanması ve "Ölü kanalları onar" çözümü. Kısa metin açık, dokununca ayrıntı. | ✅ v9.64 (cihazda görüldü) |
+| M-94 | **3'lü izleme setleri bozuktu:** "★ set" ile kaydedilen set `ad:` öneki yüzünden hiç geri yüklenmiyordu; kayıt indeks tuttuğu için ülke/liste değişince başka kanal açılıyordu. Önek ayrıştırması düzeltildi, kayda kanal adresleri eklendi (`u:` alanı), eski kayıtlar uyumlu. | Claude 17. yarı | ✅ v9.67 (cihazda: Test Seti → 2. pencere arte→ADRIA) |
+| M-95 | **Çoklu ekran paneli ekrana sığmıyordu:** "★ set" ve sonrası 1280 px'de görünmüyordu, set kaydetmek imkânsızdı. Panel yatay kaydırılabilir; set listesinde ham kod yerine set adı yazılıyor. | Claude 17. yarı | ✅ v9.67 (cihazda: ★ set görünür, ad "Test Seti") |
 
 ### Oturum 24 Kasım 2026 (yedinci yarı) — A/V senkron + 12 maddelik test (v9.55)
 
@@ -602,3 +604,38 @@ zaten uygulanmış olduğu için yalnız doğrulandı.
 **Sonraki oturum:** (1) `MultiActivity` set kaydını URL tabanlı yapmak, (2) tek
 rendition kanallarda dürüst kalite etiketi, (3) gerçek ölü kanalla `Repair` testi,
 (4) ödüllü reklam akışı, (5) M-13 `kanallar.json`, (6) M-72 tam media3 radyo.
+
+### Oturum 24 Kasım 2026 (on yedinci yarı) — 9.67: 3'lü izleme setleri
+
+Sıradaki açık uç, geçen turun "sonraki oturum" listesindeki `MultiActivity` set
+kaydıydı. Yaparken iki ek hata çıktı; üçü birlikte düzeltildi.
+
+- **M-94 (✅):** Kayıt okuma koşulu `!saved.startsWith("ad:")` yüzünden **isimli
+  setler hiç uygulanmıyordu**; set seçilince varsayılan dört kanal açılıyordu.
+  Koşul kaldırıldı, `ad:` öneki ayrıştırmadan önce atılıyor. Ayrıca kayıt artık
+  dört pencerenin **kanal adresini** de yazıyor (`|u:<url1>,...`); açarken
+  adresler güncel listede aranıp indekse çevriliyor (bulunamazsa eski indeks).
+  Eski kayıtlar adres alanı olmadığı için aynen çalışmaya devam ediyor.
+  **Cihazda:** "★ set" → "Test Seti" (3sat/ADRIA/Adventure) kaydedildi,
+  2. pencere `№6 arte` yapıldı, set yeniden açıldı → 2. pencere `ADRIA`'ya döndü.
+- **M-95 (✅):** Kontrol paneli tek satırda sığmıyordu; 1280 px genişlikte
+  "★ set" düğmesi ekran dışında kalıyor, set kaydetmek fiilen imkânsız oluyordu.
+  Panel `HorizontalScrollView` içine alındı (kaydırma çubuğu gizli).
+  Set listesinde ham kod (`ad:Test Seti|0,1,...`) yerine artık set adı görünüyor.
+- **M-25 (✅):** Kodda zaten kapalı: `AudioService.flushUsage()` radyo/arka plan
+  sesinde `TrafficStats` farkını günlük sayaca yazıyor, `checkLimit()` limit
+  dolunca yayını duraklatıyor; çoklu ekran `MultiActivity.countData()` ile ölçülüyor.
+- **M-28 (✅):** Kodda zaten kapalı: `Good.refreshIfNeeded` gün damgasını yalnız
+  `download()` başarılı olunca yazıyor.
+- **Kapasite:** 7.121.589 B · 400 dosya · **17.517 sınıf** (+0) · +544 bayt ·
+  imza aynı → ✅. GitHub release `v9.67`, site `/indir` 9.67.
+- **Açık kalan:** kayıtlı sette kanal listede yoksa kullanıcıya bilgi verilmiyor;
+  `Prefs` anahtarı hâlâ `url.hashCode()` (M-65); ödüllü reklam akışı (kullanıcı elle);
+  tablet 9.67 kurulumu.
+
+**Durum sayısı (24 Kasım 2026, 17. yarı sonu):** toplam **96 madde** · **45 ✅ bitti** ·
+**7 👤 kullanıcı işi** · **44 açık**.
+
+**Sonraki oturum:** (1) `Prefs` kullanım anahtarını `url.hashCode()` yerine tam
+adrese taşımak (M-65), (2) tek rendition kanallarda dürüst kalite etiketi,
+(3) gerçek ölü kanalla `Repair` testi, (4) M-13 `kanallar.json`, (5) M-72 media3 radyo.

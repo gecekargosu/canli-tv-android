@@ -516,9 +516,17 @@ public class MainActivity extends android.app.Activity {
     private void savedSets() {
         final List<String> sets = new ArrayList<String>(Prefs.multiSets(this));
         sets.add(0, "Son kullandığım set");
+        // Listede ham kod ("ad:Spor|0,1,2,3|1000|3|u:...") görünüyordu; yalnız set adı yazılır.
+        final String[] labels = new String[sets.size()];
+        labels[0] = sets.get(0);
+        for (int i = 1; i < sets.size(); i++) {
+            String v = sets.get(i);
+            int bar = v.indexOf('|');
+            labels[i] = v.startsWith("ad:") && bar > 3 ? v.substring(3, bar) : v;
+        }
         new AlertDialog.Builder(this)
                 .setTitle("3'lü izleme setleri")
-                .setItems(sets.toArray(new String[0]), new DialogInterface.OnClickListener() {
+                .setItems(labels, new DialogInterface.OnClickListener() {
                     @Override public void onClick(DialogInterface d, int which) {
                         Intent i = new Intent(MainActivity.this, MultiActivity.class);
                         if (which > 0) i.putExtra("set", sets.get(which));

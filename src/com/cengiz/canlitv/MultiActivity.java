@@ -73,7 +73,8 @@ public class MultiActivity extends android.app.Activity {
         int[] idx = new int[]{start >= 0 ? start : 0, 1, 2, 3};
         boolean[] aud = new boolean[]{true, false, false, false};
         int cnt = 3;
-        if (saved != null && saved.contains("|") && !saved.startsWith("ad:")) {
+        // HATA: isimli setler ("ad:...") bu kosul yuzunden hic geri yuklenmiyordu.
+        if (saved != null && saved.contains("|")) {
             try {
                 String[] p = saved.replace("ad:", "").split("\\|");
                 String[] parts = p[1].split(",");
@@ -81,6 +82,7 @@ public class MultiActivity extends android.app.Activity {
                 String mask = p[2];
                 for (int i = 0; i < 4 && i < mask.length(); i++) aud[i] = mask.charAt(i) == '1';
                 cnt = Integer.parseInt(p[3].trim());
+                if (p.length > 4) resolveUrls(p[4], idx);
             } catch (Exception ignored) { }
         }
         for (int i = 0; i < 4; i++) audible[i] = aud[i];
@@ -109,7 +111,14 @@ public class MultiActivity extends android.app.Activity {
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         panelLp.gravity = Gravity.BOTTOM;
         panelLp.setMargins(dp(8), 0, dp(8), dp(10));
-        root.addView(panel, panelLp);
+        // Dar ekranda panel sığmıyordu: "★ set" düğmesi ekran dışında kalıyordu.
+        // Panel yatay kaydırılabilir olsun ki tüm düğmeler erişilebilsin.
+        android.widget.HorizontalScrollView panelScroll =
+                new android.widget.HorizontalScrollView(this);
+        panelScroll.setHorizontalScrollBarEnabled(false);
+        panelScroll.setFillViewport(true);
+        panelScroll.addView(panel);
+        root.addView(panelScroll, panelLp);
 
         TextView home = chip("🏠");
         home.setOnClickListener(new View.OnClickListener() {
@@ -342,7 +351,7 @@ public class MultiActivity extends android.app.Activity {
         for (int i = 0; i < 4; i++) b.append(slots[i].chan).append(i < 3 ? "," : "");
         b.append("|");
         for (int i = 0; i < 4; i++) b.append(audible[i] ? "1" : "0");
-        b.append("|").append(paneCount);
+        b.append("|").append(paneCount).append("|").append(encodeUrls());
         Prefs.setMultiLast(this, b.toString());
     }
 
@@ -398,11 +407,44 @@ public class MultiActivity extends android.app.Activity {
                         for (int i = 0; i < 4; i++) b.append(slots[i].chan).append(i < 3 ? "," : "");
                         b.append("|");
                         for (int i = 0; i < 4; i++) b.append(audible[i] ? "1" : "0");
-                        b.append("|").append(paneCount);
+                        b.append("|").append(paneCount).append("|").append(encodeUrls());
                         Prefs.saveMultiSet(MultiActivity.this, b.toString());
                         Toast.makeText(MultiActivity.this, "Kaydedildi: " + name, Toast.LENGTH_SHORT).show();
                     }
                 }).setNegativeButton("Vazgeç", null).show();
+    }
+
+    /**
+     * Kaydedilmiş set: kanal adreslerini indekse çevirir.
+     * Adres alanı yoksa (eski kayıtlar) indeks kullanılır.
+     */
+    private void resolveUrls(String field, int[] idx) {
+        if (field == null || !field.startsWith("u:")) return;
+        String[] parts = field.substring(2).split(",");
+        for (int i = 0; i < 4 && i < parts.length; i++) {
+            String url;
+            try { url = java.net.URLDecoder.decode(parts[i], "UTF-8"); }
+            catch (Exception e) { continue; }
+            if (url.length() == 0) continue;
+            for (int k = 0; k < list.size(); k++) {
+                if (list.get(k).url.equals(url)) { idx[i] = k; break; }
+            }
+        }
+    }
+
+    /**
+     * Set metninin son alanı: dört pencerenin kanal adresi.
+     * Ülke/liste değişince indeks başka kanalı gösteriyordu; adres sabit kalır.
+     */
+    private String encodeUrls() {
+        StringBuilder b = new StringBuilder("u:");
+        for (int i = 0; i < 4; i++) {
+            if (i > 0) b.append(',');
+            try {
+                b.append(java.net.URLEncoder.encode(list.get(slots[i].chan).url, "UTF-8"));
+            } catch (Exception ignored) { }
+        }
+        return b.toString();
     }
 
     private class Slot extends FrameLayout implements SurfaceHolder.Callback {

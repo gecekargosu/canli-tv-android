@@ -192,3 +192,12 @@ dokunma + `uiautomator dump` + `logcat` + ekran görüntüsü. "Kanıt" sütunu 
 | D-38 | İlk kanal açılışında reklam çıkıyor mu | **✅** yükleme sonrası 1. kanalda reklam yok; 2. kanalda tam ekran reklam normal geldi (`_build/y21s.png` TOD reklamı = 2. açılış). |
 | D-39 | Sadece ses gerçekten düşük veri mi | **🟡** yayın kesintisiz, `PLAYING`; veri farkı video moduna göre düşük ama tek rendition kanalda (3sat) kesin ayrım yapılamadı. |
 | D-40 | Ödül sonrası yayın baştan başlıyor mu | **⏳** ödüllü reklam ağı doldurmadı; kullanıcı elle denemeli. |
+
+### 17. yarı (v9.67) — 3'lü izleme setleri
+
+| # | Konu | Sonuç / kanıt |
+|---|------|----------------|
+| D-41 | Kaydedilen set geri yükleniyor mu | **✅** "Test Seti" kaydedildi, 2. pencere `№6 arte` yapıldı, set yeniden açıldı → 2. pencere `ADRIA`'ya döndü (`_build/y39t.jpg`). |
+| D-42 | Set listesinde okunur ad | **✅** Ana ekran → "3'lü izleme setleri" listesinde "Test Seti" (ham `ad:...` kodu değil). |
+| D-43 | Panel tüm düğmeler erişilebilir mi | **✅** Panel yatay kaydırılıyor, "★ set" görünür ve çalışıyor (`_build/y32t.jpg`). |
+| D-44 | Ülke değişince set doğru kanalı mı açıyor | **⏳** denenmedi (ülke değiştirip set açma turu yapılmadı); adres alanı `u:` kayıtta mevcut. |
