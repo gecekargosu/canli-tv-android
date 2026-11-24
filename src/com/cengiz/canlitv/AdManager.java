@@ -437,12 +437,25 @@ public final class AdManager {
         try {
             ad.show(activity);
             AdStats.note(activity, "gecis");
+            // Radyo arkada çalıyorsa ses odağı reklama geçer; reklam kapanınca radyo kendiliğinden döner.
+            toastRadioHint(activity);
         } catch (Throwable t) {
             showingAd = false;
             Log.w(TAG, "gecis reklami gosterilemedi: " + t);
             loadInterstitial(activity);
             then.run();
         }
+    }
+
+    /** Reklam açılırken radyo dinleyicisine ne olacağını söyle (ses kesilmesi kafa karıştırmasın). */
+    private static void toastRadioHint(final Activity activity) {
+        try {
+            if (AudioService.isPlayingStatic() || AudioService.isConnectingStatic()) {
+                android.widget.Toast.makeText(activity,
+                        "Reklam sırasında radyo duraklatıldı · reklamı kapatınca devam eder",
+                        android.widget.Toast.LENGTH_LONG).show();
+            }
+        } catch (Throwable ignored) { }
     }
 
     /**

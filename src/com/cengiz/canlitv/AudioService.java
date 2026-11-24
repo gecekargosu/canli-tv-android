@@ -86,10 +86,25 @@ public class AudioService extends Service {
         } catch (Throwable ignored) { }
     }
 
+    // --- yayin durumu (ekran bunu okuyup "caliyor mu" anlar) ---
+    public static final int S_BUFFERING = 0, S_PLAYING = 1, S_ERROR = 2, S_PAUSED = 3;
+    private static volatile int state = S_BUFFERING;
+    private static volatile String stateUrl = "";
+
+    public static int stateStatic() { return state; }
+    public static String stateUrlStatic() { return stateUrl; }
+
+    /** Yayin gercekten caliyor mu (tamponlama bitmis, hata yok). */
     public static boolean isPlayingStatic() {
         try {
-            return INSTANCE != null && INSTANCE.player != null && INSTANCE.player.isPlaying();
+            return INSTANCE != null && INSTANCE.player != null
+                    && state == S_PLAYING && INSTANCE.player.isPlaying();
         } catch (Throwable e) { return false; }
+    }
+
+    /** Yayin hala kurtarilabilir mi (baglaniyor / yeniden deneniyor). */
+    public static boolean isConnectingStatic() {
+        return state == S_BUFFERING;
     }
 
     public static void toggleStatic() {
@@ -206,6 +221,7 @@ public class AudioService extends Service {
         try {
             if (player != null && player.isPlaying()) player.pause();
             paused = true;
+            state = S_PAUSED;
             updateState();
             startForeground(NOTIF_ID, notification());
         } catch (Exception ignored) { }
@@ -217,6 +233,7 @@ public class AudioService extends Service {
             requestFocus();
             player.start();
             paused = false;
+            state = S_PLAYING;
             updateState();
             startForeground(NOTIF_ID, notification());
         } catch (Exception ignored) { }
@@ -238,7 +255,8 @@ public class AudioService extends Service {
                                         try {
                                             switch (change) {
                                                 case AudioManager.AUDIOFOCUS_LOSS:
-                                                    resumeOnFocus = false;
+                                                    // Reklam/video gibi geçici sahiplik: odak geri gelince devam et.
+                                                    resumeOnFocus = true;
                                                     pause();
                                                     break;
                                                 case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT:
@@ -289,12 +307,57 @@ public class AudioService extends Service {
     /** Zayıf internette kaç kez yeniden bağlanılacağı. */
     private static final int MAX_ATTEMPTS = 3;
     /** Yavaş bağlantıda ilk bağlanma için tanınan süre. */
-    private static final long START_GRACE_MS = 25000L;
+    private static final long START_GRACE_MS = 15000L;
     private boolean preparedOk = false;
     private boolean retryPending = false;
     private int passiveTries = 0;
     private long playStartedAt = 0;
     private final android.os.Handler ui = new android.os.Handler(android.os.Looper.getMainLooper());
+    private long lastPos = -1;
+    private long lastRx = -1;
+    private int stallTicks = 0;
+
+    /**
+     * Yayın gerçekten ilerliyor mu? MediaPlayer internet kesilince de isPlaying()=true
+     * diyebiliyor; bu yüzden konum ilerlemesini izliyoruz (12 sn ilerlemezse takıldı).
+     */
+    private final Runnable monitor = new Runnable() {
+        @Override public void run() {
+            MediaPlayer p = player;
+            try {
+                if (p != null && state == S_PLAYING && p.isPlaying()) {
+                    int pos = p.getCurrentPosition();
+                    // Ağdan veri gelmiyorsa yayın sessizce takılmış demektir (tampon bitince ses kesilir).
+                    long rx = android.net.TrafficStats.getUidRxBytes(android.os.Process.myUid());
+                    if (lastRx < 0) lastRx = rx;
+                    // 12 sn'de 8 KB'den az veri geldiyse yayın akışı durmuş demektir
+                    // (128 kbps radyo saniyede ~16 KB indirir).
+                    boolean noData = rx >= 0 && (rx - lastRx) < 8000;
+                    if (pos == lastPos || noData) {
+                        stallTicks++;
+                        if (stallTicks >= 3) {
+                            stallTicks = 0;
+                            lastPos = -1;
+                            state = S_BUFFERING;
+                            CrashLog.event(AudioService.this, "radio", "yayin takildi (12 sn): " + currentUrl);
+                            notifyText("Bağlantı sorunu · yeniden bağlanıyorum");
+                            scheduleRetry("Yayın takıldı");
+                            return;
+                        }
+                    } else {
+                        stallTicks = 0;
+                        lastPos = pos;
+                        lastRx = rx;
+                    }
+                } else {
+                    stallTicks = 0;
+                    lastPos = -1;
+                }
+            } catch (Throwable ignored) { }
+            ui.postDelayed(this, 4000L);
+        }
+    };
+
     private final Runnable watchdog = new Runnable() {
         @Override public void run() {
             MediaPlayer p = player;
@@ -349,7 +412,8 @@ public class AudioService extends Service {
         if (attempt < MAX_ATTEMPTS - 1) {
             attempt++;
             notifyText(reason + " · yeniden bağlanılıyor (" + attempt + "/" + (MAX_ATTEMPTS - 1) + ")");
-            long delay = attempt == 1 ? 2000L : 5000L;
+            state = S_BUFFERING;
+            long delay = 5000L;
             android.util.Log.w("UmayRadio", "yeniden baglanma " + attempt + " gecikme=" + delay);
             retryPending = true;
             ui.postDelayed(new Runnable() {
@@ -383,8 +447,11 @@ public class AudioService extends Service {
         releasePlayer();
         paused = false;
         preparedOk = false;
+        state = S_BUFFERING;
+        stateUrl = candidate;
         playStartedAt = android.os.SystemClock.elapsedRealtime();
         ui.removeCallbacks(watchdog);
+        CrashLog.event(this, "radio", "baglaniyor: " + candidate);
         try {
             player = new MediaPlayer();
             player.setAudioAttributes(new AudioAttributes.Builder()
@@ -400,15 +467,31 @@ public class AudioService extends Service {
             player.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
                                     @Override public void onPrepared(MediaPlayer mp) {
                         preparedOk = true;
+                        state = S_PLAYING;
+                        CrashLog.event(AudioService.this, "radio", "hazir: " + candidate);
                         attachEq(mp);
                         mp.start();
+                        lastPos = -1;
+                        lastRx = -1;
+                        stallTicks = 0;
+                        ui.removeCallbacks(monitor);
+                        ui.postDelayed(monitor, 4000L);
                         updateState();
                     try { startForeground(NOTIF_ID, notification()); } catch (Exception ignored) { }
                 }
             });
-                            player.setOnErrorListener(new MediaPlayer.OnErrorListener() {
+                            player.setOnInfoListener(new MediaPlayer.OnInfoListener() {
+                @Override public boolean onInfo(MediaPlayer mp, int what, int extra) {
+                    if (what == MediaPlayer.MEDIA_INFO_BUFFERING_START) state = S_BUFFERING;
+                    else if (what == MediaPlayer.MEDIA_INFO_BUFFERING_END) state = S_PLAYING;
+                    return false;
+                }
+            });
+            player.setOnErrorListener(new MediaPlayer.OnErrorListener() {
                     @Override public boolean onError(MediaPlayer mp, int w, int e) {
                         android.util.Log.e("UmayRadio", "hata what=" + w + " extra=" + e + " " + currentUrl);
+                        state = S_ERROR;
+                        CrashLog.event(AudioService.this, "radio", "hata what=" + w + " extra=" + e + " " + currentUrl);
                         scheduleRetry("Yayın kesildi");
                         return true;
                     }
@@ -532,6 +615,8 @@ public class AudioService extends Service {
     @Override
     public void onDestroy() {
         INSTANCE = null;
+        state = S_ERROR;
+        ui.removeCallbacks(monitor);
         abandonFocus();
         try { if (noisyReceiver != null) { unregisterReceiver(noisyReceiver); noisyReceiver = null; } }
         catch (Throwable ignored) { }

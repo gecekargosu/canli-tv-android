@@ -149,6 +149,28 @@ public class RadioPlayerActivity extends Activity {
         statusView.setPadding(0, dp(2), 0, dp(6));
         root.addView(statusView);
 
+        // Baglanti sorunu icin elle mudahale: tekrar dene / sonraki kanal
+        LinearLayout fixRow = new LinearLayout(this);
+        fixRow.setGravity(Gravity.CENTER);
+        TextView retryBtn = chip("🔄 Tekrar dene");
+        retryBtn.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) {
+                statusView.setText("🔄 Yeniden bağlanıyorum…");
+                customStatus = true;
+                stationRetries = 0;
+                AudioService.start(RadioPlayerActivity.this, urls.get(index), names.get(index));
+                ui.removeCallbacks(radioWatchdog);
+                ui.postDelayed(radioWatchdog, 15000);
+            }
+        });
+        TextView nextBtn = chip("⏭ Sonraki kanal");
+        nextBtn.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) { changeStation(1); }
+        });
+        fixRow.addView(retryBtn);
+        fixRow.addView(nextBtn);
+        root.addView(fixRow);
+
         eqView = new EqView(this);
         root.addView(eqView, new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, dp(60)));
@@ -370,8 +392,9 @@ public class RadioPlayerActivity extends Activity {
         AudioService.start(this, urls.get(index), names.get(index));
         playing = true;
         stationRetries = 0;
+        customStatus = false;
         ui.removeCallbacks(radioWatchdog);
-        ui.postDelayed(radioWatchdog, 12000);
+        ui.postDelayed(radioWatchdog, 15000);
     }
 
     /**
@@ -379,24 +402,42 @@ public class RadioPlayerActivity extends Activity {
      * bulabiliyor. Aynı yayına 2 kez daha bağlanılır, ancak ondan sonra sıradakine geçilir.
      * "Ölü istasyon" işaretlemesi bu yüzden kaldırıldı (yavaş ağ istasyonu öldürmesin).
      */
+    private boolean customStatus = false;
+
     private final Runnable radioWatchdog = new Runnable() {
         @Override public void run() {
             if (names.isEmpty() || index < 0 || index >= urls.size()) return;
-            if (AudioService.isPlayingStatic()) { radioSkips = 0; stationRetries = 0; return; }
-            if (stationRetries < 2) {
+            if (AudioService.isPlayingStatic()) {
+                radioSkips = 0;
+                if (stationRetries > 0) {
+                    customStatus = true;
+                    statusView.setText("✅ Bağlantı iyi · çalıyor");
+                    ui.postDelayed(new Runnable() {
+                        @Override public void run() { customStatus = false; stationRetries = 0; }
+                    }, 4000);
+                }
+                return;
+            }
+            // 15 sn içinde ses gelmedi: 5 sn arayla 3 kez daha bağlan.
+            if (stationRetries < 3) {
                 stationRetries++;
-                statusView.setText("bağlantı yavaş · yeniden deneniyor (" + stationRetries + "/2)");
+                customStatus = true;
+                statusView.setText("📶 Bağlantı sorunu · yeniden deneniyor ("
+                        + stationRetries + "/3)");
+                CrashLog.event(RadioPlayerActivity.this, "radio",
+                        "yeniden deneme " + stationRetries + "/3: " + urls.get(index));
                 AudioService.start(RadioPlayerActivity.this, urls.get(index), names.get(index));
-                ui.postDelayed(this, 12000);
+                ui.postDelayed(this, 5000);
                 return;
             }
             if (radioSkips >= 3) {
-                statusView.setText("İnternet zayıf görünüyor · başka istasyon veya ülke dene");
+                customStatus = true;
+                statusView.setText("İnternet zayıf görünüyor · Tekrar dene veya başka istasyon seç");
                 return;
             }
             radioSkips++;
             Toast.makeText(RadioPlayerActivity.this,
-                    "İstasyon açılmadı, sıradakine geçiliyor", Toast.LENGTH_SHORT).show();
+                    "Bağlantı kurulamadı, sonraki istasyona geçiliyor", Toast.LENGTH_SHORT).show();
             changeStation(1);
         }
     };
@@ -408,11 +449,13 @@ public class RadioPlayerActivity extends Activity {
                 eqView.setActive(playing);   // cubuklar sadece ses varken hareket eder
                 eqView.invalidate();
             }
-            if (statusView != null) {
-                if (playing) {
-                    statusView.setText("çalıyor · ekolayzır aktif");
-                } else if (playing == false) {
-                    statusView.setText("bağlanıyor… (internet zayıf olabilir)");
+            if (statusView != null && !customStatus) {
+                if (AudioService.stateStatic() == AudioService.S_PAUSED) {
+                    statusView.setText("⏸ Duraklatıldı (reklam/başka ses) · kapanınca devam eder");
+                } else if (playing && AudioService.isPlayingStatic()) {
+                    statusView.setText("✅ Bağlantı iyi · çalıyor");
+                } else if (playing) {
+                    statusView.setText("📶 Bağlanıyor… (internet zayıf olabilir)");
                 }
             }
             ui.postDelayed(this, 150);

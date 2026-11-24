@@ -228,10 +228,9 @@ public class RadioActivity extends Activity {
     }
 
     private void play(final int i) {
-        // radyo acilirken frekans sinirli gecis reklami (reklamsiz surede atlanir)
-        AdManager.maybeInterstitial(this, new Runnable() {
-            @Override public void run() { RadioPlayerActivity.open(RadioActivity.this, i); }
-        });
+        // Radyo secimi reklamsiz acilir: gecis reklami sesi kesiyordu (kullanici sikayeti).
+        // Gelir, liste banner'i + izlerken cikan reklamlar + 40 dk sonraki odullu teklifle surer.
+        RadioPlayerActivity.open(this, i);
     }
 
     /** Tur cipleri: Tümü, ★ Favoriler, haber/spor/müzik/dini, Gizlenenler. */

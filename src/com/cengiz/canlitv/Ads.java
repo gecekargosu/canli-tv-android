@@ -54,6 +54,9 @@ public class Ads {
     public static final int REWARD_MINUTES = 15;
     /** Radyoda kac dakika sonra "reklamsiz devam?" teklifi gosterilir (zorlamasiz). */
     public static final int ADFREE_OFFER_MINUTES = 40;
+
+    /** Hata kaydı / destek e-postası (gizlilik politikasındaki adres). */
+    public static final String SUPPORT_EMAIL = "cengizkilic1980@gmail.com";
     /** Uygulama acilisinda reklam gosterilmez (acilis reklami kapali). */
     public static final boolean APP_OPEN_AD = false;
 }

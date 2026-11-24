@@ -222,3 +222,39 @@ radyo dayanıklılığı). M-20 tam media3 geçişi henüz yapılmadı.
 6. M-11 — Mağaza görsellerinin reklamsız yenilenmesi.
 
 **Yayın:** GitHub `v9.36` ve `v9.39`, site `/indir` 9.39, zip `UMAY-MULTI-TV-Claude-9.39.zip`, AAB `releases/v9.39/`.
+
+### Oturum 24 Kasım 2026 (ikinci yarı) — bağlantı dayanıklılığı, radyo butonları, hata günlüğü (v9.40 → v9.43)
+
+**Bu oturumda biten: 4 madde** (M-20'nin radyo yarısı, M-23 genişletme, M-69 yeni, M-70 yeni)
+
+- **M-23 (genişletildi, ✅):** 15 sn zaman aşımı, 5 sn arayla 3 yeniden bağlanma, sonra sonraki kanal.
+  TV ve radyoda "📶 Bağlantı sorunu · yeniden deneniyor (n/3)" ve düzelince "✅ Bağlantı iyi · çalıyor".
+- **M-20 (radyo yarısı, ✅ kısmi):** Radyo ekranına **🔄 Tekrar dene** ve **⏭ Sonraki kanal** butonları
+  eklendi; cihazda ikisi de test edildi. Yayının gerçekten çaldığı artık `isPlaying()` yerine konum +
+  ağ verisi (12 sn'de <8 KB) ile anlaşılıyor; sessiz takılma tespit edilip yeniden bağlanıyor.
+  **NOT (yarım):** Radyo hâlâ MediaPlayer'da; tam media3 geçişi (ICY/302, Bluetooth tuşları) yapılmadı.
+- **M-69 (yeni, ✅):** Hata günlüğü — çökme + bağlantı olayları `files/events.txt`'ye yazılıyor;
+  Ayarlar → Hata bildir → **📧 E-posta** (cengizkilic1980@gmail.com) veya **Paylaş** (WhatsApp/mesaj).
+- **M-70 (yeni, ✅):** Radyo seçiminde geçiş reklamı kaldırıldı (sesi kesiyordu). Reklam başka
+  ekranda açılırsa radyo duraklıyor ve reklam kapanınca **kendiliğinden devam ediyor** (odak düzeltmesi);
+  ekranda "⏸ Duraklatıldı (reklam/başka ses)" yazıyor.
+
+**Cihaz doğrulaması:** 9.43 kuruldu; "✅ Bağlantı iyi · çalıyor" görüldü, **Tekrar dene** ve
+**Sonraki kanal** butonları çalıştı, wifi kapat/aç sonrası radyo toparlandı.
+
+**Yayın:** GitHub `v9.43`, site `/indir` 9.43, `releases/v9.43/` APK+AAB+notlar, zip 9.43.
+
+**Sonraki oturum:** M-20 tam media3 geçişi, M-25 radyo veri sayacı, M-15 sunucu filtresi,
+M-21 çoklu ekran, M-16 eşik kontrolü, M-11 mağaza görselleri. **Bugün hepsi bitmez** (yaklaşık
+20+ madde kaldı; mağaza görselleri ve Play yayını kullanıcı işi).
+
+---
+
+## EK MADDELER (24 Kasım 2026, kullanıcı geri bildirimi)
+
+| No | İş | Durum |
+|---|---|---|
+| M-69 | **Hata günlüğü + e-posta:** çökme ve bağlantı olayları cihazda `events.txt`'ye yazılır; Ayarlar → Hata bildir → 📧 E-posta / Paylaş. | ✅ v9.43 |
+| M-70 | **Radyoda reklam kesintisi:** radyo seçiminde geçiş reklamı kaldırıldı; başka ekranda reklam açılırsa radyo duraklar, reklam kapanınca kendiliğinden devam eder. | ✅ v9.43 |
+| M-71 | **Radyo geçiş reklamı geliri:** M-70 ile kaybedilen radyo geçiş reklamı yerine radyo listesinde banner + 40 dk sonraki ödüllü teklif korunuyor; ileride radyo içi sesli reklam (opsiyonel) değerlendirilecek. | 🔧 planlı |
+| M-72 | **Tam media3 radyo:** MediaPlayer yerine ExoPlayer + MediaSession (ICY/302, Bluetooth/kilit ekranı tuşları). | 🔧 (M-20'nin devamı) |

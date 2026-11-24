@@ -483,9 +483,12 @@ public class PlayerActivity extends android.app.Activity {
         Prefs.clearFails(this, list.get(index).url);
         autoSkips = 0;
         fbTried = 0;
+        if (sameRetries > 0) showNotice("✅ Bağlantı iyi · yayın açıldı");
         sameRetries = 0;
         stallCount = 0;
-        hideNotice();
+        ui.postDelayed(new Runnable() {
+            @Override public void run() { hideNotice(); }
+        }, 4000);
         if (!tracking) { tracking = true; openedAt = System.currentTimeMillis(); }
         ui.removeCallbacks(watchdog);
     }
@@ -498,10 +501,11 @@ public class PlayerActivity extends android.app.Activity {
         progress.setVisibility(View.GONE);
         final String cur = list.get(index).url;
         // Zayıf internet: kanalı hemen bırakmak yerine aynı yayına 2 kez daha bağlan.
-        if (sameRetries < 2) {
+        if (sameRetries < 3) {
             sameRetries++;
             final int n = sameRetries;
-            showNotice("📡 Bağlantı zayıf · yeniden bağlanıyorum (" + n + "/2)");
+            showNotice("📶 Bağlantı sorunu · yeniden bağlanıyorum (" + n + "/3)");
+            CrashLog.event(this, "tv", "hata, tekrar deneniyor " + n + "/3: " + cur);
             progress.setVisibility(View.VISIBLE);
             ui.postDelayed(new Runnable() {
                 @Override public void run() {
@@ -511,10 +515,10 @@ public class PlayerActivity extends android.app.Activity {
                         player.setMediaItem(androidx.media3.common.MediaItem.fromUri(cur));
                         player.prepare();
                         player.play();
-                        ui.postDelayed(watchdog, 13000);
+                        ui.postDelayed(watchdog, 15000);
                     } catch (Throwable ignored) { }
                 }
-            }, n == 1 ? 1500 : 3500);
+            }, 5000);
             return;
         }
         String[] alts = ChannelRepo.fallbacks(cur);
@@ -834,7 +838,7 @@ public class PlayerActivity extends android.app.Activity {
         lastPos = -1;
         lastPosAt = System.currentTimeMillis();
         ui.removeCallbacks(watchdog);
-        ui.postDelayed(watchdog, 13000);
+        ui.postDelayed(watchdog, 15000);
     }
 
     private void toggleMute() {
@@ -851,11 +855,14 @@ public class PlayerActivity extends android.app.Activity {
         @Override public void run() {
             try {
                 if (!player.isPlaying()) {
-                    // Zayıf internet: kanalı "ölü" saymadan önce aynı yayına 2 kez daha bağlan.
-                    if (sameRetries < 2) {
+                    // Zayıf internet: kanalı "ölü" saymadan önce aynı yayına 3 kez daha bağlan.
+                    if (sameRetries < 3) {
                         sameRetries++;
                         final String cur = list.get(index).url;
-                        showNotice("📡 Bağlantı zayıf · yeniden bağlanıyorum (" + sameRetries + "/2)");
+                        showNotice("📶 Bağlantı sorunu · yeniden bağlanıyorum ("
+                                + sameRetries + "/3)");
+                        CrashLog.event(PlayerActivity.this, "tv",
+                                "15 sn ses yok, tekrar " + sameRetries + "/3: " + cur);
                         try {
                             player.stop();
                             player.clearMediaItems();
@@ -864,7 +871,7 @@ public class PlayerActivity extends android.app.Activity {
                             player.play();
                         } catch (Throwable ignored) { }
                         ui.removeCallbacks(this);
-                        ui.postDelayed(this, 13000);
+                        ui.postDelayed(this, 15000);
                         return;
                     }
                     progress.setVisibility(View.GONE);

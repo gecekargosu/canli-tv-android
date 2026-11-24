@@ -343,16 +343,40 @@ public class SettingsActivity extends Activity {
 
     /** Cihazda kayitli hata logunu paylasir (WhatsApp/mail ile gonderilebilir). */
     private void shareCrash() {
-        String log = CrashLog.last(this);
-        if (log.length() == 0) {
-            toast("Kayıtlı hata yok. Bir sorun olursa buradan gönderebilirsin.");
-            return;
+        final String log = CrashLog.report(this);
+        new AlertDialog.Builder(this)
+                .setTitle("Hata kaydı")
+                .setMessage("Uygulama sürümü, cihaz bilgisi ve son bağlantı hataları hazır.\n\n"
+                        + "E-posta ile gönderirsen doğrudan bana ulaşır; istersen WhatsApp/mesajla da "
+                        + "paylaşabilirsin.\n\nKayıt: " + Math.min(log.length(), 6000) + " karakter")
+                .setPositiveButton("📧 E-posta", new DialogInterface.OnClickListener() {
+                    @Override public void onClick(DialogInterface d, int w) { mailCrash(log); }
+                })
+                .setNeutralButton("Paylaş", new DialogInterface.OnClickListener() {
+                    @Override public void onClick(DialogInterface d, int w) { shareText(log); }
+                })
+                .setNegativeButton("Kapat", null).show();
+    }
+
+    /** Hata kaydını destek e-postasına gönderir (kullanıcı sadece Gönder'e basar). */
+    private void mailCrash(String log) {
+        try {
+            Intent i = new Intent(Intent.ACTION_SENDTO, android.net.Uri.parse("mailto:"));
+            i.putExtra(Intent.EXTRA_EMAIL, new String[]{Ads.SUPPORT_EMAIL});
+            i.putExtra(Intent.EXTRA_SUBJECT, "UMAY Multi TV hata kaydı · sürüm " + version());
+            i.putExtra(Intent.EXTRA_TEXT, log);
+            startActivity(Intent.createChooser(i, "E-posta ile gönder"));
+        } catch (Throwable t) {
+            shareText(log);
         }
+    }
+
+    private void shareText(String log) {
         Intent i = new Intent(Intent.ACTION_SEND);
         i.setType("text/plain");
-        i.putExtra(Intent.EXTRA_SUBJECT, "UMAY Multi TV hata kaydı");
+        i.putExtra(Intent.EXTRA_SUBJECT, "UMAY Multi TV hata kaydı · sürüm " + version());
         i.putExtra(Intent.EXTRA_TEXT, log);
-        startActivity(Intent.createChooser(i, "Hata kaydını gönder"));
+        startActivity(Intent.createChooser(i, "Hata kaydını paylaş"));
     }
 
     /** Reklam bilgisi + odullu "60 dk reklamsiz" + uyelik kisayolu. */
