@@ -227,6 +227,26 @@ public class Prefs {
         e.apply();
     }
 
+    /** Bu ülke için sunucuda liste yok (404) — tekrar tekrar denemeyelim. */
+    public static void markCountryMiss(Context c, String code) {
+        java.util.Set<String> s = new java.util.HashSet<String>(missSet(c));
+        s.add(code);
+        sp(c).edit().putStringSet("countryMiss", s).apply();
+    }
+
+    public static boolean isCountryMiss(Context c, String code) {
+        return missSet(c).contains(code);
+    }
+
+    private static java.util.Set<String> missSet(Context c) {
+        try {
+            java.util.Set<String> s = sp(c).getStringSet("countryMiss", null);
+            return s == null ? new java.util.HashSet<String>() : s;
+        } catch (Throwable t) {
+            return new java.util.HashSet<String>();
+        }
+    }
+
     public static int limitMb(Context c) {
         return sp(c).getInt("limitMb", 0);
     }

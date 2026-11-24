@@ -20,6 +20,7 @@ import android.widget.Toast;
  * Listeye uzun basmak, o ulkenin listesini yeniden indirir (guncelleme icin).
  */
 public class CountryActivity extends Activity {
+    private ListView list;
 
     private static final int BG = Color.parseColor("#11151C");
     private static final int CARD = Color.parseColor("#1B2230");
@@ -72,7 +73,7 @@ public class CountryActivity extends Activity {
         head.addView(top);
         root.addView(head);
 
-        ListView list = new ListView(this);
+        list = new ListView(this);
         list.setDivider(null);
         list.setDividerHeight(dp(6));
         list.setPadding(0, dp(4), 0, dp(8));
@@ -118,6 +119,10 @@ public class CountryActivity extends Activity {
                         // M-16: 30'dan az doğrulanmış kanal → "yakında" (boş liste göstermeyelim)
                         s.setText(have + " kanal · yakında (" + CountryRepo.READY_MIN + "+ gerekli)");
                         s.setTextColor(MUTED);
+                    } else if (Prefs.isCountryMiss(CountryActivity.this, code)) {
+                        // M-83: sunucuda bu ülkenin listesi yok (404) → boşuna indirme denemesi yok
+                        s.setText("yakında · liste henüz yok");
+                        s.setTextColor(MUTED);
                     } else {
                         s.setText(Lang.t(CountryActivity.this, "download"));
                         s.setTextColor(ACCENT);
@@ -158,6 +163,10 @@ public class CountryActivity extends Activity {
     }
 
     private void pick(final String code, final boolean force) {
+        if (!force && !CountryRepo.isReady(this, code) && Prefs.isCountryMiss(this, code)) {
+            Toast.makeText(this, "Bu ülke için liste henüz yok (yakında).", Toast.LENGTH_SHORT).show();
+            return;
+        }
         if (!force && CountryRepo.isReady(this, code)) {
             Prefs.setCountry(this, code);
             ChannelRepo.reload(this);
@@ -175,7 +184,13 @@ public class CountryActivity extends Activity {
                     @Override public void run() {
                         if (dlg.isShowing()) dlg.dismiss();
                         if (!ok) {
-                            Toast.makeText(CountryActivity.this, Lang.t(CountryActivity.this, "download_failed"),
+                            // M-83: liste sunucuda yok → "yakında" olarak işaretle, kullanıcıya net söyle.
+                            Prefs.markCountryMiss(CountryActivity.this, code);
+                            if (list != null && list.getAdapter() instanceof android.widget.BaseAdapter) {
+                                ((android.widget.BaseAdapter) list.getAdapter()).notifyDataSetChanged();
+                            }
+                            Toast.makeText(CountryActivity.this,
+                                    "Bu ülke için kanal listesi henüz yok (yakında ekleniyor).",
                                     Toast.LENGTH_LONG).show();
                             return;
                         }

@@ -342,6 +342,7 @@ M-11 mağaza görselleri, M-57/58 mağaza metinleri.
 | M-80 | **Ağ geri gelince kendiliğinden toparlanma:** `ConnectivityManager` dinleyicisi tek oynatıcıda ve çoklu ekranda yayını yeniden başlatıyor; `ready=false` ile spinner/uyarı takılması giderildi. | ✅ v9.59 (cihazda: Wi-Fi 22/30 sn kesildi, ikisi de toparlandı) |
 | M-81 | **Çoklu ekran kalitesi ve veri sayacı:** MediaPlayer'da track sınırı olmadığı için master playlist 1080p'ye çıkabiliyordu; artık 360p varyantı seçiliyor. Ayrıca çoklu ekranda günlük veri sayacı hiç artmıyordu (yalnız ExoPlayer sayıyordu) — `TrafficStats` farkı eklendi. | ✅ v9.61 (cihazda: 3 pencere ≈650 kbps/kanal; sayaç 643,5 → 661,0 MB) |
 | M-82 | **"Ne var, ne yok?" ekranı güncellendi:** 25 satır, güncel ürünle eşlendi (çoklu ekran/ağ toparlanma, radyo kapatma şeridi, A/V senkron 360p, veri sayacı, sürüm bilgisi, Play durumu + olmayanların nedeni). | ✅ v9.61 (cihazda görüldü) |
+| M-83 | **Ülke seçiminde "indir" sessizce başarısızdı:** sunucuda listesi olmayan ülke 404 dönüyordu; satır artık **"yakında · liste henüz yok"** yazıyor, tekrar dokunmak ağa çıkmıyor. | ✅ v9.62 (cihazda: Suriye/Yunanistan) |
 
 ### Oturum 24 Kasım 2026 (yedinci yarı) — A/V senkron + 12 maddelik test (v9.55)
 
@@ -446,3 +447,19 @@ satırını ve radyo aramasını doğrula, (2) D-04 uçak modu, D-05 reklam anı
 **Sonraki oturum (kontör azalıyor — en önemliler):**
 (1) D-05 reklam sonrası canlıya dönüş, (2) D-08 ülke “yakında”, D-09 hata bildir,
 (3) tablete 9.61 kurulumu, (4) M-72 tam media3 radyo, (5) M-13 `kanallar.json`.
+
+### Oturum 24 Kasım 2026 (on ikinci yarı) — 9.62: ülke listesi “yakında”
+
+**Bu oturumda biten: 2 madde**
+
+- **M-83 (✅):** “Ülke seç → indir” hiçbir şey yapmıyordu. Kök neden: `site/good/<cc>.json`
+  sunucuda yoksa 404 dönüyor, uygulama bunu sessizce yutuyordu. Artık satır
+  “yakında · liste henüz yok” oluyor, tekrar dokunuş ağa çıkmıyor. Cihazda doğrulandı.
+- **D-09 (✅):** Hata bildir penceresi + e-posta paylaşım seçicisi açıldı (gönderim yapılmadı).
+- **D-08 (✅ kod + cihaz):** Ülke ekranında “hazır” sayısı ve “yakında” etiketi artık görünüyor.
+
+**Durum sayısı (24 Kasım 2026, 12. yarı sonu):** toplam **84 madde** · **24 ✅ bitti** ·
+**7 👤 kullanıcı işi** · **53 açık**.
+
+**Sonraki oturum (kota az):** (1) D-05 reklam sonrası dönüş (test reklamıyla),
+(2) tablet 9.62 kurulumu, (3) M-72 tam media3 radyo, (4) M-13 `kanallar.json`.

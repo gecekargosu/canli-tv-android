@@ -64,5 +64,16 @@
   "unpackedBytes": 17036356,
   "dexFiles": 2,
   "classes": 17509
+ },
+ {
+  "versionName": "9.62",
+  "versionCode": "71",
+  "apkBytes": 7114557,
+  "sha256": "137ffe52bc95a917c93f8ab2303cfadbfa633f3818d9886d7ecbfa466338fba9",
+  "signSha256": "f3996c67ef0e0e0420f442fe3fcf6303a17caa88dcba8a2b19a10cd95c92b8d5",
+  "zipEntries": 400,
+  "unpackedBytes": 17037119,
+  "dexFiles": 2,
+  "classes": 17509
  }
 ]
