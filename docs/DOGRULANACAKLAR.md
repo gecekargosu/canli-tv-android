@@ -85,3 +85,14 @@ dokunma + `uiautomator dump` + `logcat` + ekran görüntüsü. "Kanıt" sütunu 
    çöküyordu → `adjustNothing`.
 3. **Türkçe karakter araması (M-77):** "super" yazınca "Süper FM" bulunmuyordu →
    `Lang.fold` (ı/i, ş/s, ğ/g, ü/u, ö/o, ç/c) + gizli istasyonlar da sonuçta.
+
+### 8. yarı (v9.56) — doğrulananlar / eklenenler
+
+| # | Konu | Sonuç |
+|---|------|-------|
+| D-13 | Radyo araması klavye açıkken sonuç gösteriyor mu | **✅** `ntv` yazıldı, NTV Radyo + diğerleri göründü (`_build/k3.jpg`) |
+| D-14 | Radyo çipleri (Tümü/★/Haber…) klavye açıkken görünüyor mu | **✅** aynı ekran görüntüsünde görünüyor |
+| D-15 | Alt banner gezinme çubuğunun üstünde mi | **✅** Paycell banner'ı tam, kırpılmadan (`_build/k1.jpg`) |
+| D-16 | APK kapasite kaybı var mı (9.55 → 9.56) | **✅** 400 dosya, 17.504 sınıf, +124 bayt (`releases/apk-kapasite.json`) |
+| D-17 | Tablet APK | **⏳ kullanıcıda** — binary telefonla aynı, SHA-256 `4e530038…7aeb8c` |
+| D-18 | Radyo aramasında yabancı (Kanada/İspanya) istasyonlar | **⚠️ açık** — radio-browser sonuçları filtresiz geliyor (M-15) |

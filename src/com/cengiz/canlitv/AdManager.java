@@ -257,6 +257,17 @@ public final class AdManager {
                     // altında bırakma. Alt inset de sistem çubuğu için.
                     int top = insets.getSystemWindowInsetTop();
                     int bottom = insets.getSystemWindowInsetBottom();
+                    // M-78: bazı cihazlarda (MIUI, jest çubuğu) inset 0 geliyor ve banner
+                    // gezinme çubuğunun altında kalıyordu. Sistemin bildirdiği çubuk
+                    // yüksekliğini de alt sınır olarak kullan.
+                    try {
+                        int id = v.getResources().getIdentifier(
+                                "navigation_bar_height", "dimen", "android");
+                        if (id > 0) {
+                            bottom = Math.max(bottom,
+                                    v.getResources().getDimensionPixelSize(id));
+                        }
+                    } catch (Throwable ignored) { }
                     if (top > 0 || bottom > 0) v.setPadding(0, top, 0, bottom);
                     return insets;
                 }

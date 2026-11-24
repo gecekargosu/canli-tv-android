@@ -336,6 +336,7 @@ M-11 mağaza görselleri, M-57/58 mağaza metinleri.
 | M-75 | **Ses/görüntü senkronu (düşük kalitede ses erken):** kalite tercihi artık varyant playlist URL'iyle değil, master playlist + ExoPlayer track sınırıyla (`setMaxVideoSize`) uygulanıyor; ses ve görüntü aynı master'dan geliyor. | ✅ v9.55 (cihazda 360p'de oynatıldı) |
 | M-76 | **Radyo araması görünmüyordu:** klavye açıkken liste 0 yüksekliğe çöküyordu (ekran boş). Pencere `adjustNothing` ile klavyeden etkilenmiyor; sonuçlar klavyenin üstünde görünüyor. | ✅ v9.55 (cihazda doğrulandı) |
 | M-77 | **Türkçe karakterli arama:** "super" → "Süper FM", "radyo" → "Radyo 7" (`Lang.fold`); arama sırasında gizlenmiş istasyonlar da listeleniyor. | ✅ v9.55 (cihazda doğrulandı) |
+| M-78 | **Alt şerit gezinme çubuğunun altına kayıyordu:** MIUI jest çubuğunda alt inset 0 geliyordu; banner artık `navigation_bar_height` ile en az çubuk yüksekliği kadar yukarıda. | ✅ v9.56 (cihazda doğrulandı) |
 
 ### Oturum 24 Kasım 2026 (yedinci yarı) — A/V senkron + 12 maddelik test (v9.55)
 
@@ -356,3 +357,26 @@ M-11 mağaza görselleri, M-57/58 mağaza metinleri.
 
 **Sonraki oturum:** (1) D-04/D-05/D-12 elle test (uçak modu, reklam, 3'lü mod),
 (2) M-72 tam media3 radyo, (3) M-13 `kanallar.json` entegrasyonu + M-15 "review" filtresi.
+
+### Oturum 24 Kasım 2026 (sekizinci yarı) — 9.56: arama + banner + kapasite denetimi
+
+**Bu oturumda biten: 2 madde (M-76 tekrar doğrulandı, M-78 yeni)**
+
+- **M-76 (tekrar):** kullanıcının gönderdiği ekran görüntüsü 9.52 öncesine aitti; 9.55'te
+  düzeltilen klavye/liste çökmesi 9.56'da cihazda tekrar doğrulandı ("ntv" araması klavye
+  açıkken sonuç verdi, çipler göründü). Ekran görüntüsü: `_build/k3.jpg`.
+- **M-78 (✅):** ana/radyo ekranındaki alt şerit (veri + banner) gezinme çubuğunun altında
+  kalıyordu. `AdManager.wrap` alt boşluğu artık inset ile `navigation_bar_height`'ın
+  büyüğü kadar bırakıyor. Cihazda Paycell banner'ı tam göründü (`_build/k1.jpg`).
+- **Yeni zorunlu kural:** `tools/verify-apk.py` + `AGENTS.md`. Her sürümde APK bayt,
+  dosya sayısı, açılmış bayt, sınıf sayısı ve imza ölçülür; **düşüş varsa yayın durur**.
+  9.55 → 9.56: 400 dosya / 17.504 sınıf / +124 bayt, kayıp yok (`releases/apk-kapasite.json`).
+- **Tablet:** ayrı derleme yok; `releases/v9.56/UMAY-MULTI-TV-9.56-tablet.apk` telefon
+  APK'sının birebir kopyası (aynı SHA-256).
+
+**Durum sayısı (24 Kasım 2026, 8. yarı sonu):** toplam **78 madde** · **18 ✅ bitti** ·
+**7 👤 kullanıcı işi** · **53 açık**.
+
+**Sonraki oturum:** (1) D-04 (uçak modu), D-05 (reklam anı), D-12 (3'lü mod) elle test,
+(2) M-72 tam media3 radyo, (3) M-15 radyo-browser "review" filtresi (arama sonuçlarında
+yabancı istasyonlar çıkıyor), (4) M-13 `kanallar.json` entegrasyonu.

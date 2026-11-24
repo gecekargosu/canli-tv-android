@@ -1,0 +1,13 @@
+[
+ {
+  "versionName": "9.56",
+  "versionCode": "65",
+  "apkBytes": 7112417,
+  "sha256": "4e53003842669cfd989d5be1cb12fd9df56e6e1756160b5558aa0596467aeb8c",
+  "signSha256": "f3996c67ef0e0e0420f442fe3fcf6303a17caa88dcba8a2b19a10cd95c92b8d5",
+  "zipEntries": 400,
+  "unpackedBytes": 17032526,
+  "dexFiles": 2,
+  "classes": 17504
+ }
+]
