@@ -62,13 +62,17 @@ public final class Good {
         String day = new java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US)
                 .format(new java.util.Date());
         if (day.equals(Prefs.goodDay(ctx))) return;
-        Prefs.setGoodDay(ctx, day);
+        // M-28: gün damgası yalnız BAŞARILI indirmede yazılır; aksi hâlde internet
+        // bir kez kopunca o gün bir daha denenmiyordu.
+        final String stamp = day;
         new Thread(new Runnable() {
-            @Override public void run() { download(ctx, cc); }
+            @Override public void run() {
+                if (download(ctx, cc)) Prefs.setGoodDay(ctx, stamp);
+            }
         }, "good-refresh").start();
     }
 
-    private static void download(Context ctx, String cc) {
+    private static boolean download(Context ctx, String cc) {
         java.net.HttpURLConnection con = null;
         try {
             con = (java.net.HttpURLConnection) new java.net.URL(
@@ -76,7 +80,7 @@ public final class Good {
             con.setConnectTimeout(8000);
             con.setReadTimeout(10000);
             con.setRequestProperty("User-Agent", "Mozilla/5.0 UMAYMultiTV");
-            if (con.getResponseCode() != 200) return;
+            if (con.getResponseCode() != 200) return false;
             InputStream in = con.getInputStream();
             File tmp = new File(ctx.getFilesDir(), "good_" + cc + ".tmp");
             java.io.FileOutputStream out = new java.io.FileOutputStream(tmp);
@@ -89,15 +93,17 @@ public final class Good {
             }
             out.close();
             in.close();
-            if (total < 30) { tmp.delete(); return; }
+            if (total < 30) { tmp.delete(); return false; }
             // gerçekten kanal listesi mi? (bozuk dosya gömülü listeyi ezmesin)
             String txt = readFile(tmp);
             JSONArray items = new JSONObject(txt).optJSONArray("items");
-            if (items == null || items.length() == 0) { tmp.delete(); return; }
+            if (items == null || items.length() == 0) { tmp.delete(); return false; }
             File target = file(ctx, cc);
             if (target.exists()) target.delete();
-            tmp.renameTo(target);
+            boolean ok = tmp.renameTo(target);
+            return ok;
         } catch (Exception ignored) {
+            return false;
         } finally {
             if (con != null) try { con.disconnect(); } catch (Exception ignored) { }
         }

@@ -63,6 +63,8 @@ public class PlayerActivity extends android.app.Activity {
             new java.util.concurrent.atomic.AtomicLong();
     /** Sayaçların yazılacağı kanal adresi. */
     private String usageUrl = null;
+    /** M-22: her kanal isteğinde artar; eski isteğin geç gelen cevabı yok sayılır. */
+    private volatile int playRequest = 0;
     private long openedAt = 0;
     private boolean limitWarned = false;
     private boolean locked = false;
@@ -513,7 +515,11 @@ public class PlayerActivity extends android.app.Activity {
 
     private void checkStall() {
         try {
-            if (!player.isPlaying()) return;
+            // M-23: eskiden "isPlaying() false" ise hiç bakmıyordu; tamponlama sırasında
+            // tam da donma anını kaçırıyordu. Artık BUFFERING de izleniyor.
+            int state = player.getPlaybackState();
+            boolean buffering = state == androidx.media3.common.Player.STATE_BUFFERING;
+            if (!player.isPlaying() && !buffering) return;
             long now = System.currentTimeMillis();
             int pos = (int) player.getCurrentPosition();
             if (pos != lastPos) {
@@ -756,6 +762,8 @@ public class PlayerActivity extends android.app.Activity {
     }
 
     private void playNow(final Channel c) {
+        // M-22: hızlı zap'ta eski isteğin geç gelen cevabı yeni kanalı ezmesin.
+        final int req = ++playRequest;
         // önceki kanalın baytlarını eski adrese yaz, sayacı sıfırla
         finishUsage();
         usageUrl = c.url;
@@ -775,7 +783,10 @@ public class PlayerActivity extends android.app.Activity {
                 Quality.resolve(PlayerActivity.this, direct, new Quality.UrlCallback() {
                     @Override public void onUrl(final String url) {
                         runOnUiThread(new Runnable() {
-                            @Override public void run() { startVideo(url); }
+                            @Override public void run() {
+                                if (req != playRequest) return;   // kullanıcı başka kanala geçti
+                                startVideo(url);
+                            }
                         });
                     }
                 });
