@@ -202,6 +202,7 @@ public class AudioService extends Service {
     }
 
     private void pause() {
+        ui.removeCallbacks(watchdog);
         try {
             if (player != null && player.isPlaying()) player.pause();
             paused = true;
@@ -285,10 +286,92 @@ public class AudioService extends Service {
     }
 
     private int attempt = 0;
+    /** Zayıf internette kaç kez yeniden bağlanılacağı. */
+    private static final int MAX_ATTEMPTS = 3;
+    /** Yavaş bağlantıda ilk bağlanma için tanınan süre. */
+    private static final long START_GRACE_MS = 25000L;
+    private boolean preparedOk = false;
+    private boolean retryPending = false;
+    private int passiveTries = 0;
+    private long playStartedAt = 0;
+    private final android.os.Handler ui = new android.os.Handler(android.os.Looper.getMainLooper());
+    private final Runnable watchdog = new Runnable() {
+        @Override public void run() {
+            MediaPlayer p = player;
+            if (p == null) return;
+            boolean playing = false;
+            try { playing = p.isPlaying(); } catch (Exception ignored) { }
+            if (playing) { preparedOk = true; return; }
+            long waited = android.os.SystemClock.elapsedRealtime() - playStartedAt;
+            // Yavaş internet: yayın henüz hazırlanıyorsa hemen "başarısız" sayma.
+            if (!preparedOk && waited < START_GRACE_MS) {
+                android.util.Log.i("UmayRadio", "yavas baglanti, bekleniyor (" + waited + " ms)");
+                notifyText("Bağlantı yavaş · bekleniyor…");
+                ui.postDelayed(this, 5000L);
+                return;
+            }
+            android.util.Log.w("UmayRadio", "yayin takildi, waited=" + waited);
+            scheduleRetry("Bağlantı zayıf");
+        }
+    };
 
     private void playUrl(String url) {
+        ui.removeCallbacks(watchdog);
         attempt = 0;
+        passiveTries = 0;
+        retryPending = false;
+        httpsTried = url != null && url.startsWith("https://");
         attemptPlay(url);
+    }
+
+    /** http:// adres bir kez de https:// olarak denendi mi? */
+    private boolean httpsTried = false;
+
+    /**
+     * Zayıf bağlantı: istasyonu hemen bırakmak yerine aynı adrese geri dön.
+     * 3 deneme sonunda vazgeçip kullanıcıya bilgi ver (radyo ekranı sıradakine geçer).
+     */
+    private void scheduleRetry(final String reason) {
+        if (retryPending) return;
+        // Şifresiz http:// adres açılmıyorsa aynı yayının https:// sürümünü dene
+        // (bazı ağlar 80 portunu/CDN'i engelliyor; şifreli adres genelde geçiyor).
+        if (!httpsTried && currentUrl != null && currentUrl.startsWith("http://")) {
+            httpsTried = true;
+            final String secure = "https://" + currentUrl.substring("http://".length());
+            android.util.Log.w("UmayRadio", "https deneniyor: " + secure);
+            notifyText("Güvenli adres deneniyor…");
+            retryPending = true;
+            ui.postDelayed(new Runnable() {
+                @Override public void run() { retryPending = false; attemptPlay(secure); }
+            }, 1000L);
+            return;
+        }
+        if (attempt < MAX_ATTEMPTS - 1) {
+            attempt++;
+            notifyText(reason + " · yeniden bağlanılıyor (" + attempt + "/" + (MAX_ATTEMPTS - 1) + ")");
+            long delay = attempt == 1 ? 2000L : 5000L;
+            android.util.Log.w("UmayRadio", "yeniden baglanma " + attempt + " gecikme=" + delay);
+            retryPending = true;
+            ui.postDelayed(new Runnable() {
+                @Override public void run() { retryPending = false; attemptPlay(currentUrl); }
+            }, delay);
+        } else {
+            // İnternet geri gelebilir: istasyonu "ölü" işaretlemeden sessizce beklemeye devam et.
+            if (passiveTries < 12) {
+                passiveTries++;
+                notifyText("Bağlantı bekleniyor · otomatik yeniden denenecek");
+                retryPending = true;
+                ui.postDelayed(new Runnable() {
+                    @Override public void run() {
+                        retryPending = false;
+                        attempt = 0;
+                        attemptPlay(currentUrl);
+                    }
+                }, 15000L);
+            } else {
+                notifyText("Yayın açılamadı (bağlantı) · ⏭ ile başka istasyon");
+            }
+        }
     }
 
         /**
@@ -299,6 +382,9 @@ public class AudioService extends Service {
         final String candidate = url;
         releasePlayer();
         paused = false;
+        preparedOk = false;
+        playStartedAt = android.os.SystemClock.elapsedRealtime();
+        ui.removeCallbacks(watchdog);
         try {
             player = new MediaPlayer();
             player.setAudioAttributes(new AudioAttributes.Builder()
@@ -309,28 +395,11 @@ public class AudioService extends Service {
                     Net.playerHeaders());
             player.prepareAsync();
             android.util.Log.i("UmayRadio", "deneme " + attempt + ": " + candidate);
-            final MediaPlayer p = player;
-            new android.os.Handler(getMainLooper()).postDelayed(new Runnable() {
-                @Override public void run() {
-                    try {
-                        if (p != player) return;
-                        boolean playing = false;
-                        try { playing = p.isPlaying(); } catch (Exception ignored) { }
-                        if (playing) return;
-                        if (attempt == 0) {
-                            attempt = 1;
-                            android.util.Log.w("UmayRadio", "yayin takildi, ayni adres tekrar deneniyor");
-                            attemptPlay(currentUrl);
-                        } else {
-                            android.util.Log.w("UmayRadio", "yayin acilmadi: " + candidate);
-                            try { Prefs.addFail(AudioService.this, currentUrl); } catch (Exception ignored) { }
-                            notifyText("Yayın açılamadı · başka istasyon dene");
-                        }
-                    } catch (Exception ignored) { }
-                }
-            }, 7000);
+            ui.removeCallbacks(watchdog);
+            ui.postDelayed(watchdog, 7000L);
             player.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
                                     @Override public void onPrepared(MediaPlayer mp) {
+                        preparedOk = true;
                         attachEq(mp);
                         mp.start();
                         updateState();
@@ -340,7 +409,7 @@ public class AudioService extends Service {
                             player.setOnErrorListener(new MediaPlayer.OnErrorListener() {
                     @Override public boolean onError(MediaPlayer mp, int w, int e) {
                         android.util.Log.e("UmayRadio", "hata what=" + w + " extra=" + e + " " + currentUrl);
-                        notifyText("Yayın açılamadı · sonraki kanal için ⏭");
+                        scheduleRetry("Yayın kesildi");
                         return true;
                     }
                 });

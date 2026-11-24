@@ -483,16 +483,40 @@ public class PlayerActivity extends android.app.Activity {
         Prefs.clearFails(this, list.get(index).url);
         autoSkips = 0;
         fbTried = 0;
+        sameRetries = 0;
         stallCount = 0;
         hideNotice();
         if (!tracking) { tracking = true; openedAt = System.currentTimeMillis(); }
         ui.removeCallbacks(watchdog);
     }
 
-    /** ExoPlayer hatası: yedek kaynak → sonraki kanal. */
+    /** Aynı yayına kaç kez yeniden bağlanıldı (zayıf internet). */
+    private int sameRetries = 0;
+
+    /** ExoPlayer hatası: aynı adres → yedek kaynak → sonraki kanal. */
     private void onPError() {
         progress.setVisibility(View.GONE);
-        String cur = list.get(index).url;
+        final String cur = list.get(index).url;
+        // Zayıf internet: kanalı hemen bırakmak yerine aynı yayına 2 kez daha bağlan.
+        if (sameRetries < 2) {
+            sameRetries++;
+            final int n = sameRetries;
+            showNotice("📡 Bağlantı zayıf · yeniden bağlanıyorum (" + n + "/2)");
+            progress.setVisibility(View.VISIBLE);
+            ui.postDelayed(new Runnable() {
+                @Override public void run() {
+                    try {
+                        player.stop();
+                        player.clearMediaItems();
+                        player.setMediaItem(androidx.media3.common.MediaItem.fromUri(cur));
+                        player.prepare();
+                        player.play();
+                        ui.postDelayed(watchdog, 13000);
+                    } catch (Throwable ignored) { }
+                }
+            }, n == 1 ? 1500 : 3500);
+            return;
+        }
         String[] alts = ChannelRepo.fallbacks(cur);
         if (alts != null && fbTried < alts.length) {
             String alt = alts[fbTried++];
@@ -768,6 +792,7 @@ public class PlayerActivity extends android.app.Activity {
         finishUsage();
         usageUrl = c.url;
         sessionBytes.set(0);
+        sameRetries = 0;
         tracking = true;
         openedAt = System.currentTimeMillis();
         // TV acilinca arkadaki radyo sussun (tek ses kaynagi kalsin)
@@ -826,10 +851,25 @@ public class PlayerActivity extends android.app.Activity {
         @Override public void run() {
             try {
                 if (!player.isPlaying()) {
+                    // Zayıf internet: kanalı "ölü" saymadan önce aynı yayına 2 kez daha bağlan.
+                    if (sameRetries < 2) {
+                        sameRetries++;
+                        final String cur = list.get(index).url;
+                        showNotice("📡 Bağlantı zayıf · yeniden bağlanıyorum (" + sameRetries + "/2)");
+                        try {
+                            player.stop();
+                            player.clearMediaItems();
+                            player.setMediaItem(androidx.media3.common.MediaItem.fromUri(cur));
+                            player.prepare();
+                            player.play();
+                        } catch (Throwable ignored) { }
+                        ui.removeCallbacks(this);
+                        ui.postDelayed(this, 13000);
+                        return;
+                    }
                     progress.setVisibility(View.GONE);
-                    errorView.setText("Yayın 13 saniyede açılmadı.\n\nDokun → tekrar dene\nveya ⏭ ile sonraki kanal");
+                    errorView.setText("Yayın açılmadı (bağlantı zayıf olabilir).\n\nDokun → tekrar dene\nveya ⏭ ile sonraki kanal");
                     errorView.setVisibility(View.VISIBLE);
-                    Prefs.addFail(PlayerActivity.this, list.get(index).url);
                     autoNext();
                 }
             } catch (Exception ignored) { }

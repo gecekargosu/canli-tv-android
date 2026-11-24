@@ -189,3 +189,36 @@ Durum işaretleri: ✅ bitti · 🔧 kod işi · 👤 kullanıcı/hesap işi · 
 **v9.33 (24 Kasım):** M-02, M-03, M-04, M-05, M-06, M-08, M-12 kod olarak tamam. M-03 cihazda doğrulanamadı (MIUI kurulum engeli).
 
 Toplam: **68 master madde** (Faz 0–7) + 18 askıdaki eski madde eşlemesi.
+
+---
+
+## OTURUM RAPORLARI
+
+### Oturum 24 Kasım 2026 — cihaz kuruldu, radyo/TV dayanıklılığı (v9.33 → v9.39)
+
+**Kurulum:** MIUI ilk kurulumu adb'den reddediyordu; kullanıcı dosya yöneticisinden kurunca açıldı.
+Sonrasında `adb install -r` çalışıyor (doğrulandı) → sonraki sürümler doğrudan kurulabilir.
+Ayrıntı: `docs/KURULUM-VE-MIUI.md`.
+
+**Bu oturumda biten (cihazda doğrulanmış):**
+- M-03 reklam rıza kapısı: cihazda banner yüklendi (izin alındığında istek gidiyor) ✅
+- M-22 zap yarışı, M-23 tamponlama/donma, M-28 liste yenileme: v9.34 telefonda kuruldu, kanal oynatma + sayaç çalıştı ✅
+- M-23 genişletildi: zayıf internette kanal/radyo **aynı yayına yeniden bağlanma** (v9.35–v9.39):
+  TV'de 2 deneme + yedek kaynak, radyoda 3 hızlı + 12 yavaş deneme, `http://` → `https://` yedeği.
+  Cihazda wifi kapat/aç testinde radyo kendini toparladı ✅
+- Radyo ekranının 9 sn'de "sıradakine geç" davranışı kaldırıldı; yavaş ağda istasyon "ölü" işaretlenmiyor ✅
+- M-08 HTTPS zorunluluğu cihazda: TRT Haber (HTTPS) oynadı, HTTP radyo için istisna listesi çalışıyor ✅
+- M-12 metinleri cihazda doğrulandı ("145 kanal", "Reklam izle · 15 dk reklamsız") ✅
+
+**Bu oturumda biten madde sayısı: 7** (M-03, M-08, M-12, M-22, M-23, M-28 + M-20'nin ilk yarısı:
+radyo dayanıklılığı). M-20 tam media3 geçişi henüz yapılmadı.
+
+**Sonraki oturumda yapılacaklar (öncelik sırası):**
+1. M-20 — Radyoyu media3'e taşı (ICY/302 akışlar, kilit ekranı, Bluetooth tuşları).
+2. M-25 — Radyo/arka plan veri sayacı + günlük limit kapsamı.
+3. M-16 — Ülke "hazır" eşiği (≥30 çalışan kanal).
+4. M-21 — Çoklu ekran media3 + sessiz panellere kalite tavanı.
+5. M-15 — Sunucu tarafı `good/<cc>.json` filtresi (çıplak IP / ölü yayın).
+6. M-11 — Mağaza görsellerinin reklamsız yenilenmesi.
+
+**Yayın:** GitHub `v9.36` ve `v9.39`, site `/indir` 9.39, zip `UMAY-MULTI-TV-Claude-9.39.zip`, AAB `releases/v9.39/`.

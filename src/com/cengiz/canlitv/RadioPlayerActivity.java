@@ -360,24 +360,38 @@ public class RadioPlayerActivity extends Activity {
     /** Üst üste kaç istasyon açılmadı (sonsuz döngü olmasın). */
     private int radioSkips = 0;
 
+    /** Aynı istasyona kaç kez yeniden bağlanıldı (zayıf internet). */
+    private int stationRetries = 0;
+
     private void show() {
         nameView.setText(names.get(index));
         metaView.setText(metas.get(index));
         statusView.setText("bağlanıyor…");
         AudioService.start(this, urls.get(index), names.get(index));
         playing = true;
+        stationRetries = 0;
         ui.removeCallbacks(radioWatchdog);
-        ui.postDelayed(radioWatchdog, 9000);
+        ui.postDelayed(radioWatchdog, 12000);
     }
 
-    /** 9 saniyede ses gelmezse istasyonu "ölü" işaretleyip sıradakine geçer. */
+    /**
+     * Ses gelmezse istasyonu hemen bırakmıyoruz: zayıf internetde ilk bağlanma 20 sn'yi
+     * bulabiliyor. Aynı yayına 2 kez daha bağlanılır, ancak ondan sonra sıradakine geçilir.
+     * "Ölü istasyon" işaretlemesi bu yüzden kaldırıldı (yavaş ağ istasyonu öldürmesin).
+     */
     private final Runnable radioWatchdog = new Runnable() {
         @Override public void run() {
             if (names.isEmpty() || index < 0 || index >= urls.size()) return;
-            if (AudioService.isPlayingStatic()) { radioSkips = 0; return; }
-            Prefs.addFail(RadioPlayerActivity.this, urls.get(index));
+            if (AudioService.isPlayingStatic()) { radioSkips = 0; stationRetries = 0; return; }
+            if (stationRetries < 2) {
+                stationRetries++;
+                statusView.setText("bağlantı yavaş · yeniden deneniyor (" + stationRetries + "/2)");
+                AudioService.start(RadioPlayerActivity.this, urls.get(index), names.get(index));
+                ui.postDelayed(this, 12000);
+                return;
+            }
             if (radioSkips >= 3) {
-                statusView.setText("Bu ülkedeki istasyonlar açılmıyor · başka ülke dene");
+                statusView.setText("İnternet zayıf görünüyor · başka istasyon veya ülke dene");
                 return;
             }
             radioSkips++;
