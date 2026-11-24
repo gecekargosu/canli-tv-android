@@ -33,9 +33,23 @@ public class CountryRepo {
     }
 
     /** Liste cihazda var mi (TR her zaman gomulu). */
+    /** M-16: bir ülke "hazır" sayılması için en az bu kadar çalışan kanal gerekir. */
+    public static final int READY_MIN = 30;
+
     public static boolean isReady(Context ctx, String cc) {
         if ("tr".equals(cc)) return true;
-        return cacheFile(ctx, cc).length() > 200;
+        return count(ctx, cc) >= READY_MIN;
+    }
+
+    /** Önbellekteki kanal sayısı (hazır eşiği ve "yakında" etiketi için). */
+    public static int count(Context ctx, String cc) {
+        try {
+            if ("tr".equals(cc)) return load(ctx, cc).size();
+            if (cacheFile(ctx, cc).length() < 200) return 0;
+            return load(ctx, cc).size();
+        } catch (Throwable t) {
+            return 0;
+        }
     }
 
     public static List<Channel> load(Context ctx, String cc) {

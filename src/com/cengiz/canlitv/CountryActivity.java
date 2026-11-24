@@ -108,8 +108,21 @@ public class CountryActivity extends Activity {
                 n.setTextSize(14);
                 TextView s = new TextView(CountryActivity.this);
                 boolean ready = CountryRepo.isReady(CountryActivity.this, code);
-                s.setText(ready ? Lang.t(CountryActivity.this, "ready") : Lang.t(CountryActivity.this, "download"));
-                s.setTextColor(ready ? MUTED : ACCENT);
+                int cnt = ready ? CountryRepo.count(CountryActivity.this, code) : 0;
+                if (ready) {
+                    s.setText(cnt + " kanal · " + Lang.t(CountryActivity.this, "ready"));
+                    s.setTextColor(MUTED);
+                } else {
+                    int have = CountryRepo.count(CountryActivity.this, code);
+                    if (have > 0) {
+                        // M-16: 30'dan az doğrulanmış kanal → "yakında" (boş liste göstermeyelim)
+                        s.setText(have + " kanal · yakında (" + CountryRepo.READY_MIN + "+ gerekli)");
+                        s.setTextColor(MUTED);
+                    } else {
+                        s.setText(Lang.t(CountryActivity.this, "download"));
+                        s.setTextColor(ACCENT);
+                    }
+                }
                 s.setTextSize(10);
                 cc.addView(n);
                 cc.addView(s);

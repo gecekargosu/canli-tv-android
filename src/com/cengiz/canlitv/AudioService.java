@@ -316,6 +316,10 @@ public class AudioService extends Service {
     private long lastPos = -1;
     private long lastRx = -1;
     private int stallTicks = 0;
+    // --- M-25: radyo/arka plan veri sayacı ---
+    private long pendingBytes = 0;
+    private long usageStartedAt = 0;
+    private boolean limitWarned = false;
 
     /**
      * Yayın gerçekten ilerliyor mu? MediaPlayer internet kesilince de isPlaying()=true
@@ -330,6 +334,12 @@ public class AudioService extends Service {
                     // Ağdan veri gelmiyorsa yayın sessizce takılmış demektir (tampon bitince ses kesilir).
                     long rx = android.net.TrafficStats.getUidRxBytes(android.os.Process.myUid());
                     if (lastRx < 0) lastRx = rx;
+                    // M-25: radyo dinlerken harcanan veriyi günlük sayaca yaz.
+                    if (rx > lastRx) {
+                        pendingBytes += (rx - lastRx);
+                        lastRx = rx;
+                        if (pendingBytes > 1048576L) flushUsage();
+                    }
                     // 12 sn'de 8 KB'den az veri geldiyse yayın akışı durmuş demektir
                     // (128 kbps radyo saniyede ~16 KB indirir).
                     boolean noData = rx >= 0 && (rx - lastRx) < 8000;
@@ -347,7 +357,6 @@ public class AudioService extends Service {
                     } else {
                         stallTicks = 0;
                         lastPos = pos;
-                        lastRx = rx;
                     }
                 } else {
                     stallTicks = 0;
@@ -378,7 +387,41 @@ public class AudioService extends Service {
         }
     };
 
+    /** Biriken radyo baytlarını/saniyelerini kaydet ve günlük limiti uygula (M-25). */
+    private void flushUsage() {
+        long bytes = pendingBytes;
+        pendingBytes = 0;
+        int sec = 0;
+        if (usageStartedAt > 0) {
+            sec = (int) ((System.currentTimeMillis() - usageStartedAt) / 1000);
+            usageStartedAt = System.currentTimeMillis();
+        }
+        try {
+            if ((bytes > 0 || sec > 2) && currentUrl != null)
+                Prefs.addUsage(this, currentUrl, bytes, sec);
+        } catch (Throwable ignored) { }
+        checkLimit();
+    }
+
+    /** Günlük limit dolduysa radyoyu durdur ve kullanıcıya söyle. */
+    private void checkLimit() {
+        try {
+            final int lim = Prefs.limitMb(this);
+            if (lim <= 0 || limitWarned) return;
+            if (Prefs.todayBytes(this) < lim * 1048576L) return;
+            limitWarned = true;
+            CrashLog.event(this, "limit", "radyo: günlük veri limiti doldu (" + lim + " MB)");
+            notifyText("Günlük veri limiti doldu · radyo durduruldu");
+            try { if (player != null) player.pause(); } catch (Throwable ignored) { }
+            paused = true;
+            state = S_PAUSED;
+        } catch (Throwable ignored) { }
+    }
+
     private void playUrl(String url) {
+        flushUsage();
+        usageStartedAt = System.currentTimeMillis();
+        limitWarned = false;
         ui.removeCallbacks(watchdog);
         attempt = 0;
         passiveTries = 0;
@@ -471,6 +514,7 @@ public class AudioService extends Service {
                         CrashLog.event(AudioService.this, "radio", "hazir: " + candidate);
                         attachEq(mp);
                         mp.start();
+                        usageStartedAt = System.currentTimeMillis();
                         lastPos = -1;
                         lastRx = -1;
                         stallTicks = 0;
@@ -616,6 +660,7 @@ public class AudioService extends Service {
     public void onDestroy() {
         INSTANCE = null;
         state = S_ERROR;
+        flushUsage();
         ui.removeCallbacks(monitor);
         abandonFocus();
         try { if (noisyReceiver != null) { unregisterReceiver(noisyReceiver); noisyReceiver = null; } }

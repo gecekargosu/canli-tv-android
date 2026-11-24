@@ -275,6 +275,25 @@ sonrası banner stoğu açılmalı; M-60 ile bağlantılı.
 **Sonraki oturum:** Play Console adımları (M-09 Data Safety, M-10 app-ads.txt kök alan adı, M-57/58
 mağaza görselleri), M-20/M-72 tam media3, M-25 radyo sayacı, M-15 sunucu filtresi.
 
+### Oturum 24 Kasım 2026 (dördüncü yarı) — radyo sayacı, ülke eşiği, liste denetimi (v9.46 → v9.47)
+
+**Bu oturumda biten: 3 madde**
+
+- **M-25 (✅):** Radyo/arka plan dinlerken harcanan veri `TrafficStats` ile ölçülüp günlük sayaca yazılıyor
+  (1 MB'da bir ve durdurma/kapanışta kayıt). **Günlük veri limiti** radyoda da uygulanıyor: limit dolunca
+  radyo duruyor, bildirim + olay kaydı düşülüyor. Cihazda doğrulandı (2,3 MB → 2,5 MB).
+- **M-16 (✅):** Ülke "hazır" eşiği **30 kanal**; 1–29 kanallı ülkeler "n kanal · yakında (30+ gerekli)"
+  etiketiyle görünüyor, boş listeye girilmiyor. TR her zaman hazır.
+- **M-14/M-15 (✅ kısmi):** `tools/check-lists.py` eklendi — çıplak IP, `raw.githubusercontent`, ücretli marka,
+  HTTP ve kopya kayıtları tarıyor; `--fail` modu var. Çalıştırıldı: **temiz** (TR kanal + radyo + good/*.json).
+  Sunucu tarafı "hak durumu bekliyor" filtresi (M-13 `kanallar.json` şeması) hâlâ **yarım**; M-15'in
+  otomatik filtre kısmı bu denetimle karşılandı, hak durumu alanı M-13 ile gelecek.
+
+**Yayın:** GitHub `v9.47`, site `/indir` 9.47, `releases/v9.47/`, zip 9.47.
+
+**Sonraki oturum (öncelik):** M-72/M-20 tam media3 radyo, M-21 çoklu ekran media3, M-13 kanal envanteri,
+M-11 mağaza görselleri, M-57/58 mağaza metinleri.
+
 ---
 
 ## EK MADDELER (24 Kasım 2026, kullanıcı geri bildirimi)
