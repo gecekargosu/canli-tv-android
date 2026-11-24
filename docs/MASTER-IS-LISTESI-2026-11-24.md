@@ -139,7 +139,7 @@ Durum işaretleri: ✅ bitti · 🔧 kod işi · 👤 kullanıcı/hesap işi · 
 | M-62 | **Gradle Wrapper + standart yapı** (`app/src/main/...`), Windows'a sabit yollar kaldırılsın, `gradlew` depoya. | ChatGPT 13 | 🔧 |
 | M-63 | **GitHub Actions:** her push'ta derleme + lint + imzalı APK artifact. | ChatGPT 13 | 🔧 |
 | M-64 | **Test altyapısı:** JUnit birim testleri (URL/başlık/parse/Quality/Usage) + cihaz matrisi (Android 8/10/12/14/15/16, düşük RAM, tablet). | ChatGPT 13 / Claude 6 | 🔧 |
-| M-65 | `Prefs` anahtarları: 32-bit `hashCode()` → SHA-256 (çakışma kanal sayaçlarını karıştırıyor). | ChatGPT 14 | 🔧 |
+| M-65 | `Prefs` anahtarları: 32-bit `hashCode()` → SHA-256 (çakışma kanal sayaçlarını karıştırıyor). | ChatGPT 14 | ✅ v9.68 — anahtar tam adres `use:<url>`, eski kayit tasiniyor |
 | M-66 | Depo hijyeni: APK/AAB çift kopyaları, `build_aab/`, büyük medya dosyaları depodan çıksın; `.gitignore` genişletilsin. | Claude P0-7 | 🔧 |
 | M-67 | `/giris` gibi kalan ölü üyelik rotaları ve sayfaları silinsin (worker 410 dönüyor ama sayfa duruyor). | ChatGPT 14 | 🔧 |
 | M-68 | Gizlilik/yaş beyanı tutarlılığı: 13+ mı 18+ mı? Çocuk kanalları için "Aile" bölümü + ebeveyn kilidi. | Claude 4.4 | 🔧 |
@@ -349,6 +349,7 @@ M-11 mağaza görselleri, M-57/58 mağaza metinleri.
 | M-87 | **Kullanıcı bilgilendirmesi:** ülke ekranına TR/EN/RU/AR **"Kanal açılmıyor mu?"** kartı — reklam kuşağı, IP değişikliği, kanal kapanması ve "Ölü kanalları onar" çözümü. Kısa metin açık, dokununca ayrıntı. | ✅ v9.64 (cihazda görüldü) |
 | M-94 | **3'lü izleme setleri bozuktu:** "★ set" ile kaydedilen set `ad:` öneki yüzünden hiç geri yüklenmiyordu; kayıt indeks tuttuğu için ülke/liste değişince başka kanal açılıyordu. Önek ayrıştırması düzeltildi, kayda kanal adresleri eklendi (`u:` alanı), eski kayıtlar uyumlu. | Claude 17. yarı | ✅ v9.67 (cihazda: Test Seti → 2. pencere arte→ADRIA) |
 | M-95 | **Çoklu ekran paneli ekrana sığmıyordu:** "★ set" ve sonrası 1280 px'de görünmüyordu, set kaydetmek imkânsızdı. Panel yatay kaydırılabilir; set listesinde ham kod yerine set adı yazılıyor. | Claude 17. yarı | ✅ v9.67 (cihazda: ★ set görünür, ad "Test Seti") |
+| M-96 | **Kalite etiketi tercihi gösteriyordu:** tek varyantlı kanalda (3sat) yayın 720p inerken düğme "360p" yazıyordu. Etiket artık oynatıcının gerçek yüksekliği (`onVideoSizeChanged`); düğme metni yayın hazır olunca güncelleniyor. | Claude 18. yarı | ✅ v9.68 (cihazda: 3sat → 720p) |
 
 ### Oturum 24 Kasım 2026 (yedinci yarı) — A/V senkron + 12 maddelik test (v9.55)
 
@@ -639,3 +640,24 @@ kaydıydı. Yaparken iki ek hata çıktı; üçü birlikte düzeltildi.
 **Sonraki oturum:** (1) `Prefs` kullanım anahtarını `url.hashCode()` yerine tam
 adrese taşımak (M-65), (2) tek rendition kanallarda dürüst kalite etiketi,
 (3) gerçek ölü kanalla `Repair` testi, (4) M-13 `kanallar.json`, (5) M-72 media3 radyo.
+
+### Oturum 24 Kasım 2026 (on sekizinci yarı) — 9.68: sayaç anahtarı + dürüst kalite etiketi
+
+- **M-65 (✅):** `Prefs` kullanım anahtarı `url.hashCode()` idi; farklı adresler aynı
+  hash'e düşünce kanal sayaçları karışıyordu. Anahtar tam adrese taşındı
+  (`use:<url>` / `useS:<url>`), eski kayıt ilk okumada yeni anahtara kopyalanıyor.
+  **Cihazda:** ana liste sayaçları korundu (304,8 MB / 110,9 MB / 117,1 MB), veri kaybı yok.
+- **M-96 (✅):** Kalite düğmesi tercihi ("360p") yazıyordu; tek varyantlı kanalda yayın
+  720p gelirken etiket yanlış kalıyordu. Etiket oynatıcıdan gelen gerçek yüksekliği
+  gösteriyor (Media3 `onVideoSizeChanged`). **Cihazda:** 3sat → "720p".
+- **Kapasite:** 7.122.373 B · 400 dosya · **17.517 sınıf** (+0) · +784 bayt · imza aynı → ✅.
+- **Açık kalan:** tek varyantlı kanalda tercih hâlâ uygulanamıyor (transcode yok, etiket
+  doğru söylüyor); gerçek ölü kanalla `Repair` testi; M-13 `kanallar.json`; M-72 media3 radyo;
+  ödüllü reklam akışı (kullanıcı elle); tablet 9.68 kurulumu.
+
+**Durum sayısı (24 Kasım 2026, 18. yarı sonu):** toplam **97 madde** · **47 ✅ bitti** ·
+**7 👤 kullanıcı işi** · **43 açık**.
+
+**Sonraki oturum:** (1) tek varyantlı kanallarda "bu kanal yalnız 720p yayınlıyor" bilgisi
+(kalite diyalogunda), (2) gerçek ölü kanalla `Repair` testi, (3) M-13 `kanallar.json`,
+(4) M-72 media3 radyo, (5) kayıtlı sette bulunamayan kanal uyarısı.

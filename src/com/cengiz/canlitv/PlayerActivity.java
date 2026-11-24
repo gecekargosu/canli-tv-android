@@ -444,6 +444,12 @@ public class PlayerActivity extends android.app.Activity {
             @Override public void onPlayerError(androidx.media3.common.PlaybackException e) {
                 onPError();
             }
+
+            @Override public void onVideoSizeChanged(androidx.media3.common.VideoSize size) {
+                // Etiket yalnız tercihi gösteriyordu ("360p"); tek varyantlı kanalda yayın
+                // 1080p geliyor ve etiket yalan söylüyordu. Gerçek çözünürlüğü yaz.
+                if (size != null && size.height > 0) showRealQuality(size.height);
+            }
         });
 
         show();
@@ -733,6 +739,12 @@ public class PlayerActivity extends android.app.Activity {
     }
 
     // ---------- kalite ----------
+    /** Kalite düğmesinde yayının gerçek yüksekliğini göster (tercih değil). */
+    private void showRealQuality(int height) {
+        if (qualityBtn == null || height <= 0) return;
+        qualityBtn.setText(height + "p");
+    }
+
     private void chooseQuality() {
         QualityDialog.show(this, new Runnable() {
             @Override public void run() {

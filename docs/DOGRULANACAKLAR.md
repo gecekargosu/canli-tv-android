@@ -201,3 +201,11 @@ dokunma + `uiautomator dump` + `logcat` + ekran görüntüsü. "Kanıt" sütunu 
 | D-42 | Set listesinde okunur ad | **✅** Ana ekran → "3'lü izleme setleri" listesinde "Test Seti" (ham `ad:...` kodu değil). |
 | D-43 | Panel tüm düğmeler erişilebilir mi | **✅** Panel yatay kaydırılıyor, "★ set" görünür ve çalışıyor (`_build/y32t.jpg`). |
 | D-44 | Ülke değişince set doğru kanalı mı açıyor | **⏳** denenmedi (ülke değiştirip set açma turu yapılmadı); adres alanı `u:` kayıtta mevcut. |
+
+### 18. yarı (v9.68) — sayaç anahtarı ve kalite etiketi
+
+| # | Konu | Sonuç / kanıt |
+|---|------|----------------|
+| D-45 | Sayaç anahtarı değişince eski veri korunuyor mu | **✅** Ana listede kanal başına sayaçlar aynı (304,8 MB · 110,9 MB · 117,1 MB); taşıma ilk okumada yapıldı. |
+| D-46 | Kalite etiketi yayının gerçek çözünürlüğünü mü gösteriyor | **✅** Tercih 360p iken 3sat'ta düğme **720p**. |
+| D-47 | Çok varyantlı kanalda tercih hâlâ uygulanıyor mu | **⏳** TR kanalında ayrıca denenmedi. |

@@ -202,13 +202,28 @@ public class Prefs {
                 .format(new java.util.Date());
     }
 
-    /** Kanal basina toplam kullanim (bayt). */
+    /**
+     * Kanal basina toplam kullanim (bayt).
+     * M-65: anahtar artik tam adres. Eskiden `url.hashCode()` kullaniliyordu; iki farkli
+     * adres ayni hash'e dusunce kanallarin verisi birbirine karisiyordu. Eski kayit ilk
+     * okumada yeni anahtara tasinir (kullanici verisi kaybolmaz).
+     */
     public static long usage(Context c, String url) {
-        return sp(c).getLong("use:" + url.hashCode(), 0);
+        if (url == null) return 0;
+        long v = sp(c).getLong("use:" + url, -1L);
+        if (v >= 0) return v;
+        long old = sp(c).getLong("use:" + url.hashCode(), -1L);
+        if (old > 0) sp(c).edit().putLong("use:" + url, old).apply();
+        return Math.max(0, old);
     }
 
     public static int secs(Context c, String url) {
-        return sp(c).getInt("useS:" + url.hashCode(), 0);
+        if (url == null) return 0;
+        int v = sp(c).getInt("useS:" + url, -1);
+        if (v >= 0) return v;
+        int old = sp(c).getInt("useS:" + url.hashCode(), -1);
+        if (old > 0) sp(c).edit().putInt("useS:" + url, old).apply();
+        return Math.max(0, old);
     }
 
     /** Gunluk toplam (bayt); gun degisince sifirlanir. */
@@ -219,8 +234,8 @@ public class Prefs {
 
     public static void addUsage(Context c, String url, long bytes, int seconds) {
         SharedPreferences.Editor e = sp(c).edit();
-        e.putLong("use:" + url.hashCode(), usage(c, url) + bytes);
-        e.putInt("useS:" + url.hashCode(), secs(c, url) + seconds);
+        e.putLong("use:" + url, usage(c, url) + bytes);
+        e.putInt("useS:" + url, secs(c, url) + seconds);
         long t = today().equals(sp(c).getString("day", "")) ? sp(c).getLong("dayBytes", 0) : 0;
         e.putString("day", today());
         e.putLong("dayBytes", t + bytes);
