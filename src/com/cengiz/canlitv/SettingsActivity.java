@@ -65,7 +65,7 @@ public class SettingsActivity extends Activity {
         t.setTextSize(21);
         t.setTypeface(t.getTypeface(), android.graphics.Typeface.BOLD);
         TextView sub = new TextView(this);
-        sub.setText("Dokunduğun satır açılır · değer sağda yazar");
+        sub.setText("Sürüm " + version() + " · dokunduğun satır açılır");
         sub.setTextColor(MUTED);
         sub.setTextSize(10);
         titles.addView(t);
@@ -307,7 +307,8 @@ public class SettingsActivity extends Activity {
                 "Bildir ›", new View.OnClickListener() {
                     @Override public void onClick(View v) { copyrightDialog(); }
                 });
-        row("📱", "Sürüm", "UMAY Multi TV", version(), new View.OnClickListener() {
+        row("📱", "Sürüm " + version(), "UMAY Multi TV", "Ayrıntı ›",
+                new View.OnClickListener() {
             @Override public void onClick(View v) {
                 new AlertDialog.Builder(SettingsActivity.this)
                         .setTitle("UMAY Multi TV")

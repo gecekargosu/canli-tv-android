@@ -96,3 +96,12 @@ dokunma + `uiautomator dump` + `logcat` + ekran görüntüsü. "Kanıt" sütunu 
 | D-16 | APK kapasite kaybı var mı (9.55 → 9.56) | **✅** 400 dosya, 17.504 sınıf, +124 bayt (`releases/apk-kapasite.json`) |
 | D-17 | Tablet APK | **⏳ kullanıcıda** — binary telefonla aynı, SHA-256 `4e530038…7aeb8c` |
 | D-18 | Radyo aramasında yabancı (Kanada/İspanya) istasyonlar | **⚠️ açık** — radio-browser sonuçları filtresiz geliyor (M-15) |
+
+### 9. yarı (v9.57)
+
+| # | Konu | Sonuç |
+|---|------|-------|
+| D-17 | Tablet APK kurulumu | **⏳ ENGELLİ** — tablette 9.29 farklı imzayla kurulu; `INSTALL_FAILED_UPDATE_INCOMPATIBLE`. Eski sürüm kaldırılmalı (kullanıcı onayı). |
+| D-19 | Ayarlar'da sürüm yazıyor mu | **⏳** kod hazır (M-79); ekranda kurulum sonrası bakılacak |
+| D-20 | Radyo aramasında yabancı sonuçlar (Kentville vb.) | **⏳** kelime başı filtresi eklendi (M-15); cihazda doğrulanacak |
+| D-18 | (önceki) yabancı istasyon sonuçları | **✅ kod düzeltmesi yapıldı**, doğrulama D-20'de |

@@ -337,6 +337,8 @@ M-11 mağaza görselleri, M-57/58 mağaza metinleri.
 | M-76 | **Radyo araması görünmüyordu:** klavye açıkken liste 0 yüksekliğe çöküyordu (ekran boş). Pencere `adjustNothing` ile klavyeden etkilenmiyor; sonuçlar klavyenin üstünde görünüyor. | ✅ v9.55 (cihazda doğrulandı) |
 | M-77 | **Türkçe karakterli arama:** "super" → "Süper FM", "radyo" → "Radyo 7" (`Lang.fold`); arama sırasında gizlenmiş istasyonlar da listeleniyor. | ✅ v9.55 (cihazda doğrulandı) |
 | M-78 | **Alt şerit gezinme çubuğunun altına kayıyordu:** MIUI jest çubuğunda alt inset 0 geliyordu; banner artık `navigation_bar_height` ile en az çubuk yüksekliği kadar yukarıda. | ✅ v9.56 (cihazda doğrulandı) |
+| M-79 | **Ayarlar'da sürüm görünür:** başlık altı "Sürüm 9.57 · dokunduğun satır açılır", Hakkında bölümünde "📱 Sürüm 9.57" satırı; numara `versionName`'den geliyor. | ✅ v9.57 (derleme; ekranda doğrulama tablete kurulum sonrası) |
+| M-15 | **Radyo internet aramasında alakasız sonuçlar:** sorgu artık istasyon adında **kelime başında** aranıyor ("ntv" → Kentville eşleşmiyor). | ✅ v9.57 (kod; cihazda doğrulama bekliyor) |
 
 ### Oturum 24 Kasım 2026 (yedinci yarı) — A/V senkron + 12 maddelik test (v9.55)
 
@@ -380,3 +382,24 @@ M-11 mağaza görselleri, M-57/58 mağaza metinleri.
 **Sonraki oturum:** (1) D-04 (uçak modu), D-05 (reklam anı), D-12 (3'lü mod) elle test,
 (2) M-72 tam media3 radyo, (3) M-15 radyo-browser "review" filtresi (arama sonuçlarında
 yabancı istasyonlar çıkıyor), (4) M-13 `kanallar.json` entegrasyonu.
+
+### Oturum 24 Kasım 2026 (dokuzuncu yarı) — 9.57: sürüm etiketi + arama filtresi (tablet günü)
+
+**Bu oturumda biten: 2 madde**
+
+- **M-79 (✅ kod):** Ayarlar başlığının altı ve "Hakkında" satırı sürüm numarasını gösteriyor.
+  Numara `versionName`'den okunuyor; sürüm notu elle güncellenmiyor.
+- **M-15 (✅ kod):** radio-browser sonuçları kelime başı eşleşmesiyle süzülüyor; "ntv"
+  aramasında "Kentville" gibi yabancı sonuçlar eleniyor.
+- **Tablet:** `25040RP0AG` bağlıydı, üzerinde **9.29 farklı imzayla** kurulu olduğu için
+  `adb install -r` reddedildi (`INSTALL_FAILED_UPDATE_INCOMPATIBLE`). APK hem
+  `releases/v9.57/` hem `İndirilenler/UMAY-MULTI-TV-9.57-tablet.apk` içine bırakıldı.
+- **Telefon bağlı değildi:** telefon doğrulamaları bir sonraki oturuma kaldı.
+
+**Durum sayısı (24 Kasım 2026, 9. yarı sonu):** toplam **80 madde** · **20 ✅ bitti** ·
+**7 👤 kullanıcı işi** · **53 açık**.
+
+**Sonraki oturum (telefon bağlanınca):** (1) 9.57'yi telefona kur, Ayarlar → sürüm
+satırını ve radyo aramasını doğrula, (2) D-04 uçak modu, D-05 reklam anı, D-12 3'lü mod,
+(3) tablete temiz kurulum (eski 9.29 kaldırılıp), (4) M-72 tam media3 radyo,
+(5) M-13 `kanallar.json` entegrasyonu.

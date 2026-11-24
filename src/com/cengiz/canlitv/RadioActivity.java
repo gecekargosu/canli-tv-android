@@ -338,6 +338,21 @@ public class RadioActivity extends Activity {
         }
     }
 
+    /** Sorgunun istasyon adında KELİME BAŞINDA geçmesi (Kentville ≠ ntv). */
+    private static boolean wordMatch(String name, String query) {
+        String n = Lang.fold(name);
+        String q = Lang.fold(query).trim();
+        if (q.length() == 0) return true;
+        for (String tok : q.split("\\s+")) {
+            if (tok.length() == 0) continue;
+            java.util.regex.Matcher m = java.util.regex.Pattern
+                    .compile("(^|[^a-z0-9])" + java.util.regex.Pattern.quote(tok))
+                    .matcher(n);
+            if (!m.find()) return false;
+        }
+        return true;
+    }
+
     /** Arama cubuguna yazilan istasyon listede yoksa radio-browser'da arar. */
     private void searchOnline(final String q) {
         onlineQuery = q;
@@ -371,6 +386,9 @@ public class RadioActivity extends Activity {
                         if (nm.length() == 0 || su.length() < 8) continue;
                         if (!su.startsWith("http")) continue;
                         if (URLS.contains(su)) continue;
+                        // M-15: "ntv" araması "Kentville" gibi kelime ortası eşleşmeleri
+                        // getiriyordu; yalnızca kelime başında eşleşen sonuçlar alınır.
+                        if (!wordMatch(nm, q)) continue;
                         String cc = o.optString("country", "");
                         int br = o.optInt("bitrate", 0);
                         NAMES.add(nm);
