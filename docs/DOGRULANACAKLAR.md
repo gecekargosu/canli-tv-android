@@ -138,3 +138,11 @@ dokunma + `uiautomator dump` + `logcat` + ekran görüntüsü. "Kanıt" sütunu 
 | D-05 | Reklam sonrası canlıya dönüş | **⏳** reklam anı yakalanacak |
 | D-08 | Ülke “yakında” etiketi | **⏳** |
 | D-09 | Hata bildir → e-posta | **⏳** |
+
+### 12. yarı (v9.61) — ülke ve hata bildir akışı
+
+| # | Konu | Sonuç / kanıt |
+|---|------|----------------|
+| D-08 | Ülke ekranında hazır sayısı ve "yakında" | **KISMEN ✅** — “Ülke seç” ekranı açıldı; Türkiye “145 kanal · hazır” ve ✓ işaretli, diğer ülkeler “indir” (`_build/ul1.jpg`). **“yakında” etiketi gözlenmedi**: 30'dan az kanalı olan bir ülkenin indirilmesi gerekiyor; indirme dokunuşu bu oturumda tetiklenmedi (kota). |
+| D-09 | Ayarlar → Hata bildir | **✅** — “Hata kaydı” penceresi açıldı (sürüm, cihaz bilgisi, son bağlantı hataları, 6000 karakter); “E-posta” → Android paylaşım seçicisi açıldı (`ChooserActivity`). **E-posta gönderilmedi** (kullanıcı hesabı). |
+| D-05 | Reklam sonrası canlıya dönüş | **⏳ açık** — tam ekran reklam anı yakalanmadı. |
