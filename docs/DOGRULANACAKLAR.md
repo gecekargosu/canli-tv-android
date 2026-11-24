@@ -115,3 +115,14 @@ dokunma + `uiautomator dump` + `logcat` + ekran görüntüsü. "Kanıt" sütunu 
   (bilgisayarda da `İndirilenler/UMAY-MULTI-TV-9.57-tablet.apk`).
 - Kurulum: tablette **Dosyalar → İndirilenler → UMAY-MULTI-TV-9.57-TABLET.apk** → aç → kur.
 - İleride adb ile kurmak için tablette "USB ile yükleme" açılmalı.
+
+### 10. yarı (v9.59) — telefon bağlı, ağ testleri
+
+| # | Konu | Sonuç / kanıt |
+|---|------|----------------|
+| D-04 | TV yayını ağ kesintisinden sonra toparlanıyor mu | **✅** Wi-Fi 22 sn kapalı → açık; 22 sn içinde yayın açıldı, spinner kayboldu, veri 102 → 125,9 MB (`_build/f1.jpg`). |
+| D-12 | Çoklu ekran (3 pencere) regresyonu | **✅** üç kanal birlikte oynuyor (`_build/m3.jpg`); ağ 30 sn kesilip gelince üçü de canlıya döndü (`_build/g1.jpg`). |
+| D-19 | Ayarlar'da sürüm yazıyor mu | **✅** “Sürüm 9.59 · dokunduğun satır açılır” (`_build/v2.jpg`). |
+| D-20 | Radyo aramasında yabancı sonuç | **✅** “ntv” → yalnız NTV Radyo / ntv Live; Kentville yok (`_build/v3.jpg`). |
+| D-21 | Ağ geri gelince yayın donuk kalıyordu | **✅ düzeltildi (M-80)** — cihazda doğrulandı. |
+| D-05 | Reklam sonrası canlıya dönüş | **⏳ açık** — test süresinde tam ekran reklam çıkmadı. |

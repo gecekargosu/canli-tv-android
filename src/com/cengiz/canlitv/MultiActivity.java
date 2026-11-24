@@ -37,6 +37,7 @@ public class MultiActivity extends android.app.Activity {
 
     private List<Channel> list;
     private final Slot[] slots = new Slot[4];
+    private android.net.ConnectivityManager.NetworkCallback netCb;
     private final boolean[] audible = {true, false, false, false};
     private int paneCount = 3;
     private boolean tracking = false;
@@ -187,6 +188,7 @@ public class MultiActivity extends android.app.Activity {
         for (int i = 0; i < 4; i++) slots[i].setChannel(idx[i] % list.size());
         applyAudio();
         setPaneCount(paneCount);
+        watchNetwork();
         ui.postDelayed(watchdog, 6000);
         tracking = true;
         openedAt = System.currentTimeMillis();
@@ -556,6 +558,20 @@ public class MultiActivity extends android.app.Activity {
         }
 
         /** Bir sonraki kaynağa geç. */
+        /** İnternet geri geldi: boş/hatalı pencereyi kendiliğinden yeniden bağla. */
+        void networkBack() {
+            try {
+                if (mp != null && prepared && !failed) {
+                    try { if (mp.isPlaying()) return; } catch (Throwable ignored) { }
+                }
+                gen++;
+                attempt = 0;
+                label.setText("internet geri geldi · bağlanıyor…");
+                label.setVisibility(View.VISIBLE);
+                startAttempt();
+            } catch (Throwable ignored) { }
+        }
+
         void retry() {
             if (!surfaceReady || failed) return;
             attempt++;
@@ -779,10 +795,33 @@ public class MultiActivity extends android.app.Activity {
         if (!tracking) { tracking = true; openedAt = System.currentTimeMillis(); Net.begin(); }
     }
 
+    /** M-80: ağ geri gelince pencereleri kendiliğinden toparla. */
+    private void watchNetwork() {
+        try {
+            android.net.ConnectivityManager cm =
+                    (android.net.ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
+            netCb = new android.net.ConnectivityManager.NetworkCallback() {
+                @Override public void onAvailable(android.net.Network n) {
+                    runOnUiThread(new Runnable() {
+                        @Override public void run() {
+                            for (Slot s : slots) if (s != null) s.networkBack();
+                        }
+                    });
+                }
+            };
+            cm.registerDefaultNetworkCallback(netCb);
+        } catch (Throwable ignored) { }
+    }
+
     @Override
     protected void onDestroy() {
         ui.removeCallbacksAndMessages(null);
         if (recorder.isRunning()) recorder.stop();
+        try {
+            android.net.ConnectivityManager cm =
+                    (android.net.ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
+            if (netCb != null) cm.unregisterNetworkCallback(netCb);
+        } catch (Throwable ignored) { }
         for (Slot s : slots) if (s != null) s.release();
         super.onDestroy();
     }

@@ -404,6 +404,7 @@ public class PlayerActivity extends android.app.Activity {
             }
         });
         setContentView(outer);
+        watchNetwork();
 
         // Ekonomi modu: ekran kapanınca video indirmeyi durdur, sadece sesi sürdür.
         screenOff = new android.content.BroadcastReceiver() {
@@ -512,6 +513,43 @@ public class PlayerActivity extends android.app.Activity {
 
     /** Aynı yayına kaç kez yeniden bağlanıldı (zayıf internet). */
     private int sameRetries = 0;
+    private android.net.ConnectivityManager.NetworkCallback netCb;
+
+    /** M-80: internet geri geldiğinde yayını kendiliğinden yeniden başlat. */
+    private void watchNetwork() {
+        try {
+            android.net.ConnectivityManager cm =
+                    (android.net.ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
+            netCb = new android.net.ConnectivityManager.NetworkCallback() {
+                @Override public void onAvailable(android.net.Network n) {
+                    ui.post(new Runnable() {
+                        @Override public void run() {
+                            try {
+                                if (player == null || adPaused) return;
+                                boolean ok = player.getPlaybackState()
+                                        == androidx.media3.common.Player.STATE_READY
+                                        && player.isPlaying();
+                                if (ok) return;
+                                sameRetries = 0;
+                                errorView.setVisibility(View.GONE);
+                                progress.setVisibility(View.VISIBLE);
+                                showNotice("📶 İnternet geri geldi · yeniden bağlanıyorum");
+                                final String cur = list.get(index).url;
+                                ready = false;   // onReady() tekrar çalışsın (spinner/uyarı temizlenir)
+                                player.stop();
+                                player.clearMediaItems();
+                                player.setMediaItem(androidx.media3.common.MediaItem.fromUri(cur));
+                                player.prepare();
+                                player.play();
+                                ui.postDelayed(watchdog, 15000);
+                            } catch (Throwable ignored) { }
+                        }
+                    });
+                }
+            };
+            cm.registerDefaultNetworkCallback(netCb);
+        } catch (Throwable ignored) { }
+    }
     // Reklam açıkken yayın duraklatılır; kapanınca canlı kenara yeniden bağlanılır.
     private boolean adPaused = false;
 
@@ -526,6 +564,7 @@ public class PlayerActivity extends android.app.Activity {
             showNotice("📶 Bağlantı sorunu · yeniden bağlanıyorum (" + n + "/3)");
             CrashLog.event(this, "tv", "hata, tekrar deneniyor " + n + "/3: " + cur);
             progress.setVisibility(View.VISIBLE);
+            ready = false;   // yeniden bağlanınca onReady() çalışsın
             ui.postDelayed(new Runnable() {
                 @Override public void run() {
                     try {
@@ -886,6 +925,7 @@ public class PlayerActivity extends android.app.Activity {
                                 + sameRetries + "/3)");
                         CrashLog.event(PlayerActivity.this, "tv",
                                 "15 sn ses yok, tekrar " + sameRetries + "/3: " + cur);
+                        ready = false;   // tekrar açılışta onReady() çalışsın
                         try {
                             player.stop();
                             player.clearMediaItems();
@@ -1158,6 +1198,11 @@ public class PlayerActivity extends android.app.Activity {
     @Override
     protected void onDestroy() {
         finishUsage();
+        try {
+            android.net.ConnectivityManager cm =
+                    (android.net.ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
+            if (netCb != null) cm.unregisterNetworkCallback(netCb);
+        } catch (Throwable ignored) { }
         ui.removeCallbacksAndMessages(null);
         if (recorder.isRunning()) recorder.stop();
         try { if (screenOff != null) unregisterReceiver(screenOff); } catch (Throwable ignored) { }

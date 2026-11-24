@@ -339,6 +339,7 @@ M-11 mağaza görselleri, M-57/58 mağaza metinleri.
 | M-78 | **Alt şerit gezinme çubuğunun altına kayıyordu:** MIUI jest çubuğunda alt inset 0 geliyordu; banner artık `navigation_bar_height` ile en az çubuk yüksekliği kadar yukarıda. | ✅ v9.56 (cihazda doğrulandı) |
 | M-79 | **Ayarlar'da sürüm görünür:** başlık altı "Sürüm 9.57 · dokunduğun satır açılır", Hakkında bölümünde "📱 Sürüm 9.57" satırı; numara `versionName`'den geliyor. | ✅ v9.57 (derleme; ekranda doğrulama tablete kurulum sonrası) |
 | M-15 | **Radyo internet aramasında alakasız sonuçlar:** sorgu artık istasyon adında **kelime başında** aranıyor ("ntv" → Kentville eşleşmiyor). | ✅ v9.57 (kod; cihazda doğrulama bekliyor) |
+| M-80 | **Ağ geri gelince kendiliğinden toparlanma:** `ConnectivityManager` dinleyicisi tek oynatıcıda ve çoklu ekranda yayını yeniden başlatıyor; `ready=false` ile spinner/uyarı takılması giderildi. | ✅ v9.59 (cihazda: Wi-Fi 22/30 sn kesildi, ikisi de toparlandı) |
 
 ### Oturum 24 Kasım 2026 (yedinci yarı) — A/V senkron + 12 maddelik test (v9.55)
 
@@ -403,3 +404,22 @@ yabancı istasyonlar çıkıyor), (4) M-13 `kanallar.json` entegrasyonu.
 satırını ve radyo aramasını doğrula, (2) D-04 uçak modu, D-05 reklam anı, D-12 3'lü mod,
 (3) tablete temiz kurulum (eski 9.29 kaldırılıp), (4) M-72 tam media3 radyo,
 (5) M-13 `kanallar.json` entegrasyonu.
+
+### Oturum 24 Kasım 2026 (onuncu yarı) — 9.59: ağ toparlanması (telefon bağlı)
+
+**Bu oturumda biten: 1 madde + 4 doğrulama**
+
+- **M-80 (✅):** ağ kesilip geri geldiğinde yayın kendiliğinden açılıyor.
+  Üç kök neden: (a) ağ dinleyicisi yoktu, (b) yeniden bağlanma yolları `ready` bayrağını
+  sıfırlamadığı için spinner/uyarı ekranda kalıyordu, (c) çoklu ekranda ağ dönüşü denemesi yoktu.
+  Cihazda: tek oynatıcı (Wi-Fi 22 sn kapalı) ve 3'lü ekran (30 sn kapalı) ikisi de toparlandı.
+- **Doğrulananlar:** D-04 (tek oynatıcı toparlanma) ✅, D-12 (3'lü ekran) ✅,
+  D-19 (Ayarlar'da sürüm) ✅, D-20 (radyo aramasında “ntv” filtresi) ✅.
+- **D-05 (reklam sonrası canlıya dönüş) hâlâ açık:** 9.7 MB'lık test süresinde tam ekran
+  reklam çıkmadı; reklam anı yakalanınca bakılacak.
+
+**Durum sayısı (24 Kasım 2026, 10. yarı sonu):** toplam **81 madde** · **21 ✅ bitti** ·
+**7 👤 kullanıcı işi** · **53 açık**.
+
+**Sonraki oturum:** (1) D-05 reklam anı, D-08 ülke “yakında”, D-09 hata bildir akışı,
+(2) tablete 9.59 kurulumu (dosyadan), (3) M-72 tam media3 radyo, (4) M-13 `kanallar.json`.
