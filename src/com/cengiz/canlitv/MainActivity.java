@@ -871,9 +871,35 @@ public class MainActivity extends android.app.Activity {
         adapter.notifyDataSetChanged();
         if (shown.isEmpty()) {
             emptyView.setVisibility(View.VISIBLE);
-            emptyView.setText(onlyHidden
-                    ? "Gizlenen kanal yok.\n\nBir kanala uzun basıp \"Listeden sil\" dersen burada birikir."
-                    : "Bu filtrede kanal yok.\n\nAramayı temizle veya başka bir sekme dene.");
+            final String cc = Prefs.country(this);
+            if (base.isEmpty() && !"tr".equals(cc)) {
+                // #148: ülke listesi inmediyse/hazır değilse boş ekran yerine açıklama + tekrar dene
+                emptyView.setText("" + Countries.flag(cc) + " " + Countries.name(cc, false)
+                        + " listesi henüz hazır değil.\n\nBu ülke için kanallar sunucudan indirilemedi "
+                        + "ya da henüz doğrulanmadı.\n\nDokun → tekrar indirmeyi dene\n"
+                        + "veya Ayarlar → Ülke bölümünden Türkiye'ye dön.");
+                emptyView.setOnClickListener(new View.OnClickListener() {
+                    @Override public void onClick(View v) {
+                        emptyView.setText("İndiriliyor…");
+                        new Thread(new Runnable() {
+                            @Override public void run() {
+                                CountryRepo.download(MainActivity.this, cc);
+                                runOnUiThread(new Runnable() {
+                                    @Override public void run() {
+                                        ChannelRepo.reload(MainActivity.this);
+                                        refresh();
+                                    }
+                                });
+                            }
+                        }, "retry-dl").start();
+                    }
+                });
+            } else {
+                emptyView.setOnClickListener(null);
+                emptyView.setText(onlyHidden
+                        ? "Gizlenen kanal yok.\n\nBir kanala uzun basıp \"Listeden sil\" dersen burada birikir."
+                        : "Bu filtrede kanal yok.\n\nAramayı temizle veya başka bir sekme dene.");
+            }
             if (listView != null) listView.setVisibility(View.GONE);
         } else {
             emptyView.setVisibility(View.GONE);

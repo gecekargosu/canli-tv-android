@@ -214,25 +214,83 @@ public final class RadioRepo {
         }, "radio-dl").start();
     }
 
+    /**
+     * Yayını hızlıca yoklar: ilk baytı okuyabiliyorsak çalıyor sayılır.
+     * radio-browser "hidebroken" işaretine rağmen ölü adres döndürebiliyor.
+     */
+    private static boolean alive(String url) {
+        HttpURLConnection con = null;
+        try {
+            con = (HttpURLConnection) new URL(url).openConnection();
+            con.setConnectTimeout(4000);
+            con.setReadTimeout(5000);
+            con.setInstanceFollowRedirects(true);
+            con.setRequestProperty("User-Agent", "UMAY-Multi-TV/1.0");
+            con.setRequestProperty("Icy-MetaData", "0");
+            if (con.getResponseCode() / 100 != 2) return false;
+            java.io.InputStream in = con.getInputStream();
+            int b = in.read();
+            in.close();
+            return b >= 0;
+        } catch (Throwable t) {
+            return false;
+        } finally {
+            if (con != null) try { con.disconnect(); } catch (Exception ignored) { }
+        }
+    }
+
+    /** Adresleri paralel yoklar; ölüleri atar. */
+    private static List<String[]> filterAlive(List<String[]> all) {
+        List<String[]> keep = new java.util.ArrayList<String[]>();
+        try {
+            java.util.concurrent.ExecutorService pool =
+                    java.util.concurrent.Executors.newFixedThreadPool(8);
+            List<java.util.concurrent.Future<Boolean>> fs =
+                    new java.util.ArrayList<java.util.concurrent.Future<Boolean>>();
+            for (final String[] e : all) {
+                fs.add(pool.submit(new java.util.concurrent.Callable<Boolean>() {
+                    @Override public Boolean call() { return alive(e[2]); }
+                }));
+            }
+            for (int i = 0; i < all.size(); i++) {
+                try {
+                    if (fs.get(i).get(8, java.util.concurrent.TimeUnit.SECONDS)) keep.add(all.get(i));
+                } catch (Throwable ignored) { }
+            }
+            pool.shutdownNow();
+        } catch (Throwable t) {
+            return all;
+        }
+        // Aşırı eleme olursa (ağ kısıtlı) listeyi boş bırakma
+        return keep.size() >= 20 ? keep : all;
+    }
+
     private static boolean save(String cc, JSONArray arr, Context c) throws Exception {
-        StringBuilder out = new StringBuilder("#EXTM3U\n");
-        int added = 0;
-        for (int i = 0; i < arr.length() && added < 80; i++) {
+        List<String[]> all = new java.util.ArrayList<String[]>();
+        for (int i = 0; i < arr.length() && all.size() < 80; i++) {
             JSONObject o = arr.getJSONObject(i);
             String url = o.optString("url_resolved", "");
             if (url.length() == 0) url = o.optString("url", "");
             String name = o.optString("name", "").trim();
             if (url.length() == 0 || name.length() == 0) continue;
+            if (name.contains("|")) name = name.replace('|', ' ');
             String codec = o.optString("codec", "MP3");
             String bitrate = o.optString("bitrate", "");
             String city = o.optString("state", "");
             if (city.length() == 0) city = o.optString("country", cc.toUpperCase());
             String meta = codec.toUpperCase() + (bitrate.length() > 0 ? " · " + bitrate + " kbps" : "")
                     + " | " + city;
-            out.append("#EXTINF:-1,").append(name.replace("\n", " ")).append(" | ").append(meta).append('\n')
-               .append(url).append('\n');
-            added++;
+            all.add(new String[]{name, meta, url});
         }
+        if (all.isEmpty()) return false;
+
+        List<String[]> good = filterAlive(all);
+        StringBuilder out = new StringBuilder("#EXTM3U\n");
+        for (String[] e : good) {
+            out.append("#EXTINF:-1,").append(e[0]).append(" | ").append(e[1]).append('\n')
+               .append(e[2]).append('\n');
+        }
+        int added = good.size();
         if (added == 0) return false;
         File f = cacheFile(c, cc);
         FileOutputStream fos = new FileOutputStream(f);

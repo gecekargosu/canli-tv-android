@@ -4,6 +4,12 @@
  "checked": true,
  "items": [
   {
+   "name": "TRT Haber",
+   "group": "Haber",
+   "logo": "",
+   "url": "https://tv-trthaber.medya.trt.com.tr/master.m3u8"
+  },
+  {
    "name": "ATV (Turkiye)",
    "url": "https://rnttwmjcin.turknet.ercdn.net/lcpmvefbyo/atv/atv_720p.m3u8",
    "logo": "https://i.imgur.com/HyVUwFC.png",

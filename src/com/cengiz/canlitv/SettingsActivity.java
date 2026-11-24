@@ -112,7 +112,8 @@ public class SettingsActivity extends Activity {
         TextView c2 = new TextView(this);
         c2.setText("Kalite: " + QualityDialog.label(this)
                 + (lim > 0 ? "  ·  Limit: " + lim + " MB/gün" : "  ·  Limit yok")
-                + "\nKalite düştükçe harcama azalır: 360p ≈ 0,3 GB/saat, 720p ≈ 1,2 GB/saat.");
+                + "\nTahmini tüketim: 360p saatte ~300 MB, 720p saatte ~1,2 GB. "
+                + "Sayaç yalnız yayın verisini ölçer (reklamlar hariç).");
         c2.setTextColor(MUTED);
         c2.setTextSize(10);
         c2.setPadding(0, dp(3), 0, 0);
@@ -287,6 +288,14 @@ public class SettingsActivity extends Activity {
 
         // --- hakkinda ---
         section("Hakkında");
+        row("📖", "Program tanıtımı ve özellikleri",
+                "A'dan Z'ye ne yapar, sorun olursa ne yapmalı, iletişim",
+                "Oku ›", new View.OnClickListener() {
+                    @Override public void onClick(View v) {
+                        startActivity(new android.content.Intent(SettingsActivity.this,
+                                AboutActivity.class));
+                    }
+                });
         row("ℹ️", "Ne var, ne yok?", "İstenen özelliklerin durumu: oldu / olmadı / neden",
                 "Aç ›", new View.OnClickListener() {
                     @Override public void onClick(View v) {

@@ -1,0 +1,1191 @@
+Kanka, ZIP dosyasını açtım. Bu kez yalnızca ekran görüntülerine veya Freebuff'ın yaptığı açıklamalara bakarak değerlendirmeyeceğim. **UMAY Multi TV v9.29'un kaynak kodunu, Android yapılandırmasını, sunucu tarafını, sürüm notlarını, reklam sistemini, gizlilik politikasını ve proje dokümantasyonunu birlikte inceliyorum.**
+
+İlk önemli tespitim şu: Bu artık basit bir canlı TV uygulaması değil. İçinde birden fazla oynatma altyapısı, çoklu ekran, radyo servisi, yayın sağlığı kontrolü, otomatik onarım, ülke bazlı kanal dağıtımı, reklam yönetimi ve sunucu tarafında içerik dağıtımı bulunan gerçek bir Android ürününe dönüşmüş.
+
+Ama bir noktayı özellikle vurgulayacağım: Bir özelliğin kodda bulunması, o özelliğin sorunsuz çalıştığının kanıtı değildir. Analizde şu üç durumu birbirinden ayıracağım:
+
+- **Doğrulanmış:** Kaynak kodda veya dosyada açıkça gördüğüm durum.
+- **Risk:** Kodun çalışma biçiminden kaynaklanan muhtemel sorun.
+- **Test gerekli:** Gerçek cihazda veya sunucuda doğrulanması gereken konu.
+
+Bir de önemli güvenlik konusu var: ZIP içerisinde `.secrets` klasörü ve kimlik bilgisi niteliğinde dosyalar bulunuyor. Bunları raporda ifşa etmeyeceğim; ancak gerçek ve aktif anahtarlarsa yenilenmelerini önereceğim.
+
+# **1. Genel değerlendirme**
+
+Ürün altyapısı güçlü
+
+Önemli düzeltmeler var
+
+Yayın öncesi kritik riskler
+
+# **v9.29**
+
+İncelenen uygulama sürümü · 23 Kasım 2026
+
+# **30**
+
+Java kaynak dosyası
+
+# **8.987**
+
+Java kaynak satırı
+
+# **144**
+
+Gömülü Türkiye TV kanalı
+
+# **32**
+
+Gömülü Türkiye radyo istasyonu
+
+**Teknik altyapı**
+
+- Android Native / Java
+- Gradle 8.14.3 ve Android Gradle Plugin 8.13.0
+- AndroidX Media3 / ExoPlayer
+- Google AdMob ve UMP
+- Cloudflare Worker ve statik JSON dağıtımı
+- HLS / M3U8 yayınları
+- SharedPreferences ile yerel veri saklama
+- MediaPlayer tabanlı eski oynatma bileşenleri
+
+Benim genel kanaatim:
+
+**Uygulamanın temel fikri ve özellik seti başarılı. Ancak şu an en büyük problem özellik sayısı değil, özelliklerin aynı kalite ve güvenilirlik seviyesinde çalışmaması.**
+
+Özellikle oynatma motorları, veri tüketimi, reklam izinleri ve dağıtım altyapısı üzerinde çalışılması gerekiyor.
+
+Bir başka önemli konu: Uygulamanın bazı bölümleri gerçekten ileri seviyeye taşınmışken bazı bölümleri hâlâ eski mimaride kalmış.
+
+# **2. Uygulamanın mimarisini inceledim**
+
+Önce sistemin nasıl kurulduğunu ortaya koyalım.
+
+**UMAY Multi TV — mevcut mimari**
+
+**Android uygulaması**
+
+MainActivity · Ayarlar · Ülke · Kanal listesi
+
+**TV oynatımı**
+
+PlayerActivity
+
+Media3
+
+**Çoklu ekran**
+
+MultiActivity
+
+MediaPlayer
+
+**Radyo**
+
+RadioPlayerActivity
+
+MediaPlayer
+
+**Arka plan ses**
+
+AudioService
+
+MediaPlayer
+
+**Ortak servisler**
+
+ChannelRepo · CountryRepo · Good · Quality · Net · Prefs · HlsRecorder
+
+**Cloudflare**
+
+Kanal listeleri, JSON ve web sitesi
+
+**Google AdMob**
+
+Banner, geçiş, ödüllü reklam ve UMP
+
+Bu mimarinin olumlu tarafı, uygulamanın artık bütün özellikleri tek bir MainActivity içerisinde toplamıyor olması.
+
+Ancak mimaride önemli bir eksiklik var:
+
+**Dört ayrı oynatma senaryosu tek bir ortak medya altyapısına bağlanmamış.**
+
+Bunun sonuçlarını aşağıda açıklıyorum.
+
+## **2.1. İyi yapılmış bölümler**
+
+Özellikle şu dosyalar doğru yönde geliştirilmiş:
+
+| Dosya              | Değerlendirmem                                  |
+| ------------------ | ----------------------------------------------- |
+| `ChannelRepo.java` | Kanal yönetiminin merkezileştirilmesi iyi       |
+| `CountryRepo.java` | Ülke bazlı liste yönetimi doğru yönde           |
+| `Good.java`        | Çalışan yayınları öne alma mantığı faydalı      |
+| `Quality.java`     | Kalite seçimi ayrı sınıfta                      |
+| `Prefs.java`       | Kullanıcı tercihlerinin merkezileştirilmesi iyi |
+| `AdManager.java`   | Reklamların tek merkezden yönetilmesi doğru     |
+| `CrashLog.java`    | Hata raporlama düşünülmüş                       |
+| `HlsRecorder.java` | Kayıt mekanizması ayrı bir bileşen              |
+
+Bunları çöpe atmak veya baştan yazmak gerekmiyor.
+
+Bence Freebuff ajanına verilecek talimatların en önemli şartı şu olmalı:
+
+**Çalışan özellikleri koruyarak geliştirme yap. Sırf mimariyi güzelleştirmek için çalışan kodları değiştirme.**
+
+# **3. Kritik hatalar ve riskler**
+
+Burada özellikle önem verdiğim konulara geçiyorum.
+
+## P&#x30;**&#x20;3.1. UMP reklam izin kontrolü bütün reklam türlerine uygulanmıyor**
+
+Bence ilk düzeltilmesi gereken konu bu.
+
+`AdManager.java` dosyasını inceledim.
+
+UMP sistemi eklenmiş. Yani Avrupa Ekonomik Alanı ve ilgili bölgelerde reklam izni yönetimi düşünülmüş.
+
+Ancak banner tarafında önemli bir problem var.
+
+Şu kod:
+
+`AdManager.java`, 266–299:
+
+```
+public static View banner(final Activity activity) {
+    if (!Ads.SDK_READY) return null;
+
+    // ...
+
+    view.loadAd(new AdRequest.Builder().build());
+    return holder;
+}
+```
+
+Burada banner reklamı yüklenirken UMP'nin `canRequestAds()` sonucu kontrol edilmiyor.
+
+Daha da önemlisi `MainActivity.java` içerisinde sıralama şöyle:
+
+```
+View banner = AdManager.banner(this);
+setContentView(root);
+AdManager.init(this);
+```
+
+Yani banner yükleme isteği, UMP izin güncellemesi başlatılmadan önce oluşturuluyor.
+
+Diğer ekranlarda kullanılan `AdManager.wrap()` da banner yüklemeyi doğrudan gerçekleştiriyor.
+
+**Neden önemli?**
+
+- Yeni kurulumda henüz rıza durumu belirlenmemiş olabilir.
+- Banner isteği UMP kontrolünden önce gönderilebilir.
+- Geçiş ve ödüllü reklamların kontrol edilmesi, banner tarafının da kontrol edildiği anlamına gelmiyor.
+
+Öncelik: P0
+
+**Önerim:**
+
+Tek bir reklam izin kapısı oluşturulmalı.
+
+1. UMP bilgi güncellemesi yapılmalı.
+2. Gerekli rıza formu gösterilmeli.
+3. `canRequestAds()` sonucu alınmalı.
+4. İzin varsa banner, geçiş ve ödüllü reklamlar yüklenmeli.
+5. İzin yoksa hiçbir reklam isteği gönderilmemeli.
+6. İnternet yoksa veya izin bilgisi alınamıyorsa güvenli davranış uygulanmalı.
+
+Ayrıca `startAds()` içerisinde `canRequestAds` değişkeni başlangıçta `true` tanımlanmış. Kontrol sırasında istisna oluşursa da bu değer korunuyor. Bu durum da fail-open davranışına yol açabilir. İzin durumu doğrulanamıyorsa reklam yüklememek daha güvenli.
+
+Bu konuyu çözmeden yeni reklam özellikleri eklememeliyiz.
+
+## P&#x30;**&#x20;3.2. ZIP içerisinde gizli anahtarlar bulunuyor**
+
+Şu klasörü buldum:
+
+`UMAY-MULTI-TV/.secrets/`
+
+İçerisinde:
+
+- `resend.key`
+- `mailfrom.txt`
+- `konusmalar.txt`
+
+bulunuyor.
+
+Özellikle `resend.key`, API anahtarı biçiminde bir kimlik bilgisi içeriyor.
+
+`.gitignore` dosyanızda `.secrets/` klasörünün Git'e eklenmemesi gerektiği yazılmış. Fakat ZIP oluşturulurken bu klasör dışarıda bırakılmamış.
+
+Bu iki farklı koruma mekanizmasıdır:
+
+- Git ignore, Git'e eklenmesini engeller.
+- ZIP oluşturma işlemi ise ayrıca kontrol edilmelidir.
+
+**Yapılacaklar:**
+
+1. Resend anahtarını gerçek ve aktifse hemen yenile.
+2. Eski anahtarı iptal et.
+3. `.secrets` klasörünü dağıtım paketinden çıkar.
+4. Konuşma kayıtlarını kaynak kod paketinden ayır.
+5. Freebuff için hazırlanacak yeni ZIP'te gizli dosya kontrolü yap.
+
+Bu konuya özellikle dikkat etmeni istiyorum. ZIP'i başka birine veya başka bir geliştirme aracına gönderirken de aynı risk devam eder.
+
+## P&#x30;**&#x20;3.3. Telif ve yayın kaynakları konusunda filtre yeterli güvence sağlamıyor**
+
+`CountryRepo.java` içerisinde şu kontroller var:
+
+- Yetişkin içerik isimlerini engelleme.
+- Ücretli kanal markalarını engelleme.
+- Çıplak IP adreslerini engelleme.
+
+Özellikle `blocked()` fonksiyonu ve `isBareIp()` fonksiyonu bu işi yapıyor.
+
+Bu iyi bir başlangıç.
+
+Fakat bir kanalın ismini filtrelemek, o yayının hukuken kullanılabilir olduğunu kanıtlamaz.
+
+Örneğin:
+
+- Kanalın adı farklı yazılabilir.
+- Ücretli yayın ücretsiz görünen başka bir isimle sunulabilir.
+- Yayın adresi değişebilir.
+- Bir CDN adresinin çalışması yayın hakkına sahip olduğunuz anlamına gelmez.
+
+Ayrıca `good/<cc>.json` kullanılması, kanal listesi üzerinde kontrol sağlıyor; fakat tek başına yayın haklarını doğrulamıyor.
+
+**Önerim:**
+
+Kanal listesi için ayrı bir yayın uygunluğu kaydı oluşturulmalı:
+
+| Alan          | Açıklama                       |
+| ------------- | ------------------------------ |
+| Kanal adı     | Yayıncı                        |
+| Kaynak URL    | Yayın adresi                   |
+| Kaynak türü   | Resmî / açık lisanslı / izinli |
+| Hak durumu    | Doğrulandı / bekliyor          |
+| Son kontrol   | Tarih                          |
+| Yayın sağlığı | Çalışıyor / çalışmıyor         |
+
+Hakları doğrulanamayan yayınları otomatik olarak herkese açık listeye almamak gerekir.
+
+Ayrıca kaldırma ve telif bildirimi süreci oluşturulmalı. Bu konu için hukuk görüşü de alınmalı.
+
+## P&#x30;**&#x20;3.4. APK ile Play Store sürümü arasında imza problemi**
+
+`app/build.gradle` dosyasında önemli bir karar var.
+
+Halka açık APK için:
+
+```
+publicApk {
+    initWith release
+    signingConfig signingConfigs.debug
+}
+```
+
+Yani halka açık APK debug anahtarıyla imzalanıyor.
+
+Play Store için oluşturulan AAB ise:
+
+```
+release {
+    signingConfig signingConfigs.release
+}
+```
+
+kullanıyor.
+
+Bu iki imza aynı değil.
+
+**Sonuç:** Kullanıcı uygulamayı internet sitenizden indirirse, ileride Play Store'dan güncelleme yapmak istediğinde Android imza uyuşmazlığı nedeniyle uygulamanın üzerine yeni sürümü kuramayabilir.
+
+Kullanıcı uygulamayı kaldırıp yeniden kurmak zorunda kalabilir. Yerel ayarlarını ve verilerini kaybetme riski de oluşur.
+
+Bence dağıtım stratejisini şimdiden belirlemeliyiz:
+
+- Play Store ve doğrudan APK için aynı üretim imzalama kimliği kullanılmalı.
+- Özel imza anahtarı hiçbir zaman ZIP'e veya GitHub'a konulmamalı.
+- Debug anahtarı yalnızca test kurulumlarında kullanılmalı.
+
+Bu konu özellikle uygulama kullanıcı sayısı arttığında çok can sıkıcı olur.
+
+## P&#x30;**&#x20;3.5. Gizlilik politikası güncel uygulamayla tam uyuşmuyor**
+
+Üç dosyayı karşılaştırdım:
+
+- `docs/play/gizlilik-politikasi.html`
+- `site/public/gizlilik-politikasi.html`
+- `site/public/index.html`
+
+Üçü de birebir aynı.
+
+Ancak metinde çelişkiler var.
+
+Örneğin 46. satırdaki kısa özette reklam ve analiz yazılımı olmadığı belirtiliyor.
+
+49\. satırda hesap açılmadığında hiçbir kişisel veri toplanmadığı ve hiçbir sunucuya veri gönderilmediği ifade ediliyor.
+
+Oysa uygulamada:
+
+- AdMob var.
+- Reklam kimliği işlenebiliyor.
+- ipapi.co servisine istek gönderiliyor.
+- Cloudflare üzerinden kanal listeleri indiriliyor.
+- Üçüncü taraf yayıncıların sunucularına bağlantı kuruluyor.
+
+Politikanın 6. bölümünde AdMob ve bu bağlantıların bir kısmı anlatılmış. Yani aynı belge kendi içerisinde çelişiyor.
+
+Bir diğer sorun: Android uygulamasından üyelik sistemi v9.21'de kaldırılmış. Ancak gizlilik politikasında hâlâ hesap açma, şifre özeti ve hesap silme bölümleri var.
+
+Bu da kullanıcıya yanlış bilgi veriyor.
+
+**Önerim:** Gizlilik politikası sıfırdan, mevcut v9.29 davranışına göre yeniden düzenlenmeli. Üç ayrı dosyaya elle yazmak yerine tek ana kaynaktan üretilmeli.
+
+Play Store Veri Güvenliği beyanı da aynı gerçek davranışla eşleştirilmeli.
+
+# **4. Oynatma motoru: En önemli teknik mimari sorunumuz**
+
+Kanka, bence uygulamanın geleceği açısından en önemli geliştirme alanı burası.
+
+v9.29'da ExoPlayer geçişi yapılmış. Bu çok iyi.
+
+Ancak geçiş tamamlanmamış.
+
+| Bileşen               | Mevcut motor                      |
+| --------------------- | --------------------------------- |
+| Tekli TV              | ExoPlayer / Media3                |
+| 3'lü ve 4'lü TV       | MediaPlayer                       |
+| Radyo oynatıcısı      | MediaPlayer                       |
+| Arka plan ses servisi | MediaPlayer                       |
+| Kayıt                 | HttpURLConnection ile HLS indirme |
+
+Yani bir kullanıcı tekli TV'de yayın izlerken ExoPlayer kullanıyor; çoklu ekrana geçtiğinde başka bir oynatma motoruna geçiyor.
+
+Bu farklılık şu sorunlara yol açabilir:
+
+- Bir kanalı tekli oynatıcı açarken çoklu ekranda açamayabilir.
+- Bir CDN ExoPlayer'da çalışırken MediaPlayer'da sorun çıkarabilir.
+- 302 yönlendirme ve User-Agent davranışları farklı olabilir.
+- Hata kurtarma mekanizmaları farklılaşabilir.
+- Kalite seçimi ve tamponlama davranışları değişebilir.
+
+## **4.1. Benim önerim: Tek medya altyapısı**
+
+## **Hedef mimari**
+
+**Media3 / ExoPlayer**
+
+Ortak oynatma çekirdeği
+
+**Tekli TV**
+
+1 player
+
+**Çoklu TV**
+
+1–4 player
+
+**Radyo**
+
+Audio odaklı
+
+**Arka plan**
+
+MediaSession servisi
+
+Tek bir hata yönetimi, kalite politikası, HTTP başlık sistemi ve oynatma durumu yönetimi.
+
+Bunun için AndroidX Media3'ün servis ve MediaSession altyapısı da değerlendirilmeli.
+
+Ancak önemli bir uyarım var: Dört ExoPlayer'ı her cihazda çalıştırmak otomatik olarak dört MediaPlayer'dan daha iyi performans verecek demek değil. Çoklu ekran için cihaz kapasitesine göre test ve kaynak yönetimi şart.
+
+**Önerim:** Önce radyo ve arka plan servisi, sonra çoklu ekran geçişi yapılmalı. Tekli TV çalışan sürüm olarak korunmalı.
+
+# **5. Oynatıcıda tespit ettiğim somut hatalar**
+
+## **5.1. Yayın donma kontrolü her donmayı yakalayamayabilir**
+
+`PlayerActivity.java` 503–525 arasındaki `checkStall()` fonksiyonunu inceledim.
+
+Şu kontrol var:
+
+```
+if (!player.isPlaying()) return;
+```
+
+Sorun şu:
+
+ExoPlayer yayın tamponlarken `isPlaying()` false olabilir.
+
+Dolayısıyla:
+
+1. Yayın açılır.
+2. Bir süre oynar.
+3. İnternet yavaşlar.
+4. ExoPlayer BUFFERING durumuna geçer.
+5. `isPlaying()` false döner.
+6. Kontrol fonksiyonu hiçbir işlem yapmadan çıkar.
+
+Böylece donmayı takip etmek için yazılmış mekanizma, tam da tamponlama sırasında devre dışı kalabilir.
+
+Üstelik `onPlaybackStateChanged()` içinde yalnızca `STATE_READY` ele alınıyor. `STATE_BUFFERING` için ayrı bir kurtarma mantığı yok.
+
+**Önerim:** Oynatma durumları bir state machine üzerinden yönetilmeli:
+
+- IDLE
+- BUFFERING
+- READY
+- ENDED
+- ERROR
+
+Tamponlama süresi, konum ilerlemesi ve hata sayısı birlikte değerlendirilerek yeniden bağlantı kararı verilmeli.
+
+## **5.2. Hızlı kanal değiştirmede eski yayın yeniden başlayabilir**
+
+`PlayerActivity.java`, 747–785.
+
+`playNow()` fonksiyonu yeni bir Thread oluşturuyor.
+
+Ardından:
+
+- Yönlendirme çözülüyor.
+- Kalite seçiliyor.
+- Callback ile `startVideo(url)` çağrılıyor.
+
+Burada önemli bir eksiklik var: Her yeni kanal isteği için bir işlem kimliği veya nesil numarası kontrolü bulunmuyor.
+
+Örneğin:
+
+1. ATV'ye bastın.
+2. Hemen Kanal D'ye bastın.
+3. Kanal D daha hızlı çözüldü ve oynadı.
+4. ATV'nin eski isteği geç tamamlandı.
+5. ATV yeniden oynatıcıya gönderildi.
+
+Böyle bir yarış durumu oluşabilir.
+
+**Çözüm:** Her kanal değişiminde bir `playRequestId` artırılmalı. Callback geldiğinde hâlâ güncel isteğe ait değilse yok sayılmalı.
+
+Bu özellikle hızlı zap yapan kullanıcılar için önemli.
+
+## **5.3. Çoklu ekran hâlâ ayrı bir risk**
+
+`MultiActivity.java` içerisinde dört ayrı MediaPlayer kullanılabiliyor.
+
+Dört farklı HLS yayını aynı anda:
+
+- Ağ bağlantısı açıyor.
+- Video çözüyor.
+- Bellek kullanıyor.
+- CPU/GPU yükü oluşturuyor.
+
+Özellikle düşük RAM'li ve giriş seviyesi cihazlarda sorun çıkabilir.
+
+Önerim:
+
+- 1 ekran: bütün desteklenen cihazlar.
+- 2 ekran: standart cihazlar.
+- 3 ekran: performans kontrolü.
+- 4 ekran: cihaz kapasitesi uygunsa.
+
+Ayrıca kullanıcıya dört pencerenin de aynı anda yüksek kalitede çalışması gerektiği varsayımı dayatılmamalı. Her pencerenin bağımsız kalite tercihi olmalı.
+
+# **6. Ekonomi modu: Şu anda vaat ile uygulama arasında boşluk var**
+
+Bu konuya özel dikkat etmeni istiyorum. Çünkü senin uygulamada en önemli özelliklerden biri veri tüketimini azaltmak.
+
+v9.29'da Ekonomi modu eklenmiş.
+
+`Quality.java` içerisinde düşük çözünürlük seçimi var. Bu doğru.
+
+Ancak `PlayerActivity.java` dosyasındaki ekran kapanma davranışına baktığımda:
+
+```
+String q = Prefs.quality(PlayerActivity.this, ch.url);
+AudioService.start(
+    PlayerActivity.this,
+    q != null ? q : ch.url,
+    ch.name
+);
+```
+
+Burada kullanıcı özel kalite seçmemişse orijinal kanal URL'si servise gönderiliyor.
+
+`AudioService.java` ise bu adresi doğrudan MediaPlayer'a veriyor:
+
+```
+player.setDataSource(
+    AudioService.this,
+    android.net.Uri.parse(candidate),
+    Net.playerHeaders()
+);
+```
+
+Burada `Quality.resolveLowest()` çağrısı yok.
+
+Yani ekranda düşük çözünürlük seçilmiş olsa bile ekran kapandığında arka plan servisi yeniden master playlist üzerinden oynatmaya başlayabilir.
+
+Bir diğer önemli konu: Video akışı ses ve görüntüyü aynı segmentlerde taşıyorsa yalnızca MediaPlayer kullanmak, video verisinin indirilmesini durdurmaz.
+
+**Bu nedenle mevcut kodla ekran kapandığında yalnızca ses aktarımına geçildiğini ve video verisinin tamamen kesildiğini garanti edemiyoruz.**
+
+Önemli doğrulama gerekli
+
+Benim önerim iki ayrı ekonomi seviyesi:
+
+**Ekonomi 1 — Düşük kalite**
+
+- 240p/360p.
+- Seçilen düşük varyant korunur.
+- Ekran kapansa da aynı kalite politikası sürdürülür.
+
+**Ekonomi 2 — Gerçek ses tasarrufu**
+
+- Yayıncıda bağımsız audio-only akış varsa ona geçilir.
+- Yoksa kullanıcıya bunun mümkün olmadığı söylenir.
+- Muxed HLS akışında yalnızca görüntüyü ekrandan kaldırmanın veri tasarrufu sağladığı iddia edilmez.
+
+Bu özellikleri ayrı ayrı ölçmek gerekiyor.
+
+# **7. Veri sayacı ve günlük limit**
+
+`Net.java` içerisinde şu mekanizma kullanılıyor:
+
+```
+TrafficStats.getUidRxBytes(Process.myUid());
+```
+
+Bu uygulamanın UID seviyesindeki indirilen veri miktarını ölçer.
+
+Avantajı: Ek bir ağ kütüphanesine ihtiyaç yok.
+
+Ancak iki önemli sorun var.
+
+### **Sorun A: Kanal başına gerçek tüketim ölçülmüyor**
+
+UID sayacı uygulamanın bütün ağ trafiğini ölçüyor.
+
+Bunun içerisinde şunlar olabilir:
+
+- Video yayını.
+- Radyo yayını.
+- AdMob.
+- Ülke listesi indirme.
+- Yayın sağlık kontrolleri.
+- Diğer ağ istekleri.
+
+Dolayısıyla bu değer yalnızca o kanalın tükettiği veri değildir.
+
+Çoklu ekranda dört kanal aynı anda açıldığında da toplam uygulama trafiği ölçülür.
+
+Bunu kullanıcıya kanal başına kesin veri tüketimi gibi göstermek yanıltıcı olabilir.
+
+### **Sorun B: Arka plan ve radyo takibi eksik**
+
+`Net.begin()` ve `Net.end()` çağrıları tekli TV ve MultiActivity tarafında var.
+
+Ancak incelediğim `RadioPlayerActivity.java` ve `AudioService.java` içerisinde bu çağrılar bulunmuyor.
+
+Dahası PlayerActivity ekran kapanırken `finishUsage()` çağırıyor, ardından AudioService başlıyor.
+
+Yani arka plan ses servisi veri tüketmeye devam ederken oturum ölçümü sonlandırılmış oluyor.
+
+Ayrıca günlük limit kontrolü `PlayerActivity.checkLimit()` içerisinde. Radyo ve arka plan servisinde eşdeğer bir limit kontrolü bulunmuyor.
+
+**Sonuç:** Günlük veri sayacı ve limit sistemi uygulamanın bütün kullanım senaryolarını kapsamıyor.
+
+Önerim:
+
+- Toplam uygulama tüketimi ayrı gösterilsin.
+- Aktif oturum tüketimi ayrı gösterilsin.
+- Radyo ve arka plan servisi de ölçüme dahil edilsin.
+- Günlük limit bütün oynatma modlarını kapsasın.
+- Kanal başına değerler kesin değilse tahmini olarak etiketlensin.
+
+# **8. Kanal listesi, ülke sistemi ve otomatik onarım**
+
+Bu bölümde oldukça iyi bir fikir görüyorum. Özellikle `Good.java` yaklaşımını beğendim.
+
+## **8.1. Çalışan kanalları öne alma sistemi**
+
+Sistem şu mantıkla çalışıyor:
+
+1. Sunucudan `good/<cc>.json` indiriliyor.
+2. İçindeki URL'ler sıralama için kullanılıyor.
+3. Çalıştığı bilinen kanallar listenin başına alınıyor.
+4. Diğer kanallar popülerlik sırasına göre devam ediyor.
+
+Bu iyi bir kullanıcı deneyimi sağlar.
+
+Ancak `Good.java` dosyasında bir hata riski buldum.
+
+60–68. satırlarda günlük yenileme yapılıyor:
+
+```
+if (day.equals(Prefs.goodDay(ctx))) return;
+Prefs.setGoodDay(ctx, day);
+new Thread(...).start();
+```
+
+Burada gün bilgisi indirme başarılı olmadan kaydediliyor.
+
+Örneğin:
+
+- Kullanıcı uygulamayı açıyor.
+- İnternet bağlantısı başarısız.
+- İndirme yapılamıyor.
+- Fakat bugün için yenileme tamamlandı olarak işaretleniyor.
+
+Sonuçta aynı gün tekrar deneme yapılmıyor.
+
+**Düzeltme:** Günlük yenileme tarihi yalnızca başarılı indirme ve doğrulama sonrasında kaydedilmeli.
+
+Başarısız indirmeler için yeniden deneme mekanizması bulunmalı.
+
+## **8.2. Ölü kanal onarım sistemi gerçekte neyi kontrol ediyor?**
+
+`Repair.java` dosyasını inceledim.
+
+Burada önemli bir ayrıntı var.
+
+`alive()` fonksiyonu:
+
+- HTTP isteği gönderiyor.
+- 200 yanıtını kontrol ediyor.
+- HLS master playlist ise varyantları deniyor.
+- Media playlist içerisinde `#EXTINF` arıyor.
+
+Ancak gerçek yayın segmentini indirip oynatılabilir olduğunu doğrulamıyor.
+
+Bu nedenle bir kanal:
+
+- Playlist sunucusu 200 döndürüyor olabilir.
+- Playlist içinde segment adresleri bulunabilir.
+- Fakat segmentler 403 veya 404 döndürebilir.
+
+Böyle bir durumda sistem kanalı sağlam kabul edebilir.
+
+**Önerim:** Sağlık kontrolünü üç seviyeye ayır:
+
+| Kontrol          | Anlamı                                 |
+| ---------------- | -------------------------------------- |
+| HTTP kontrolü    | Sunucu erişilebilir mi?                |
+| HLS kontrolü     | Playlist geçerli mi?                   |
+| Segment kontrolü | Gerçek yayın segmenti alınabiliyor mu? |
+
+Sonrasında gerçek oynatıcı testiyle doğrulama yapılmalı.
+
+Bunlar birbirinden farklı sağlık seviyeleri olmalı.
+
+## **8.3. Sunucu allowlist sistemi**
+
+v9.29 ile iptv-org listesinin doğrudan indirilmesi kaldırılmış. Bunun yerine kendi sunucunuzdaki `good` JSON dosyaları kullanılıyor.
+
+Bu doğru bir mimari kararı.
+
+Fakat `CountryRepo.java` içerisindeki indirme kodunda URL şeması için kesin bir HTTPS doğrulaması göremedim.
+
+Üstelik AndroidManifest.xml içerisinde:
+
+```
+android:usesCleartextTraffic="true"
+```
+
+bulunuyor.
+
+ZIP'teki Türkiye listesinde de:
+
+- 2 adet HTTP TV adresi,
+- 9 adet HTTP radyo adresi
+
+bulunuyor.
+
+Bu durum, şifresiz HTTP bağlantılarının uygulama genelinde kullanılabilmesine izin veriyor.
+
+Önerim:
+
+- Varsayılan olarak HTTPS zorunlu olsun.
+- HTTP kaynakları açıkça işaretlensin.
+- Mümkünse HTTP yayınlar kaldırılıp güvenli alternatifleri bulunsun.
+- İndirilen JSON dosyalarına boyut sınırı konulsun.
+- Geçersiz JSON mevcut çalışan önbelleği silmesin.
+- Yeni dosya doğrulandıktan sonra atomik biçimde eski dosyanın yerine geçsin.
+
+# **9. Kayıt sistemi: HlsRecorder**
+
+`HlsRecorder.java` ayrı bir bileşen olarak yazılmış. Bu güzel.
+
+Fakat mevcut uygulama genel HLS kayıt cihazı seviyesinde değil.
+
+Tespit ettiğim sınırlamalar:
+
+1. Master playlist içerisindeki ilk varyant seçiliyor. Kullanıcının seçtiği kalite dikkate alınmıyor.
+2. AES-128 şifreli yayınlar desteklenmiyor.
+3. `EXT-X-MAP` ile tanımlanan başlangıç segmentleri işlenmiyor.
+4. `EXT-X-BYTERANGE` desteği bulunmuyor.
+5. Özel yayıncı başlıkları ve token gereksinimleri oynatıcıyla ortak kullanılmıyor.
+6. Kayıt sırasında yayıncı bağlantısı kesilirse sürekli üç saniyelik bekleme döngüsüne girilebiliyor.
+
+Özellikle fMP4 tabanlı HLS yayınlarında yalnızca segment URL'lerini birleştirmek düzgün bir kayıt dosyası üretmeye yetmeyebilir.
+
+**Önerim:**
+
+Kayıt motorunu ortak yayın çözümleme altyapısına bağlayalım.
+
+Kullanıcıya da kayıt başlatmadan önce şunlar gösterilsin:
+
+- Tahmini dosya boyutu.
+- Kayıt kalitesi.
+- Ses durumu.
+- Depolama alanı.
+- Kayıt süresi.
+
+Kayıt işlemi ayrıca cihazın kullanılabilir depolama alanını takip etmeli.
+
+# **10. Reklam ve gelir sistemi**
+
+Burada güzel bir temel oluşturulmuş.
+
+`AdManager.java`, `Ads.java` ve `AdStats.java` birbirinden ayrılmış.
+
+Özellikle reklamların merkezi olarak yönetilmesi doğru.
+
+Fakat üç konu var.
+
+### **10.1. Reklam sıklığı**
+
+`Ads.java` içerisinde:
+
+- Kanal değişiminde reklam gösterme kuralı.
+- En az 20 saniyelik reklam aralığı.
+- 15 dakikalık zaman aralığı.
+- 15 dakika ödüllü reklam karşılığı
+
+tanımlanmış.
+
+Bence reklam deneyimini biraz daha kullanıcı dostu hale getirmeliyiz.
+
+Örneğin:
+
+- Kullanıcı ilk uygulama açılışında reklamla karşılanmamalı.
+- İlk kanal açılışı reklamsız olmalı.
+- Hızlı zap sırasında reklam gösterilmemeli.
+- Kullanıcı aynı kanalda uzun süre izliyorsa gereksiz reklam gösterilmemeli.
+- Radyo dinlerken reklamlar ses deneyimini bozmamalı.
+
+Her kanal değişiminde reklam gösterme yaklaşımını yeniden değerlendirmeliyiz. Teknik olarak frekans sınırı bulunması, kullanıcı deneyiminin iyi olduğu anlamına gelmez.
+
+### **10.2. Tahmini gelir sayacı**
+
+`AdStats.java` içerisinde şu varsayımlar kullanılmış:
+
+| Reklam türü | Varsayılan eCPM |
+| ----------- | --------------- |
+| Banner      | 6 TL            |
+| Geçiş       | 35 TL           |
+| Ödüllü      | 55 TL           |
+
+Bu değerlerle tahmini kazanç hesaplanıyor.
+
+Dosyada bunun tahmin olduğu doğru şekilde belirtilmiş.
+
+Ama kullanıcı bu rakamları gerçek AdMob geliri sanabilir.
+
+Ben olsam iki ayrı ekran yapardım:
+
+- Cihazdaki reklam gösterim sayacı.
+- AdMob panelinden alınan gerçek gelir.
+
+İkisi hiçbir zaman birbirine karıştırılmamalı.
+
+### **10.3. Reklam sistemi için önerdiğim gelişmiş özellik**
+
+İleride reklamları kullanıcı davranışına göre değil, rahatsız etmeyecek kullanım senaryolarına göre yönetelim.
+
+Örneğin:
+
+- TV izleme sırasında sabit banner.
+- Kanal değişiminde kontrollü geçiş reklamı.
+- Kullanıcının isteğiyle ödüllü reklam.
+- Radyo dinleme sırasında mümkün olduğunca kesintisiz deneyim.
+
+Böylece gelir elde ederken kullanıcı kaybetme riskini azaltırız.
+
+# **11. Görsel tasarım ve kullanıcı deneyimi**
+
+ZIP içerisindeki v9.29 ekran görüntülerini de inceledim.
+
+[TeleHaiti for Android - Download the APK from Uptodown](https://images.openai.com/static-rsc-4/pPoZdeq4_PZmMQIiwIR-vKuYjKm_gbPF9Ggh8a3WLatF9RvE8uiHj8Oqp8WCrUkhb0jihMLfVaXnqT_olaRBjBPDylJhW-pFvJcjqhwYKpbGFnoRwtOebU0GT957ajPLB4d2bPNAuHbJG7s14V1Bjp0EH1_zsKwHF7Kg4_cMTs4?purpose=inline)
+
+**Ana ekran**
+
+Kanal listesi, filtreler ve numaralı kumanda yaklaşımı.
+
+[IPTV Player - Xtream M3U: Flux - Entertainment App | MWM](https://images.openai.com/static-rsc-4/qKXsr0FqcOqTzYgZQUFXkcFby9ioHwf1g_FVvXSx2S8K8qnJsCWP-092q1lI52cY0EOzG5T8cIPQWt0SGH5nQ3-oXC8CcF-S2JkIOFtuv5MeN3HRHG2VnuR3YvIcyG4MYdvUyfY7cHgge-3XQWAUDJ_U_sUAy88MvgLpIZ9QjGg?purpose=inline)
+
+**TV oynatıcı**
+
+Video, oynatma kontrolleri ve alt reklam alanı.
+
+*Yukarıdaki görseller tasarım referansıdır; ZIP'teki gerçek ekran görüntüleri değildir.*
+
+ZIP'teki gerçek ekran görüntülerinden çıkardığım değerlendirme:
+
+## **Güçlü taraflar**
+
+- Gece laciverti ve turuncu renk kombinasyonu iyi.
+- Ana ekrandaki kanal sıralaması anlaşılır.
+- Numaralı kumanda yaklaşımı farklılaştırıcı.
+- Ayarlar ekranında açıklama ve mevcut değer gösterilmesi doğru.
+- Çoklu ekran özelliği uygulamayı sıradan IPTV uygulamalarından ayırıyor.
+
+## **Düzeltilmesi gerekenler**
+
+**1. Görsel bütünlük**
+
+Eski ekran görüntülerinde pembe vurgu rengi, yenilerinde turuncu kullanılmış.
+
+Bütün mağaza görselleri v9.29 tasarımından yeniden alınmalı.
+
+**2. Radyo ekranı**
+
+Gerçek ekran görüntüsünde ortadaki beyaz görsel alan boş bir placeholder gibi görünüyor.
+
+Buraya istasyon logosu, hareketli ses görselleştirmesi veya gerçek bir kapak tasarımı konulabilir.
+
+**3. Çoklu ekran**
+
+Kontrol paneli video alanını fazla kapatmamalı. Dokununca açılan, birkaç saniye sonra gizlenen panel yaklaşımı korunmalı.
+
+**4. Ekran uyumluluğu**
+
+Şunlar test edilmeli:
+
+- 720×1280 telefonlar.
+- 1080×2400 telefonlar.
+- Büyük ekranlı cihazlar.
+- Tabletler.
+- Yatay tablet kullanımı.
+- Büyük yazı boyutu.
+- Çentikli ekranlar.
+
+**5. Erişilebilirlik**
+
+TalkBack, butonların açıklamaları, dokunma alanları ve yazı boyutları kontrol edilmeli.
+
+Bunlar mağaza kalitesini etkiler.
+
+# **12. Dokümantasyon ve Freebuff ajanı açısından önemli sorun**
+
+Bence senin geliştirme sürecinde özellikle düzeltmemiz gereken konulardan biri bu.
+
+ZIP'te farklı dönemlerden kalmış çok sayıda doküman var.
+
+| Dosya                                | İçerik                              |
+| ------------------------------------ | ----------------------------------- |
+| `README.md`                          | Eski mimari ve özellik açıklamaları |
+| `CLAUDE-README.md`                   | v9.7 bilgileri                      |
+| `docs/is-listesi.md`                 | Eski ve yeni iş durumları karışık   |
+| `docs/KONUSMA-ANALIZI-2026-11-23.md` | v9.25 dönemindeki değerlendirme     |
+| `releases/v9.29/SURUM-NOTLARI.md`    | Güncel sürüm bilgisi                |
+| `docs/ISLER-EK-2026-11-23.md`        | v9.27–v9.29 işleri                  |
+
+Burada ajan açısından çok ciddi bir problem oluşabilir.
+
+Örneğin:
+
+- Eski README MediaPlayer mimarisini anlatıyor.
+- Güncel sürüm notları ana oynatıcının ExoPlayer'a geçtiğini söylüyor.
+- Eski iş listesinde ExoPlayer hâlâ bekliyor.
+- Eski belgelerde üyelik var.
+- Güncel uygulamada üyelik kaldırılmış.
+- Eski belgelerde 300'den fazla kanal belirtiliyor.
+- Güncel Türkiye gömülü listesinde 144 kanal bulunuyor.
+
+Freebuff bu belgeleri birlikte okuyup yanlış bir karar verebilir.
+
+**Benim önerim: Tek bir yetkili proje durum dosyası oluşturalım.**
+
+Dosya adı:
+
+`PROJECT_STATE.md`
+
+Bu dosyada yalnızca şu bilgiler bulunmalı:
+
+1. Güncel sürüm ve versionCode.
+2. Gerçek mimari.
+3. Çalışan özellikler.
+4. Eksik özellikler.
+5. Bilinen hatalar.
+6. Kritik güvenlik konuları.
+7. Son test sonuçları.
+8. Değiştirilmemesi gereken çalışan özellikler.
+9. Sonraki geliştirme sırası.
+
+Eski dokümanlar silinmek zorunda değil. Ancak `archive/` altında tarihsel belge olarak saklanmalı.
+
+Freebuff'a da şu kural verilmeli:
+
+> Proje durumunu belirlerken öncelik kaynak koddadır. Eski README, konuşma kayıtları ve tarihsel iş listeleri güncel uygulamanın davranışını kanıtlamaz.
+
+Bu, ajanların eski özellikleri yanlışlıkla geri getirmesini engeller.
+
+# **13. Derleme ve proje taşınabilirliği**
+
+Bu bölüm Freebuff ile çalışırken çok önemli.
+
+Şu anki proje yapısı standart Android Studio proje yapısından biraz farklı.
+
+Kaynaklar:
+
+- `src/`
+- `res/`
+- `assets/`
+- `AndroidManifest.xml`
+
+altında tutuluyor.
+
+Gradle ise özel `sourceSets` ayarlarıyla bu dosyaları kullanıyor.
+
+Bu yapı çalışabilir. Ancak farklı geliştirme ortamlarında işleri zorlaştırıyor.
+
+## **Bulduğum sorunlar**
+
+**1. Gradle Wrapper bulunmuyor.**
+
+Projede `gradlew` ve `gradlew.bat` dosyaları yok.
+
+**2. Derleme araçları ZIP'te yok.**
+
+`gradle-build.sh` şu dizinleri bekliyor:
+
+```
+_build/tools/jdk-21*
+_build/tools/gradle-8.14.3/
+```
+
+Ancak ZIP içerisinde `_build/tools` bulunmuyor.
+
+**3. Windows yolu sabitlenmiş.**
+
+`gradle-build.sh` içerisinde:
+
+```
+C:/Users/isitm/AppData/Local/Android/Sdk
+```
+
+kullanılıyor.
+
+`build.sh` içerisinde de `apksigner.bat` için aynı makineye özel yol var.
+
+**4. Otomatik test altyapısı yok.**
+
+Gelen ZIP'te geleneksel `src/test` veya `src/androidTest` test paketi ve JUnit bağımlılığı bulunmuyor.
+
+`AdsTest.java` mevcut ancak kapsamlı otomatik test altyapısının yerini tutmuyor.
+
+Doğrulama sınırı
+
+ZIP'teki APK ve AAB dosyalarını kontrol ettim; kökteki ve `releases/v9.29` altındaki kopyaların SHA-256 değerleri aynı.
+
+Ancak mevcut kaynak kodu temiz bir Android SDK ortamında yeniden derleyemedim. Gerekli Gradle, JDK ve Android derleme araçları bu çalışma ortamında mevcut değil. Dolayısıyla kaynak kodun içindeki her değişikliğin dağıtılmış APK ile birebir aynı olduğunu bağımsız olarak doğrulamış değilim.
+
+## **Önerdiğim düzenleme**
+
+Proje zamanla şu yapıya taşınmalı:
+
+```
+UMAY-MULTI-TV/
+│
+├── app/
+│   └── src/
+│       ├── main/
+│       │   ├── java/
+│       │   ├── res/
+│       │   ├── assets/
+│       │   └── AndroidManifest.xml
+│       │
+│       ├── test/
+│       └── androidTest/
+│
+├── gradle/
+├── docs/
+├── releases/
+├── scripts/
+├── .github/
+│   └── workflows/
+│
+├── gradlew
+├── gradlew.bat
+├── settings.gradle
+└── build.gradle
+```
+
+Bunun avantajları:
+
+- Her bilgisayarda aynı Gradle sürümü kullanılabilir.
+- Freebuff ajanı projeyi daha kolay tanır.
+- GitHub Actions ile otomatik derleme yapılabilir.
+- Her sürümde otomatik test çalıştırılabilir.
+- APK ve AAB üretimi standartlaştırılır.
+
+Ancak bu taşıma işlemini hemen yapmazdım. Önce mevcut uygulamanın kritik hatalarını düzeltir, sonra ayrı bir turda mimari düzenlemeye geçerdim.
+
+# **14. Ek tespitler: Küçük görünen ama önemli konular**
+
+Bunlar ilk beş sorunun gerisinde kalıyor ancak ürün büyüdükçe önem kazanacaklar.
+
+| Konu                  | Dosya               | Tespit                                                                                                             |
+| --------------------- | ------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| Tercih anahtarları    | `Prefs.java`        | URL'ler için 32 bit `hashCode()` kullanılıyor. Çakışma riski var. SHA-256 anahtarı daha güvenli.                   |
+| Ülke önerisi          | `MainActivity.java` | İlk denemeden önce soruldu bilgisi kaydediliyor. İlk bağlantı başarısızsa yeniden deneme yapılmayabilir.           |
+| Yayın listesi         | `CountryRepo.java`  | İndirilen yanıt için kesin dosya boyutu sınırı yok.                                                                |
+| Günlük liste yenileme | `Good.java`         | Başarısız indirme günün tamamlandı olarak işaretlenmesine neden olabilir.                                          |
+| Reklam başlatma       | `AdManager.java`    | UMP güncellemesi başarısız olursa aynı uygulama oturumunda tekrar deneme yapılmayabilir.                           |
+| Ses servisi           | `AudioService.java` | WakeLock 3 saatle sınırlı, Wi-Fi kilidi ise süre sınırı olmadan tutuluyor. Uzun dinleme senaryoları test edilmeli. |
+| Kayıt                 | `HlsRecorder.java`  | İlk varyantı seçiyor; kayıt kalitesi seçimi oynatıcıyla ortak değil.                                               |
+| Hata sayacı           | `Prefs.java`        | URL hash çakışması farklı kanalların hata durumlarını etkileyebilir.                                               |
+
+Bir başka önemli ayrıntı: `AdStats.java` gerçek AdMob gelirini okumuyor. Yerel gösterim sayısını varsayılan eCPM değerleriyle çarpıyor. Tahmini olarak gösterilmesi doğru, ancak gerçek gelir ekranı gibi sunulmamalı.
+
+## **Web sunucusu**
+
+`site/worker.js` içerisinde üyelik sistemi kaldırılmış olmasına rağmen eski Google giriş sayfası ve eski üyelik fonksiyonları hâlâ bulunuyor.
+
+27–34. satırlarda `/api/*` istekleri doğrudan 410 dönüyor. Buna rağmen `/giris` rotası eski Google giriş sayfasını açabiliyor.
+
+Dolayısıyla eski giriş bağlantısı artık çalışmayan bir akışa yönlendiriyor.
+
+Bunları temizlemek gerekir.
+
+# **15. Önceliklendirilmiş düzeltme listem**
+
+Şimdiye kadar anlattığım bulguları yapılacak işler haline getirdim.
+
+**P0 — Yayın öncesi**
+
+Önce bunlar
+
+1. UMP reklam izin kontrolünü banner dahil bütün reklam türlerine uygulamak.
+2. ZIP'teki gizli anahtarları iptal etmek/yenilemek ve dağıtım paketinden çıkarmak.
+3. Gizlilik politikasını mevcut uygulama davranışıyla eşitlemek.
+4. APK ve Play Store imzalama stratejisini birleştirmek.
+5. Yayın kaynakları için hukuki uygunluk ve kaldırma sürecini oluşturmak.
+
+**P1 — Teknik güvenilirlik**
+
+İkinci aşama
+
+1. Media3 altyapısını çoklu ekran, radyo ve arka plan oynatımına taşımak.
+2. Oynatıcı tamponlama ve donma kontrolünü düzeltmek.
+3. Hızlı kanal değişimindeki asenkron işlem yarışını engellemek.
+4. Ekonomi modunun ekran kapalıyken de düşük kalite politikasını korumasını sağlamak.
+5. Radyo ve arka plan oynatımını veri sayacı ve günlük limite dahil etmek.
+6. Yayın sağlık kontrolünü gerçek segment testiyle güçlendirmek.
+7. HTTPS ve URL doğrulamasını zorunlu hale getirmek.
+8. HLS kayıt sisteminin farklı yayın türleriyle uyumluluğunu artırmak.
+
+**P2 — Ürün kalitesi ve büyüme**
+
+Sonraki aşama
+
+1. Tablet ve yatay ekran tasarımı.
+2. Görsel tasarımın bütün ekranlarda birleştirilmesi.
+3. TalkBack ve erişilebilirlik.
+4. EPG / program rehberi.
+5. Chromecast / Google Cast.
+6. Ana ekran favori kanal widget'ı.
+7. Favorileri ve ayarları dışa aktarma / içe aktarma.
+8. Mağaza ekran görüntüleri ve tanıtım videosu.
+
+# **16. Benim önerdiğim geliştirme stratejisi**
+
+Kanka, burada çok önemli bir karar vermemiz gerekiyor.
+
+Bence artık her turda yeni özellik eklemek yerine uygulamayı profesyonel ürün seviyesine taşımalıyız.
+
+Ben geliştirmeyi beş aşamaya bölerdim.
+
+1. **Tur 1 — Güvenlik ve uyumluluk**
+
+   Reklam rızası, gizlilik politikası, gizli anahtarlar, APK imzası ve yayın uygunluğu.
+
+   İlk iş
+2. **Tur 2 — Medya motoru**
+
+   Media3 geçişi, radyo, çoklu ekran, arka plan servisi ve kayıt altyapısı.
+3. **Tur 3 — Veri ekonomisi**
+
+   Gerçek veri takibi, kalite politikası, günlük limit, arka plan tasarrufu ve bağlantı yönetimi.
+4. **Tur 4 — Otomatik kalite kontrol**
+
+   Kanal sağlık sistemi, otomatik onarım, segment testi, hata raporu ve cihaz matrisi.
+5. **Tur 5 — Ticari ürün**
+
+   Play Store, reklam optimizasyonu, tanıtım, EPG, Chromecast ve kullanıcı deneyimi.
+
+# **17. Son kararım: Uygulama şu an hangi seviyede?**
+
+Benim değerlendirmem şöyle:
+
+| Alan                | Durum                           |
+| ------------------- | ------------------------------- |
+| Ürün fikri          | Güçlü                           |
+| Özellik çeşitliliği | Çok iyi                         |
+| Arayüz              | İyi, iyileştirilebilir          |
+| Kanal yönetimi      | İyi                             |
+| Yayın kurtarma      | Geliştirilmeli                  |
+| Oynatma mimarisi    | Geçiş aşamasında                |
+| Veri tasarrufu      | Doğrulanması gerekiyor          |
+| Reklam altyapısı    | Var, izin kontrolü düzeltilmeli |
+| Güvenlik            | Kritik düzeltmeler gerekiyor    |
+| Test altyapısı      | Yetersiz                        |
+| Mağaza hazırlığı    | Tamamlanmamış                   |
+
+# **Benim nihai görüşüm**
+
+**UMAY Multi TV'yi bırakıp baştan yazmamızı kesinlikle önermiyorum.**
+
+Mevcut kodda korunması gereken ciddi bir emek ve çalışan özellik altyapısı var.
+
+Ancak v9.29'u nihai ve ticari dağıtıma hazır sürüm olarak da görmüyorum.
+
+En doğru yaklaşım, mevcut çalışan sistemi koruyarak kritik sorunları gidermek ve mimariyi kademeli biçimde iyileştirmek.
+
+## **18. Freebuff ajanına bundan sonra nasıl yaklaşmalıyız?**
+
+Bence artık ajana sadece "şu özelliği ekle" dememeliyiz.
+
+Ona bir yazılım kalite mühendisi gibi görev vermeliyiz.
+
+Her turda şu çalışma düzenini uygulamalıyız:
+
+1. Önce mevcut kodu incele.
+2. İlgili özelliğin bütün bağlantılarını bul.
+3. Hatanın nedenini kanıtla.
+4. Değişiklikten etkilenecek diğer özellikleri listele.
+5. Düzeltmeyi uygula.
+6. Otomatik testleri çalıştır.
+7. APK ve AAB derle.
+8. Önceki sürümle karşılaştır.
+9. Gerçek cihaz testlerini kaydet.
+10. Değiştirilen dosyaları ve test sonuçlarını raporla.
+
+Özellikle şu kuralı koymalıyız:
+
+**Bir özelliği düzeltirken başka bir özelliğin bozulması başarı sayılmayacak.**
+
+Her turda regresyon kontrolü yapılmalı.
+
+## **Sana son olarak üç önemli önerim var**
+
+**Birincisi:** Şimdilik yeni özellik eklemeyelim. Önce P0 maddelerini çözelim.
+
+**İkincisi:** ExoPlayer geçişini yarım bırakmayalım. Uygulamanın en önemli teknik yatırımı bu olacak.
+
+**Üçüncüsü:** Freebuff'a her seferinde bütün geçmiş konuşmaları okutmak yerine güncel ve doğrulanmış bir `PROJECT_STATE.md` kullandıralım.
+
+Kanka, yaklaşık 9 bin satırlık kaynak kodu, Android yapılandırmasını, sunucu tarafını ve ekran görüntülerini inceleyerek bu raporu hazırladım. Kodda değişiklik yapmadım; bu bir denetim raporu.
+
+**Bir sonraki adım olarak önerim:** Bu bulguları Freebuff'a vereceğimiz profesyonel bir düzeltme görevine dönüştürelim. İlk turda yalnızca P0 sorunlarını çözdürelim; çalışan hiçbir özelliği kaybetmeden v9.30'u oluşturalım.

@@ -58,6 +58,11 @@ public class PlayerActivity extends android.app.Activity {
     private long sleepUntil = 0;
     private AudioManager audio;
     private boolean tracking = false;
+    /** Bu oturumda oynatıcının ağdan okuduğu bayt (gerçek ölçüm). */
+    private final java.util.concurrent.atomic.AtomicLong sessionBytes =
+            new java.util.concurrent.atomic.AtomicLong();
+    /** Sayaçların yazılacağı kanal adresi. */
+    private String usageUrl = null;
     private long openedAt = 0;
     private boolean limitWarned = false;
     private boolean locked = false;
@@ -95,9 +100,14 @@ public class PlayerActivity extends android.app.Activity {
                         .setUserAgent(Net.PLAYER_UA)
                         .setDefaultRequestProperties(Net.playerHeaders())
                         .setAllowCrossProtocolRedirects(true);
+        // #155: tüketim artık TrafficStats yerine oynatıcının okuduğu baytlardan sayılıyor.
+        CountingDataSource.Sink sink = new CountingDataSource.Sink() {
+            @Override public void add(long n) { sessionBytes.addAndGet(n); }
+        };
         player = new androidx.media3.exoplayer.ExoPlayer.Builder(this)
                 .setMediaSourceFactory(
-                        new androidx.media3.exoplayer.source.DefaultMediaSourceFactory(httpFactory))
+                        new androidx.media3.exoplayer.source.DefaultMediaSourceFactory(
+                                new CountingDataSource.Factory(httpFactory, sink)))
                 .build();
         player.setAudioAttributes(new androidx.media3.common.AudioAttributes.Builder()
                 .setUsage(androidx.media3.common.C.USAGE_MEDIA)
@@ -446,7 +456,8 @@ public class PlayerActivity extends android.app.Activity {
                 s = saat + "   ⏰ " + String.format(java.util.Locale.getDefault(), "%d:%02d", s2 / 60, s2 % 60);
             }
             clockBar.setText(s + "\n📶 " + Net.mb(Prefs.todayBytes(PlayerActivity.this)
-                    + Net.sessionSoFar()) + " bugün");
+                    + sessionBytes.get()) + " bugün");
+            if (sessionBytes.get() > 2097152L) flushUsage();
             checkLimit();
             checkStall();
             AdManager.maybeTimerAd(PlayerActivity.this);
@@ -472,7 +483,7 @@ public class PlayerActivity extends android.app.Activity {
         fbTried = 0;
         stallCount = 0;
         hideNotice();
-        if (!tracking) { tracking = true; openedAt = System.currentTimeMillis(); Net.begin(); }
+        if (!tracking) { tracking = true; openedAt = System.currentTimeMillis(); }
         ui.removeCallbacks(watchdog);
     }
 
@@ -541,7 +552,7 @@ public class PlayerActivity extends android.app.Activity {
     private void checkLimit() {
         final int lim = Prefs.limitMb(this);
         if (lim <= 0 || limitWarned) return;
-        long used = Prefs.todayBytes(this) + Net.sessionSoFar();
+        long used = Prefs.todayBytes(this) + sessionBytes.get();
         if (used < lim * 1048576L) return;
         limitWarned = true;
         new AlertDialog.Builder(this)
@@ -745,6 +756,12 @@ public class PlayerActivity extends android.app.Activity {
     }
 
     private void playNow(final Channel c) {
+        // önceki kanalın baytlarını eski adrese yaz, sayacı sıfırla
+        finishUsage();
+        usageUrl = c.url;
+        sessionBytes.set(0);
+        tracking = true;
+        openedAt = System.currentTimeMillis();
         // TV acilinca arkadaki radyo sussun (tek ses kaynagi kalsin)
         AudioService.stop(this);
         screenOffAudio = false;
@@ -808,13 +825,18 @@ public class PlayerActivity extends android.app.Activity {
         }
     };
 
+    /** Biriken baytları hemen kaydet (kanal değişimi, duraklatma, 2 MB eşiği). */
+    private void flushUsage() {
+        long bytes = sessionBytes.getAndSet(0);
+        if (bytes > 0 && usageUrl != null) Prefs.addUsage(this, usageUrl, bytes, 0);
+    }
+
     private void finishUsage() {
-        if (!tracking) return;
+        if (!tracking) { flushUsage(); return; }
         tracking = false;
-        long bytes = Net.end();
+        flushUsage();
         int sec = (int) ((System.currentTimeMillis() - openedAt) / 1000);
-        if (index >= 0 && index < list.size() && sec > 2)
-            Prefs.addUsage(this, list.get(index).url, bytes, sec);
+        if (usageUrl != null && sec > 2) Prefs.addUsage(this, usageUrl, 0, sec);
     }
 
     private boolean enterPip() {
@@ -1014,7 +1036,7 @@ public class PlayerActivity extends android.app.Activity {
     @Override
     protected void onPause() {
         super.onPause();
-        finishUsage();
+        flushUsage();
         if (isFinishing()) return;   // ✕ Kapat / geri: arkada ses devam etmesin
         if (Build.VERSION.SDK_INT >= 26 && isInPictureInPictureMode()) return;
         // ekran kapaninca / uygulamadan cikinca ses devam etsin (kilit ekrani dinleme)

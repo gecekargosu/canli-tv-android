@@ -234,9 +234,9 @@ public final class AdManager {
         return (int) (v * a.getResources().getDisplayMetrics().density);
     }
 
+    /** Ayarlar ve ana ekranla aynı biçim (Türkçe ondalık virgül) — #155. */
     private static String human(long bytes) {
-        if (bytes >= 1073741824L) return String.format(java.util.Locale.US, "%.2f GB", bytes / 1073741824.0);
-        return String.format(java.util.Locale.US, "%.1f MB", bytes / 1048576.0);
+        return Net.mb(bytes);
     }
 
     /** Ekranin altinda kalan kucuk veri satiri: bugun toplam ne kadar internet harcandi. */
