@@ -20,7 +20,7 @@ Hepsi Play karakter sınırlarına uygundur (kısa açıklama 80, tam açıklama
 ## 2. Kısa açıklama (80 karakter)
 
 ```
-157 canlı TV kanalı ve 25 radyo: kanal numarası, favoriler, 3'lü izleme, kayıt.
+145 canlı TV kanalı ve 32 radyo: kanal numarası, favoriler, 3'lü izleme, kayıt.
 ```
 
 ## 3. Tam açıklama (kopyala)
@@ -31,16 +31,17 @@ uygulamada toplar. Kumanda alışkanlığına uygun numaralı kanal sistemi, fav
 çoklu izleme ile hızlı bir TV deneyimi sunar.
 
 🔢 NUMARALI KANAL (KUMANDA GİBİ)
-Üstteki No kutusuna kanal numarasını yaz, Git'e bas: kanal hemen açılır. 157 kanal
+Üstteki No kutusuna kanal numarasını yaz, Git'e bas: kanal hemen açılır. 145 kanal
 Türkçe/yabancı ve tür olarak gruplanmıştır.
 
-📺 157 CANLI KANAL
+📺 145 CANLI KANAL
 TRT 1, TRT 2, TRT Spor, TV8, ATV, Star TV, Kanal D, Haber Global,
 NTV, A Haber, Halk TV, Kanal 7, TRT Müzik, TRT Çocuk ve çok daha fazlası.
 🌍 Ülke seç: 50 ülkenin kanalları listeye eklenir (Türkiye gömülü, internet gerekmez).
 
 📻 RADYO
-50 istasyon: TRT, Kral, Süper FM, Metro FM, Power, Joy FM, Radyo 7, Karadeniz FM...
+32 Türk radyosu: TRT, Kral, Süper FM, Metro FM, Power, Joy FM, Radyo 7, Karadeniz FM...
+Ülke değiştirince o ülkenin en çok dinlenen istasyonları listelenir.
 Ekran kilitliyken de çalar (arka plan sesi + bildirim).
 
 ▦ 3'LÜ / 4'LÜ İZLEME
@@ -65,7 +66,7 @@ Türkçe, English, Русский, العربية. Menüler seçtiğin dilde.
 
 NEDEN ÜCRETSİZ?
 Uygulama reklamla ayakta kalır: liste altında küçük bir banner ve seyrek geçiş reklamı.
-Video izleyip 20 dakika reklamsız (video reklamı kalkar, banner kalır) kullanabilirsin. Yayının üstüne reklam binmez,
+Video izleyip 15 dakika reklamsız (video reklamı kalkar, banner kalır) kullanabilirsin. Yayının üstüne reklam binmez,
 oynatma reklamla kesilmez.
 
 NOT: Kanallar yayıncıların halka açık akışlarıdır; yayınlar zaman zaman kaldırılabilir.
@@ -104,7 +105,7 @@ Ekran görüntüsü sayısı 2–8 arası; ilk ikisi en çok indirme getirir
 ## 6. Üst sıralarda çıkmak için (ASO) — sırayla
 
 1. **Başlıkta anahtar kelime:** "UMAY Multi TV: Canlı TV Radyo" (marka + 2 kelime).
-2. **Kısa açıklamada sayı:** "157 kanal", "50 radyo" tıklama oranını artırır.
+2. **Kısa açıklamada sayı:** "145 kanal", "32 radyo" tıklama oranını artırır.
 3. **İlk 2 ekran görüntüsü:** ana ekran ve oynatıcı; üzerine kısa yazı eklenirse
    (Canva'da 1080×1920) dönüşüm yükselir.
 4. **Yorum isteme:** Ayarlar → ⭐ Bizi değerlendir satırı hazır; ilk hafta 10+ yorum

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  M-08: Varsayılan olarak yalnız HTTPS.
+  Aşağıdaki alan adları, yayıncıların yalnız HTTP üzerinden yayın yaptığı eski
+  radyo/kanal adresleridir; bunlar için açık istisna tanımlıdır.
+  Yeni kaynak eklerken önce HTTPS olup olmadığına bakılmalıdır.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false" />
+
+    <domain-config cleartextTrafficPermitted="true">
+        <!-- eski HTTP radyo yayınları (streamtheworld / radyotvonline / arabeskinmerkezi) -->
+        <domain includeSubdomains="true">live.streamtheworld.com</domain>
+        <domain includeSubdomains="true">radyotvonline.net</domain>
+        <domain includeSubdomains="true">arabeskinmerkezi.com</domain>
+        <!-- listede kalan eski HTTP TV/radyo kaynakları -->
+        <domain includeSubdomains="true">rtmp.org</domain>
+        <domain includeSubdomains="true">live.net.sa</domain>
+        <domain includeSubdomains="true">46.20.3.207</domain>
+        <domain includeSubdomains="true">46.20.3.250</domain>
+    </domain-config>
+</network-security-config>

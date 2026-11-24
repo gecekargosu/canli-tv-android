@@ -26,18 +26,18 @@ Durum işaretleri: ✅ bitti · 🔧 kod işi · 👤 kullanıcı/hesap işi · 
 
 | No | İş | Kaynak | Durum |
 |---|---|---|---|
-| M-01 | **Resend API anahtarını yenile/iptal et.** `.secrets/resend.key` v9.32 zip'inde dışarı çıktı. Yeni zip gizli dosyasız üretildi ama eski zip'i paylaştıysan anahtar yanmış sayılır. | ChatGPT P0-2 | 👤 |
-| M-02 | `.secrets/` klasörünü proje dışına taşı; zip/build scriptlerine `*.key`, `.secrets`, `konusmalar.txt` istisnası ekle (kalıcı). | ChatGPT P0-2 | 🔧 |
-| M-03 | **Banner'ı UMP kapısına bağla:** `canRequestAds()` false/`Ads.SDK_READY` yokken `loadAd` çağrılmasın; `startAds()` içindeki fail-open (`canRequestAds = true`) kaldırılsın. | ChatGPT P0-1 / Claude P0-3 | 🔧 |
-| M-04 | **Gizlilik politikası gerçeğe göre yeniden yaz:** tüm dosyalar (docs/play, site/public, index) tek kaynaktan üretilsin; "reklam yok" ve "sunucuya veri gitmez" ifadeleri silinsin; AdMob/ad kimliği/Cloudflare/üçüncü taraf yayıncılar yazılsın. | Claude P0-2 / ChatGPT 3.5 | 🔧 |
-| M-05 | **ipapi.co çağrısını kaldır**, yerine `TelephonyManager` SIM/network ülke kodu + `Locale` kullan (izin ve ağ isteği yok). | Claude 3.3 | 🔧 |
-| M-06 | **İmza stratejisi:** siteden dağıtılan `publicApk` debug anahtarıyla imzalı; Play AAB release anahtarıyla. Tek üretim anahtarı kullan (Play App Signing'e geçince yükleme anahtarıyla imzala), sitedeki APK'yı aynı anahtarla üret. | ChatGPT P0-4 | 🔧 + 👤 |
+| M-01 | **Resend API anahtarını yenile/iptal et.** `.secrets/resend.key` v9.32 zip'inde dışarı çıktı. Yeni zip gizli dosyasız üretildi ama eski zip'i paylaştıysan anahtar yanmış sayılır. | ChatGPT P0-2 | 👤 (bekliyor) |
+| M-02 | `.secrets/` klasörünü proje dışına taşı; zip/build scriptlerine istisna ekle (kalıcı). | ChatGPT P0-2 | ✅ v9.33 (`tools/claude-zip.sh`) |
+| M-03 | **Banner'ı UMP kapısına bağla:** `canRequestAds()` false/`Ads.SDK_READY` yokken `loadAd` çağrılmasın; `startAds()` içindeki fail-open (`canRequestAds = true`) kaldırılsın. | ChatGPT P0-1 / Claude P0-3 | ✅ v9.33 (cihaz testi bekliyor) |
+| M-04 | **Gizlilik politikası gerçeğe göre yeniden yaz:** tüm dosyalar (docs/play, site/public, index) tek kaynaktan üretilsin; "reklam yok" ve "sunucuya veri gitmez" ifadeleri silinsin; AdMob/ad kimliği/Cloudflare/üçüncü taraf yayıncılar yazılsın. | Claude P0-2 / ChatGPT 3.5 | ✅ v9.33 |
+| M-05 | **ipapi.co çağrısını kaldır**, yerine `TelephonyManager` SIM/network ülke kodu + `Locale` kullan (izin ve ağ isteği yok). | Claude 3.3 | ✅ v9.33 |
+| M-06 | **İmza stratejisi:** siteden dağıtılan `publicApk` debug anahtarıyla imzalı; Play AAB release anahtarıyla. Tek üretim anahtarı kullan (Play App Signing'e geçince yükleme anahtarıyla imzala), sitedeki APK'yı aynı anahtarla üret. | ChatGPT P0-4 | ✅ v9.33 (eski kurulum kaldırılmalı) |
 | M-07 | **Keystore şifresi:** `app/build.gradle`'da düz metin kalmasın; `keystore.properties`/ortam değişkeni; şifre rotasyonu (Play App Signing ile upload key reset). | Claude P0-7 | 👤 (şifre) |
-| M-08 | **`usesCleartextTraffic`:** varsayılan HTTPS; yalnız açıkça işaretli HTTP kaynaklar için `networkSecurityConfig` istisnası. TR listesinde 2 HTTP TV + 9 HTTP radyo var. | ChatGPT 8.3 | 🔧 |
+| M-08 | **`usesCleartextTraffic`:** varsayılan HTTPS; yalnız açıkça işaretli HTTP kaynaklar için `networkSecurityConfig` istisnası. TR listesinde 2 HTTP TV + 9 HTTP radyo var. | ChatGPT 8.3 | ✅ v9.33 |
 | M-09 | **Play Veri Güvenliği formu** gerçek davranışla doldurulsun (reklam kimliği: toplanır/reklam amacıyla; konum: yok; hesap: yok). | Claude P0-2 | 👤 |
 | M-10 | **app-ads.txt kök alan adında** olsun; alan adı + marka sitesi (M-67 ile birlikte). | Claude P0-8 | 👤 |
 | M-11 | **Mağaza görsellerinden test reklamı ve üçüncü taraf yayın/logo kareleri çıkarılsın.** | Claude 5.2 / ChatGPT 11 | 🔧 |
-| M-12 | Mağaza metni doğrulama: başlık ≤30 ✅, "305 kanal/50 radyo" gibi eski sayılar temizlenmeli, "60 dk reklamsız" → gerçek teklif yazılmalı. | Claude P0-8 | 🔧 |
+| M-12 | Mağaza metni doğrulama: başlık ≤30 ✅, "305 kanal/50 radyo" gibi eski sayılar temizlenmeli, "60 dk reklamsız" → gerçek teklif yazılmalı. | Claude P0-8 | ✅ v9.33 |
 
 ---
 
@@ -48,7 +48,7 @@ Durum işaretleri: ✅ bitti · 🔧 kod işi · 👤 kullanıcı/hesap işi · 
 | M-13 | **Kanal envanteri:** her kanal için kaynak alan adı + "resmi/açık lisans/izinli" + son kontrol tarihi + sağlık durumu içeren `kanallar.json` üret; uygulama yalnız buradan beslensin. | Claude P0-1 / ChatGPT 3.3 | 🔧 |
 | M-14 | **Sinema grubunu temizle:** ücretli yayıncı (Cinemax, AXN, BBC First, Star Action…) ve `raw.githubusercontent.com` kaynaklı girdiler çıksın; sinema yalnız resmi ücretsiz kaynaklarla. | Claude P0-1 | 🔧 |
 | M-15 | **Hak durumu "bekliyor" olan kanal herkese açık listeye girmesin** (sunucu tarafı filtre); kaldırma talebi 24–48 saatte işlensin, haftalık otomatik kontrol. | Claude P0-1 | 🔧 |
-| M-16 | Ülke listeleri için "hazır" eşiği: **≥30 doğrulanmış çalışan kanal** yoksa ülke "yakında" görünsün (v9.32'de boş liste mesajı var ✅, eşik yok). | Claude 3.3 | 🔧 |
+| M-16 | Ülke listeleri için "hazır" eşiği: **≥30 doğrulanmış çalışan kanal** yoksa ülke "yakında" görünsün (v9.32'de boş liste mesajı var ✅, eşik yok). | Claude 3.3 | ✅ v9.33 |
 | M-17 | "Kendi listeni ekle" (M3U URL/dosya) modeli güçlendirilsin; adult/xxx filtreleri korunacak (var ✅). | Claude P0-1 | 🔧 |
 | M-18 | Hukuki görüş (telif) — avukat. | Claude P0-1 / 👤 | 👤 ⏸️ |
 | M-19 | Pazarlama metinlerindeki "kablolu TV'ye para vermeyi bıraktım" benzeri ifadeler yumuşatılsın. | Claude P0-1 | 🔧 |
@@ -78,7 +78,7 @@ Durum işaretleri: ✅ bitti · 🔧 kod işi · 👤 kullanıcı/hesap işi · 
 | M-29 | **Sağlık kontrolü 3 seviye:** HTTP → playlist → **gerçek segment** indirme; `Repair.alive()` şu an yalnız playlist bakıyor. | ChatGPT 8.2 | 🔧 |
 | M-30 | **Sunucuda günlük cron:** 50 ülke `good/<cc>.json`, `generatedAt`, 7 günden eski dosya yok sayılsın; TR dahil. Eski #143/#144 + #133/#142 (fix listesi) buraya bağlı. | Claude 3.3 / ChatGPT 8 | 🔧 (askıdaydı) |
 | M-31 | **Yedek kaynaklar** tüm kanallara yayılsın (şu an 5 kanal). Eski #125. | Claude 3.1 | 🔧 (askıdaydı) |
-| M-32 | **CountryRepo indirme sağlamlığı:** boyut sınırı, geçersiz JSON eski önbelleği silmesin, atomik yazma, şema doğrulama. | ChatGPT 8.3 | 🔧 |
+| M-32 | **CountryRepo indirme sağlamlığı:** boyut sınırı, geçersiz JSON eski önbelleği silmesin, atomik yazma, şema doğrulama. | ChatGPT 8.3 | ✅ v9.33 |
 | M-33 | Kanal listesi güvenliği: `ChannelRepo` değişmez liste + tek yükleme noktası, sıralama arka planda; UI/servis iş parçacığı yarışı. | Claude 6 | 🔧 |
 
 ---
@@ -88,7 +88,7 @@ Durum işaretleri: ✅ bitti · 🔧 kod işi · 👤 kullanıcı/hesap işi · 
 | No | İş | Kaynak | Durum |
 |---|---|---|---|
 | M-34 | **`strings.xml` + `values-xx`:** en, tr, ru, ar, de, es, pt-BR, hi; kodda kalan 70+ sabit Türkçe metin (Toast, bildirim, diyalog, reklam şeridi) taşınsın; Arapça RTL. | Claude 3.3 / ChatGPT 11 | 🔧 |
-| M-35 | Grup adları ASCII ("Muzik", "Cocuk") → Türkçe karakterli + çevrilebilir. | Claude 3.3 | 🔧 |
+| M-35 | Grup adları ASCII ("Muzik", "Cocuk") → Türkçe karakterli + çevrilebilir. | Claude 3.3 | ✅ v9.33 |
 | M-36 | **Tablet/yatay düzen** (eski #141): çoklu ekranda yatay 2×2, dikey 1+2; büyük ekran açılışı. | Claude 3.1 / #141 | 🔧 (askıdaydı) |
 | M-37 | **Çentik/edge-to-edge** (eski #121): tüm ekranlara ortak inset yardımcısı (üst+alt+yan), Android 15/16 testi. | Claude P0-6 | 🔧 (askıdaydı) |
 | M-38 | **TalkBack + erişilebilirlik** (eski #129): içerik açıklamaları, 48dp dokunma alanı, yazı ölçeği. | ChatGPT 11 / #129 | 🔧 (askıdaydı) |
@@ -185,5 +185,7 @@ Durum işaretleri: ✅ bitti · 🔧 kod işi · 👤 kullanıcı/hesap işi · 
 9. **Yayın:** M-09, M-10, M-58, M-60 (sende).
 
 **Tanım: "bitti"** = kod + telefonda doğrulama + sürüm notu + GitHub/site yayını + bu listede ✅.
+
+**v9.33 (24 Kasım):** M-02, M-03, M-04, M-05, M-06, M-08, M-12 kod olarak tamam. M-03 cihazda doğrulanamadı (MIUI kurulum engeli).
 
 Toplam: **68 master madde** (Faz 0–7) + 18 askıdaki eski madde eşlemesi.

@@ -42,6 +42,18 @@ public final class AdManager {
 
     private static final String TAG = "UmayAds";
 
+    // --- M-03: tek reklam izin kapısı -------------------------------------------------
+    /** Reklam istenebilir mi? Başlangıçta HAYIR (fail-closed). */
+    private static volatile boolean adsAllowed = false;
+    /** Rıza gelmeden oluşturulan banner'lar; izin gelince yüklenir. */
+    private static final java.util.List<Runnable> pendingBanners =
+            new java.util.ArrayList<Runnable>();
+
+    /** Reklam istenebilir mi? Diğer sınıflar da bunu kullanır. */
+    public static boolean adsAllowed() {
+        return adsAllowed;
+    }
+
     private static boolean inited = false;
     private static InterstitialAd interstitial = null;
     private static boolean loadingInterstitial = false;
@@ -143,11 +155,15 @@ public final class AdManager {
 
     /** Rıza varsa SDK'yı başlatır (yoksa reklam istenmez). */
     private static void startAds(final Activity activity) {
-        boolean can = true;
+        // M-03: rıza bilgisi alınamazsa reklam İSTEME (fail-closed).
+        boolean can = false;
         try {
             can = com.google.android.ump.UserMessagingPlatform
                     .getConsentInformation(activity).canRequestAds();
-        } catch (Throwable ignored) { }
+        } catch (Throwable t) {
+            Log.w(TAG, "riza durumu okunamadi, reklam istenmeyecek: " + t);
+        }
+        adsAllowed = can;
         if (!can) {
             Log.i(TAG, "riza yok — reklam istenmeyecek");
             return;
@@ -158,11 +174,30 @@ public final class AdManager {
                     Log.i(TAG, "SDK hazir");
                     loadInterstitial(activity);
                     loadRewarded(activity);
+                    flushPendingBanners(activity);
                 }
             });
         } catch (Throwable t) {
             Log.w(TAG, "SDK baslatma: " + t);
         }
+    }
+
+    /** Rıza geldikten sonra bekleyen banner'ları yükler (ana iş parçacığında). */
+    private static void flushPendingBanners(final Activity activity) {
+        try {
+            activity.runOnUiThread(new Runnable() {
+                @Override public void run() {
+                    java.util.List<Runnable> copy;
+                    synchronized (pendingBanners) {
+                        copy = new java.util.ArrayList<Runnable>(pendingBanners);
+                        pendingBanners.clear();
+                    }
+                    for (Runnable r : copy) {
+                        try { r.run(); } catch (Throwable ignored) { }
+                    }
+                }
+            });
+        } catch (Throwable ignored) { }
     }
 
     /** Ayarlar → "Reklam gizlilik tercihleri": rıza formunu yeniden açar. */
@@ -271,31 +306,53 @@ public final class AdManager {
             holder.setLayoutParams(new LinearLayout.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
 
-            final AdView view = new AdView(activity);
-            view.setAdUnitId(Ads.BANNER);
-            float density = activity.getResources().getDisplayMetrics().density;
-            int widthDp = (int) (activity.getResources().getDisplayMetrics().widthPixels / density);
-            AdSize size = AdSize.getCurrentOrientationAnchoredAdaptiveBannerAdSize(activity, widthDp);
-            view.setAdSize(size != null ? size : AdSize.BANNER);
-            holder.addView(view, new android.widget.FrameLayout.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
-
             final TextView house = houseBar(activity);
-            house.setVisibility(View.GONE);
             holder.addView(house);
 
-            view.setAdListener(new com.google.android.gms.ads.AdListener() {
-                @Override public void onAdImpression() {
-                    AdStats.note(activity, "banner");
-                }
+            // M-03: rıza yoksa reklam isteği GÖNDERİLMEZ. Yerine kendi tanıtım barımız kalır;
+            // rıza sonradan gelirse AdManager bekleyen banner'ı yükler.
+            final Runnable loader = new Runnable() {
+                @Override public void run() {
+                    if (!adsAllowed || holder.getChildCount() == 0) return;
+                    try {
+                        final AdView view = new AdView(activity);
+                        view.setAdUnitId(Ads.BANNER);
+                        float density = activity.getResources().getDisplayMetrics().density;
+                        int widthDp = (int) (activity.getResources()
+                                .getDisplayMetrics().widthPixels / density);
+                        AdSize size = AdSize
+                                .getCurrentOrientationAnchoredAdaptiveBannerAdSize(activity, widthDp);
+                        view.setAdSize(size != null ? size : AdSize.BANNER);
+                        holder.addView(view, 0, new android.widget.FrameLayout.LayoutParams(
+                                ViewGroup.LayoutParams.MATCH_PARENT,
+                                ViewGroup.LayoutParams.WRAP_CONTENT));
+                        house.setVisibility(View.GONE);
+                        view.setAdListener(new com.google.android.gms.ads.AdListener() {
+                            @Override public void onAdImpression() {
+                                AdStats.note(activity, "banner");
+                            }
 
-                @Override public void onAdFailedToLoad(LoadAdError error) {
-                    Log.w(TAG, "banner dolmadi, kendi barimiz gosteriliyor: " + error.getMessage());
-                    view.setVisibility(View.GONE);
-                    house.setVisibility(View.VISIBLE);
+                            @Override public void onAdFailedToLoad(LoadAdError error) {
+                                Log.w(TAG, "banner dolmadi, kendi barimiz: " + error.getMessage());
+                                view.setVisibility(View.GONE);
+                                house.setVisibility(View.VISIBLE);
+                            }
+                        });
+                        view.loadAd(new AdRequest.Builder().build());
+                    } catch (Throwable t) {
+                        Log.w(TAG, "banner yuklenemedi: " + t);
+                        house.setVisibility(View.VISIBLE);
+                    }
                 }
-            });
-            view.loadAd(new AdRequest.Builder().build());
+            };
+
+            if (adsAllowed) {
+                loader.run();
+            } else {
+                synchronized (pendingBanners) {
+                    if (pendingBanners.size() < 8) pendingBanners.add(loader);
+                }
+            }
             return holder;
         } catch (Throwable t) {
             Log.w(TAG, "banner hatasi: " + t);
@@ -344,7 +401,7 @@ public final class AdManager {
     /** Kanal bazli: key (URL) icin 20 dk reklamsiz sure varsa gecis reklami gosterilmez. */
     public static void maybeInterstitial(final Activity activity, final String key,
                                          final Runnable then) {
-        if (!Ads.SDK_READY || isAdFree(activity) || showingAd) {
+        if (!Ads.SDK_READY || !adsAllowed || isAdFree(activity) || showingAd) {
             then.run();
             return;
         }
@@ -426,7 +483,7 @@ public final class AdManager {
 
     /** "15 dakika reklamsız" odullu reklami hazir mi? */
     public static boolean rewardedReady() {
-        return Ads.SDK_READY && rewarded != null;
+        return Ads.SDK_READY && adsAllowed && rewarded != null;
     }
 
     /**
@@ -442,7 +499,7 @@ public final class AdManager {
     public static void showRewarded(final Activity activity, final String key,
                                     final Runnable onReward, final Runnable onFail) {
         final RewardedAd ad = rewarded;
-        if (!Ads.SDK_READY || ad == null) {
+        if (!Ads.SDK_READY || !adsAllowed || ad == null) {
             loadRewarded(activity);
             onFail.run();
             return;

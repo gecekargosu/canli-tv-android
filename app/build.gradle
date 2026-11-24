@@ -23,8 +23,8 @@ android {
         applicationId 'com.cengiz.canlitv'
         minSdk 26
         targetSdk 36
-        versionCode 41
-        versionName '9.32'
+        versionCode 42
+        versionName '9.33'
     }
 
     signingConfigs {
@@ -44,6 +44,10 @@ android {
         }
     }
 
+    // M-06: siteden dağıtılan APK ile Play AAB aynı imzayı kullansın.
+    // Üretim anahtarı yoksa (ör. temiz makine) derleme kırılmasın diye debug'a düşer.
+    def hasUploadKey = file('../upload-keystore.jks').exists()
+
     buildTypes {
         debug {
             // test reklamlari Ads.java icinde (BuildConfig.DEBUG) secilir
@@ -53,11 +57,12 @@ android {
             minifyEnabled false
             signingConfig signingConfigs.release
         }
-        // Halka acik APK: gercek reklam kimlikleri (release gibi) ama debug anahtariyla imzali,
-        // boylece onceki surumun uzerine adb install -r ile guncellenebilir.
+        // Halka acik APK: gercek reklam kimlikleri ve ÜRETİM imzası (Play ile aynı anahtar).
+        // Not: v9.32 ve öncesi debug anahtarıyla imzalıydı; bu sürümden itibaren aynı
+        // anahtarla imzalanır, eski kurulumların bir kez kaldırılıp yeniden kurulması gerekir.
         publicApk {
             initWith release
-            signingConfig signingConfigs.debug
+            signingConfig hasUploadKey ? signingConfigs.release : signingConfigs.debug
             matchingFallbacks = ['release']
         }
     }
