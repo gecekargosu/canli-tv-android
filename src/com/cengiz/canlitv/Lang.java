@@ -10,6 +10,20 @@ public class Lang {
 
     public static final String[] CODES = {"tr", "en", "ru", "ar"};
 
+    /**
+     * Arama için Türkçe karakterleri sadeleştir: "super" yazınca "Süper FM" bulunur.
+     * (ı→i, İ→i, ş→s, ğ→g, ü→u, ö→o, ç→c)
+     */
+    public static String fold(String s) {
+        if (s == null) return "";
+        String t = s.toLowerCase(java.util.Locale.ROOT);
+        t = t.replace('ı', 'i').replace('i', 'i')
+             .replace('ş', 's').replace('ğ', 'g')
+             .replace('ü', 'u').replace('ö', 'o').replace('ç', 'c')
+             .replace('â', 'a').replace('î', 'i').replace('û', 'u');
+        return t;
+    }
+
     public static String name(String code) {
         if ("en".equals(code)) return "English";
         if ("ru".equals(code)) return "Русский";

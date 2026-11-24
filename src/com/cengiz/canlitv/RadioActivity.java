@@ -75,6 +75,9 @@ public class RadioActivity extends Activity {
     @Override
     protected void onCreate(Bundle b) {
         super.onCreate(b);
+        // Klavye açıkken liste 0 yüksekliğe çöküyordu (arama sonuçları görünmüyordu).
+        getWindow().setSoftInputMode(
+                android.view.WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING);
         load(this);
 
         LinearLayout root = new LinearLayout(this);
@@ -153,7 +156,7 @@ public class RadioActivity extends Activity {
         search.addTextChangedListener(new TextWatcher() {
             public void beforeTextChanged(CharSequence s, int a, int b, int c) { }
             public void onTextChanged(CharSequence s, int a, int b, int c) {
-                query = s.toString().trim().toLowerCase();
+                query = Lang.fold(s.toString().trim());
                 refresh();
             }
             public void afterTextChanged(Editable s) { }
@@ -310,7 +313,8 @@ public class RadioActivity extends Activity {
         java.util.Set<String> favs = Prefs.favs(this);
         for (int i = 0; i < NAMES.size(); i++) {
             boolean isHidden = hid.contains(URLS.get(i));
-            if (showHidden != isHidden) continue;
+            // Arama yapılırken gizli istasyonlar da sonuçta görünsün (kullanıcı arıyorsa bulmalı).
+            if (showHidden != isHidden && query.length() == 0) continue;
             // internetten gelen sonuclar: isim eslesmese de gosterilir
             if (onlineUrls.contains(URLS.get(i))) { shown.add(i); continue; }
             if ("★ Favoriler".equals(cat) && !favs.contains(URLS.get(i))) continue;
@@ -320,6 +324,7 @@ public class RadioActivity extends Activity {
                 String nm = NAMES.get(i).toLowerCase();
                 String mt = META.get(i).toLowerCase();
                 String qs = query.replace(" ", "");
+                nm = Lang.fold(nm); mt = Lang.fold(mt);
                 boolean hit = nm.contains(query) || mt.contains(query)
                         || nm.replace(" ", "").contains(qs);   // "radyofenomen" = "Radyo Fenomen"
                 if (!hit) continue;

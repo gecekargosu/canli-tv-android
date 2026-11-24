@@ -333,3 +333,26 @@ M-11 mağaza görselleri, M-57/58 mağaza metinleri.
 | M-72 | **Tam media3 radyo:** MediaPlayer yerine ExoPlayer + MediaSession (ICY/302, Bluetooth/kilit ekranı tuşları). | 🔧 (M-20'nin devamı) |
 | M-73 | **Radyoyu her yerden kapat:** radyo arkada çalarken ana ekranda "🎧 X çalıyor · ⏹ Kapat" şeridi. | ✅ v9.48 (cihazda doğrulandı) |
 | M-74 | **Reklam sırasında TV duraklıyor:** tam ekran reklam açıkken yayın duraklatılır, reklam kapanınca canlıya yeniden bağlanılır; reklam sırasında donma sayılmaz. | ✅ v9.49 (cihaz doğrulaması bekliyor — D-05) |
+| M-75 | **Ses/görüntü senkronu (düşük kalitede ses erken):** kalite tercihi artık varyant playlist URL'iyle değil, master playlist + ExoPlayer track sınırıyla (`setMaxVideoSize`) uygulanıyor; ses ve görüntü aynı master'dan geliyor. | ✅ v9.55 (cihazda 360p'de oynatıldı) |
+| M-76 | **Radyo araması görünmüyordu:** klavye açıkken liste 0 yüksekliğe çöküyordu (ekran boş). Pencere `adjustNothing` ile klavyeden etkilenmiyor; sonuçlar klavyenin üstünde görünüyor. | ✅ v9.55 (cihazda doğrulandı) |
+| M-77 | **Türkçe karakterli arama:** "super" → "Süper FM", "radyo" → "Radyo 7" (`Lang.fold`); arama sırasında gizlenmiş istasyonlar da listeleniyor. | ✅ v9.55 (cihazda doğrulandı) |
+
+### Oturum 24 Kasım 2026 (yedinci yarı) — A/V senkron + 12 maddelik test (v9.55)
+
+**Bu oturumda biten: 3 madde**
+
+- **M-75 (✅):** kullanıcının bildirdiği "düşük kalitede ses 4–7 sn erken" sorununun kök nedeni
+  bulundu: kalite seçimi master yerine **tek varyant playlist URL'i** veriyordu; ses ayrı
+  rendition'dan gelince senkron kayıyordu. Artık master playlist + `setMaxVideoSize`.
+- **M-76 (✅):** radyo aramasında klavye açılınca liste 0 yüksekliğe çöküyordu (kullanıcı boş
+  ekran görüyordu). `adjustNothing` ile düzeltildi, cihazda doğrulandı.
+- **M-77 (✅):** Türkçe karakter sadeleştirmeli arama + gizli istasyonların da bulunması.
+
+**Cihaz testi (12 madde):** `docs/DOGRULANACAKLAR.md` sonunda tablo. Sonuç: **2 ✅ / 4 kısmen /
+6 yapılamadı** (MIUI `svc wifi` engeli, reklam zamanlaması, release `run-as` yokluğu, menü yolu).
+
+**Durum sayısı (24 Kasım 2026, 7. yarı sonu):** toplam **77 madde** · **17 ✅ bitti** ·
+**7 👤 kullanıcı işi** · **53 açık**.
+
+**Sonraki oturum:** (1) D-04/D-05/D-12 elle test (uçak modu, reklam, 3'lü mod),
+(2) M-72 tam media3 radyo, (3) M-13 `kanallar.json` entegrasyonu + M-15 "review" filtresi.

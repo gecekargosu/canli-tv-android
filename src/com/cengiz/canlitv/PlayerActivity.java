@@ -851,6 +851,8 @@ public class PlayerActivity extends android.app.Activity {
         try { player.stop(); player.clearMediaItems(); } catch (Exception ignored) { }
         // Tarayıcı UA'sı: TV8 gibi CDN'ler aksi hâlde reklam kuşağı klibi döndürüyor.
         try {
+            // A/V senkron: master playlist + track sınırı (varyant URL'i değil).
+            Quality.applyPref(this, player);
             player.setMediaItem(androidx.media3.common.MediaItem.fromUri(url));
             player.prepare();
             player.play();

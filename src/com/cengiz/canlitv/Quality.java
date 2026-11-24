@@ -78,21 +78,39 @@ public class Quality {
     }
 
     /**
-     * Kanal icin oynatilacak URL'i sec: kanala ozel secim > genel kalite tercihi > orijinal.
-     * Callback arka planda gelebilir; UI'a runOnUiThread ile don.
+     * Kanal icin oynatilacak URL.
+     *
+     * ÖNEMLİ (A/V senkron): eskiden kalite tercihi için **varyant playlist URL'i** seçilip
+     * oynatıcıya veriliyordu. Düşük varyantlarda ses ayrı rendition'dan geldiğinde ses
+     * görüntünün 4–7 sn önüne geçebiliyordu. Artık **master playlist** verilir; kalite
+     * sınırı ExoPlayer'ın track seçimiyle uygulanır (`applyPref`), böylece ses ve görüntü
+     * aynı master'dan, senkron halde gelir.
      */
     public static void resolve(final Context ctx, final String url, final UrlCallback cb) {
         if (cb == null) return;
         String custom = Prefs.quality(ctx, url);
-        if (custom != null) { cb.onUrl(custom); return; }
-        // Ekonomi modu: tercih ne olursa olsun en düşük çalışan varyant.
-        final int pref = Prefs.economy(ctx) ? -1 : Prefs.maxHeight(ctx);
-        if (pref == 0) { cb.onUrl(url); return; }
-        load(url, new Callback() {
-            @Override public void onResult(List<Variant> variants) {
-                cb.onUrl(variants.isEmpty() ? url : pick(variants, pref));
+        if (custom != null) { cb.onUrl(custom); return; }   // kanala özel seçim korunur
+        cb.onUrl(url);                                      // master playlist
+    }
+
+    /** Kalite tercihini oynatıcıya uygula (varyant URL'i yerine track sınırı). */
+    public static void applyPref(android.content.Context ctx,
+                                 androidx.media3.exoplayer.ExoPlayer player) {
+        if (player == null) return;
+        try {
+            int pref = Prefs.economy(ctx) ? -1 : Prefs.maxHeight(ctx);
+            androidx.media3.common.TrackSelectionParameters.Builder b =
+                    player.getTrackSelectionParameters().buildUpon();
+            if (pref < 0) {
+                b.setMaxVideoSize(426, 240);          // ekonomi: en düşük
+            } else if (pref > 0) {
+                b.setMaxVideoSize(Integer.MAX_VALUE, pref);
+            } else {
+                b.clearOverridesOfType(
+                        androidx.media3.common.C.TRACK_TYPE_VIDEO);
             }
-        });
+            player.setTrackSelectionParameters(b.build());
+        } catch (Throwable ignored) { }
     }
 
     /** Her zaman en dusuk cozunurluk: mobil veride "sadece ses" icin. */

@@ -62,6 +62,9 @@ public class MainActivity extends android.app.Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        // Kanal aramasında da klavye listeyi yutmasın.
+        getWindow().setSoftInputMode(
+                android.view.WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING);
         CrashLog.install(this);   // cokme olursa cihaza log yaz (Ayarlar -> Hata bildir)
         Good.refreshIfNeeded(this);   // #101: doğrulanmış kanal listesi günde 1 kez tazelenir
         all = ChannelRepo.all(this);
@@ -238,7 +241,7 @@ public class MainActivity extends android.app.Activity {
         search.addTextChangedListener(new TextWatcher() {
             public void beforeTextChanged(CharSequence s, int a, int b, int c) { }
             public void onTextChanged(CharSequence s, int a, int b, int c) {
-                query = s.toString().trim().toLowerCase();
+                query = Lang.fold(s.toString().trim());
                 refresh();
             }
             public void afterTextChanged(Editable s) { }
@@ -865,8 +868,8 @@ public class MainActivity extends android.app.Activity {
                 }
             }
             if (query.length() > 0
-                    && !c.name.toLowerCase().contains(query)
-                    && !c.group.toLowerCase().contains(query)
+                    && !Lang.fold(c.name).contains(query)
+                    && !Lang.fold(c.group).contains(query)
                     && !String.valueOf(c.no).equals(query)) continue;
             base.add(c);
         }
