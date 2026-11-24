@@ -159,3 +159,14 @@ dokunma + `uiautomator dump` + `logcat` + ekran görüntüsü. "Kanıt" sütunu 
 | # | Konu | Sonuç |
 |---|------|-------|
 | D-27 | Eksik ülkeler otomatik “yakında” görünüyor mu | **✅** ülke ekranı açılınca 41 ülke kendiliğinden “yakında · liste henüz yok”; listesi olan 10 ülke “indir” (`_build/ul2.jpg`). |
+
+### 14. yarı (v9.64) — ülke indirme, oynatma, radyo, bilgi kartı
+
+| # | Konu | Sonuç / kanıt |
+|---|------|----------------|
+| D-28 | Ülke "indir" gerçekten çalışıyor mu | **✅** Birleşik Krallık indirildi → **111 kanal** listeye geldi (`_build/t6.png`). |
+| D-29 | İndirilen kanal açılıyor mu | **✅** BBC One canlı yayın, **360p** rozeti, 1/111, veri 732,8 → 744,1 MB (`_build/t8s.png`). |
+| D-30 | İndirilen ülkenin radyosu çalışıyor mu | **✅** GB için **40 istasyon** indi; Heart 80s "Bağlantı iyi · çalıyor" (`_build/t11s.png`, `_build/t12s.png`). |
+| D-31 | 30'dan az kanallı ülke "yakında" mı kalıyor | **✅** Azerbaycan **3 kanal** ile indi ve "hazır" göründü (`_build/t16s.png`). |
+| D-32 | Bilgi kartı ve yeni sıralama | **✅** "Kanal açılmıyor mu?" kartı Türkçe metinle görünür; Türkiye/UK/AZ üstte, sonra "indir" (`_build/t14s.png`). |
+| D-33 | Mobil veri kapalıyken indirme | **⏳** bu oturumda denenmedi (Wi-Fi açıkken test edildi). |

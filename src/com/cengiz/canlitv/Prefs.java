@@ -238,6 +238,12 @@ public class Prefs {
         return missSet(c).contains(code);
     }
 
+    /** M-85: liste sunucuya eklendiğinde eski "yakında" işareti kalksın. */
+    public static void clearCountryMiss(Context c, String code) {
+        java.util.Set<String> s = new java.util.HashSet<String>(missSet(c));
+        if (s.remove(code)) sp(c).edit().putStringSet("countryMiss", s).apply();
+    }
+
     private static java.util.Set<String> missSet(Context c) {
         try {
             java.util.Set<String> s = sp(c).getStringSet("countryMiss", null);

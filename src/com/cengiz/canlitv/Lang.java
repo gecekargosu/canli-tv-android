@@ -58,6 +58,20 @@ public class Lang {
         if ("country_sub".equals(key)) return pick(c, "Kanalların geldiği ülke", "Country the channels come from", "Страна каналов", "دولة القنوات");
         if ("app_language".equals(key)) return pick(c, "Arayüz dili", "App language", "Язык интерфейса", "لغة الواجهة");
         if ("back".equals(key)) return pick(c, "‹ Geri", "‹ Back", "‹ Назад", "‹ رجوع");
+        if ("channels".equals(key)) return pick(c, "kanal", "channels", "каналов", "قناة");
+        if ("soon_no_list".equals(key)) return pick(c, "yakında · liste henüz yok", "coming soon · no list yet", "скоро · списка пока нет", "قريبًا · لا توجد قائمة بعد");
+        if ("no_list_toast".equals(key)) return pick(c, "Bu ülke için liste henüz yok; eklendiğinde burada indir olarak görünecek.", "No list for this country yet; it will show download here once added.", "Для этой страны списка пока нет; он появится здесь.", "لا توجد قائمة لهذه الدولة بعد؛ ستظهر هنا قريبًا.");
+        if ("info_title".equals(key)) return pick(c, "Kanal açılmıyor mu?", "A channel not opening?", "Канал не открывается?", "القناة لا تفتح؟");
+        if ("info_short".equals(key)) return pick(c,
+                "İnternet kanalları bazen durur: reklam kuşağı, yayın adresinin (IP) değişmesi veya kanalın kapanması. Bu, uygulamanın bozuk olduğu anlamına gelmez. Dokun → nedeni ve çözümü.",
+                "Internet channels sometimes stop: ad break, a changed stream address (IP) or the channel closing. That does not mean the app is broken. Tap → reason and fix.",
+                "Интернет-каналы иногда останавливаются: реклама, смена адреса (IP) или закрытие канала. Это не значит, что приложение сломано. Нажмите → причина и решение.",
+                "قنوات الإنترنت تتوقف أحيانًا: فاصل إعلاني أو تغيّر عنوان البث (IP) أو إغلاق القناة. هذا لا يعني أن التطبيق معطّل. اضغط ← السبب والحل.");
+        if ("info_full".equals(key)) return pick(c,
+                "Bunlar normaldir; uygulama bozuk değildir:\n• Reklam kuşağı: yayın 10-60 saniye donabilir, sonra devam eder.\n• Adres (IP) değişikliği: kanal yayın sunucusunu değiştirince bağlantı kopar; uygulama yeniden bağlanmayı dener.\n• Kanal kapanması: bazı yayınlar tamamen biter, liste eskir.\nÇözüm: 10-20 saniye bekleyip kanalı yeniden aç, başka bir kanal dene veya Ayarlar → Ölü kanalları onar ile adresleri güncelle. Ülke listeleri sunucudan düzenli yenilenir; yeni kanallar kendiliğinden gelir.",
+                "This is normal; the app is not broken:\n• Ad break: the stream can freeze for 10-60 seconds, then continues.\n• Address (IP) change: when a channel switches servers the connection drops; the app retries.\n• Channel closure: some streams end for good and the list gets stale.\nFix: wait 10-20 seconds and reopen, try another channel, or use Settings → Repair dead channels to refresh addresses. Country lists refresh from the server, so new channels appear by themselves.",
+                "Это нормально, приложение не сломано:\n• Реклама: поток может замереть на 10-60 секунд, затем продолжится.\n• Смена адреса (IP): при переключении сервера связь обрывается, приложение переподключается.\n• Закрытие канала: некоторые потоки прекращаются навсегда, список устаревает.\nРешение: подождите 10-20 секунд и откройте снова, выберите другой канал или Настройки → Починить мёртвые каналы. Списки стран обновляются с сервера, новые каналы появляются сами.",
+                "هذا طبيعي، التطبيق غير معطّل:\n• فاصل إعلاني: قد يتوقف البث 10-60 ثانية ثم يكمل.\n• تغيّر العنوان (IP): عند تبديل الخادم ينقطع الاتصال ويعيد التطبيق المحاولة.\n• إغلاق القناة: بعض البثوث تنتهي نهائيًا وتصبح القائمة قديمة.\nالحل: انتظر 10-20 ثانية وأعد الفتح، أو جرّب قناة أخرى، أو الإعدادات ← إصلاح القنوات الميتة. قوائم الدول تُحدَّث من الخادم فتظهر القنوات الجديدة تلقائيًا.");
         if ("general".equals(key)) return pick(c, "Genel", "General", "Общие", "عام");
 
         // --- hesap / uyelik ---
@@ -102,6 +116,15 @@ public class Lang {
         if ("login_ok".equals(key)) return pick(c, "Giriş yapıldı", "Signed in", "Вход выполнен", "تم تسجيل الدخول");
         if ("verified_thanks".equals(key)) return pick(c, "E-posta doğrulandı, teşekkürler!", "E-mail verified, thank you!", "Почта подтверждена, спасибо!", "تم تأكيد البريد، شكرًا!");
         return key;
+    }
+
+    /** "145 kanal" / "145 channels" gibi sayım metni. */
+    public static String channels(Context c, int n) {
+        String l = Prefs.uiLang(c);
+        if ("en".equals(l)) return n + (n == 1 ? " channel" : " channels");
+        if ("ru".equals(l)) return n + " каналов";
+        if ("ar".equals(l)) return n + " قناة";
+        return n + " kanal";
     }
 
     /** Alt baslik: "305 kanal · no ile aç, 3'lü izle, kayıt" */

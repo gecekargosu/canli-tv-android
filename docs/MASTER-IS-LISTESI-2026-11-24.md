@@ -10,7 +10,7 @@ Durum işaretleri: ✅ bitti · 🔧 kod işi · 👤 kullanıcı/hesap işi · 
 
 ## 0. Durum özeti (v9.32)
 
-- Kanal: 145 TR kanalı (TRT Haber eklendi), sunucu allowlist `/good/<cc>.json`.
+- Kanal: 145 TR kanalı (TRT Haber eklendi) + **55 ülkede 3.434 kanal** (v9.64), sunucu allowlist `/good/<cc>.json`.
 - Oynatıcı: tekli TV = Media3 ExoPlayer; **çoklu ekran, radyo, arka plan sesi = MediaPlayer** (yarım geçiş).
 - Veri sayacı: oynatıcı bayt sayımı (v9.32) — ekran/ana ekran/Ayarlar aynı. Radyo ve arka plan sesi **sayılmıyor**.
 - Reklam: AdMob banner/geçiş/ödüllü + UMP var; **banner UMP kapısından geçmiyor**.
@@ -344,6 +344,9 @@ M-11 mağaza görselleri, M-57/58 mağaza metinleri.
 | M-82 | **"Ne var, ne yok?" ekranı güncellendi:** 25 satır, güncel ürünle eşlendi (çoklu ekran/ağ toparlanma, radyo kapatma şeridi, A/V senkron 360p, veri sayacı, sürüm bilgisi, Play durumu + olmayanların nedeni). | ✅ v9.61 (cihazda görüldü) |
 | M-83 | **Ülke seçiminde "indir" sessizce başarısızdı:** sunucuda listesi olmayan ülke 404 dönüyordu; satır artık **"yakında · liste henüz yok"** yazıyor, tekrar dokunmak ağa çıkmıyor. | ✅ v9.62 (cihazda: Suriye/Yunanistan) |
 | M-84 | **Ülke dizini:** sunucuda `good/index.json` (~100 B) eklendi; uygulama açılışta bir kez çekip **listesi olmayan 41 ülkeyi** otomatik "yakında · liste henüz yok" yapıyor. 51 ülkeden **10'unda liste var** (br, de, gb, in, mx, ru, sa, se, tr, us). | ✅ v9.63 (cihazda doğrulandı) |
+| M-85 | **"Az kanal = yakında" eşiği kaldırıldı:** 30 kanal şartı yerine **1+ kanal = hazır**. İndirme hatası 404 (liste yok) ve ağ hatası olarak ayrıldı; ağ hatası ülkeyi "yakında" işaretlemiyor, sunucuya liste eklenince eski işaret siliniyor. Listeler **10 ülke/~673 kanaldan 55 ülke/3.434 kanala** çıktı; her aday master→en düşük varyant zinciriyle sınandı. | ✅ v9.64 (cihazda: Birleşik Krallık 111, Azerbaycan 3 kanal indi) |
+| M-86 | **Ülke sırası:** listesi hazır ülkeler üstte (Türkiye ilk, kanal sayısına göre), sonra indirilebilenler, en sonda "yakında" olanlar. | ✅ v9.64 (cihazda görüldü) |
+| M-87 | **Kullanıcı bilgilendirmesi:** ülke ekranına TR/EN/RU/AR **"Kanal açılmıyor mu?"** kartı — reklam kuşağı, IP değişikliği, kanal kapanması ve "Ölü kanalları onar" çözümü. Kısa metin açık, dokununca ayrıntı. | ✅ v9.64 (cihazda görüldü) |
 
 ### Oturum 24 Kasım 2026 (yedinci yarı) — A/V senkron + 12 maddelik test (v9.55)
 
@@ -479,3 +482,35 @@ satırını ve radyo aramasını doğrula, (2) D-04 uçak modu, D-05 reklam anı
 
 **Sonraki oturum:** (1) D-05 reklam sonrası dönüş, (2) tablet 9.63 kurulumu,
 (3) M-72 tam media3 radyo, (4) M-13 `kanallar.json` beslemesi.
+
+### Oturum 24 Kasım 2026 (on dördüncü yarı) — 9.64: ülke eşiği, 55 ülke, bilgi kartı
+
+**Bu oturumda biten: 3 madde + 5 doğrulama**
+
+- **M-85 (✅):** "30'dan az kanal → yakında" kuralı kaldırıldı. Artık inen listede **1 kanal varsa**
+  ülke hazır. İndirme sonucu üçe ayrıldı: `DL_OK`, `DL_GONE` (404 → "yakında"), `DL_FAIL`
+  (ağ → işaretlenmez, tekrar denenebilir). Sunucuya liste eklenince eski "yakında" işareti
+  `syncIndex` + `Prefs.clearCountryMiss` ile siliniyor.
+- **Kanal listeleri:** 10 ülke/~673 kanaldan **55 ülke / 3.434 kanala** çıktı. Üretim
+  `_build/good.py` ile: iptv-org adayları **master playlist → en düşük varyant → segment listesi**
+  zinciriyle sınandı, düşenler bir kez daha denendi, iki kez düşen listeye alınmadı.
+  Öne çıkanlar: ABD 66→290, Hindistan 71→233, Romanya 180, Arjantin 156, Rusya 53→141,
+  Almanya 73→120, Birleşik Krallık 24→115, Meksika 57→114, Kanada 102, İspanya 99,
+  Brezilya 49→81, Çin 69, Bulgaristan 66, İsviçre 62, Irak 52, Kore 51.
+  Yeni ülkeler: Nijerya, Filipinler, Vietnam, Bangladeş.
+  İsveç 85→11: eski liste yalnız "master 200 döndü mü" diye bakıyordu, çoğu Türkiye'den
+  coğrafi kilitliydi; yeni liste yalnız gerçekten açılanları tutuyor.
+- **M-86 (✅):** ülke ekranı üç kova: hazır (Türkiye ilk, kanal sayısına göre) → indirilebilen → yakında.
+- **M-87 (✅):** kullanıcı diliyle bilgi kartı; "kanal açılmadı → program kötü" izlenimini engelliyor.
+- **Cihaz testi (9.64, telefon):** Ülke seç → Birleşik Krallık → **indir** → 111 kanal;
+  BBC One canlı, **360p** rozeti, 1/111; veri 732,8 → 744,1 MB. Radyo: GB için **40 istasyon**
+  indi, Heart 80s "Bağlantı iyi · çalıyor". Azerbaycan **3 kanal** ile "hazır" (eşik kanıtı).
+- **Kapasite:** 7.119.005 B · 400 dosya · **17.515 sınıf** (+4) · imza aynı → ✅ kayıp yok.
+  GitHub release `v9.64`, site `/indir` 9.64, `good/index.json` 55 kod.
+
+**Durum sayısı (24 Kasım 2026, 14. yarı sonu):** toplam **88 madde** · **28 ✅ bitti** ·
+**7 👤 kullanıcı işi** · **53 açık**.
+
+**Sonraki oturum:** (1) tablet 9.64 kurulumu (dosyadan), (2) D-05 reklam sonrası canlıya dönüş,
+(3) kanal sayısı düşük ülkeler (SE 11, PH 9, AZ 3, OM 5, DZ 6) için ek doğrulanmış kaynak,
+(4) M-72 tam media3 radyo, (5) M-13 `kanallar.json` beslemesi.

@@ -19,7 +19,7 @@ import java.util.Set;
 /**
  * Ulke bazli kanal listesi.
  * - tr: uygulamanin icine gomulu, elden gecirilmis liste (assets/channels.m3u)
- * - digerleri: iptv-org ulke listesi indirilir ve cihazda saklanir (files/country_xx.m3u)
+ * - digerleri: sunucudaki hazir liste indirilir ve cihazda saklanir (files/country_xx.m3u)
  */
 public class CountryRepo {
 
@@ -28,12 +28,22 @@ public class CountryRepo {
         return GOOD_BASE + cc + ".json";
     }
 
+    /** M-85: indirme sonucu — ağ hatası ile "sunucuda liste yok" ayrı ele alınır. */
+    public static final int DL_FAIL = 0;   // ağ/timeout: "yakında" işaretlenmez
+    public static final int DL_OK = 1;     // liste indi ve kaydedildi
+    public static final int DL_GONE = 2;   // sunucuda liste yok (404): "yakında"
+
     /**
      * M-84: sunucudaki hazır ülke listesini bir kez çeker (~1 KB) ve listede olmayan
-     * ülkeleri "yakında" olarak işaretler. Böylece kullanıcı 41 ülkeye tek tek dokunup
-     * boşuna beklemez.
+     * ülkeleri "yakında" olarak işaretler. Böylece kullanıcı boşuna beklemez.
+     * M-85: listede OLAN ülkelerin eski "yakında" işareti silinir; yeni eklenen liste
+     * hemen "indir" olarak görünür.
      */
     public static void syncIndex(final Context ctx) {
+        syncIndex(ctx, null);
+    }
+
+    public static void syncIndex(final Context ctx, final Runnable onDone) {
         new Thread(new Runnable() {
             @Override public void run() {
                 HttpURLConnection con = null;
@@ -58,13 +68,16 @@ public class CountryRepo {
                     if (have.isEmpty()) return;
                     for (String[] row : Countries.LIST) {
                         String cc = row[0];
-                        if (!have.contains(cc) && !isReady(ctx, cc)) {
+                        if (have.contains(cc)) {
+                            Prefs.clearCountryMiss(ctx, cc);
+                        } else if (!isReady(ctx, cc)) {
                             Prefs.markCountryMiss(ctx, cc);
                         }
                     }
                 } catch (Throwable ignored) {
                 } finally {
                     if (con != null) con.disconnect();
+                    if (onDone != null) onDone.run();
                 }
             }
         }, "country-index").start();
@@ -74,9 +87,12 @@ public class CountryRepo {
         return new File(ctx.getFilesDir(), "country_" + cc + ".m3u");
     }
 
-    /** Liste cihazda var mi (TR her zaman gomulu). */
-    /** M-16: bir ülke "hazır" sayılması için en az bu kadar çalışan kanal gerekir. */
-    public static final int READY_MIN = 30;
+    /**
+     * M-85: "hazır" için sabit kanal sayısı eşiği YOK. Sunucudan inen doğrulanmış listede
+     * en az 1 kanal varsa ülke kullanılabilir. (Eskiden 30'du; 24 kanallı İngiltere gibi
+     * listeler haksız yere "yakında" görünüyordu.)
+     */
+    public static final int READY_MIN = 1;
 
     public static boolean isReady(Context ctx, String cc) {
         if ("tr".equals(cc)) return true;
@@ -145,6 +161,11 @@ public class CountryRepo {
      * böylece liste dışı/telif riskli yayınlar uygulamaya giremez.
      */
     public static boolean download(Context ctx, String cc) {
+        return downloadStatus(ctx, cc) == DL_OK;
+    }
+
+    /** M-85: 404 (liste yok) ile ağ hatasını ayırır. */
+    public static int downloadStatus(Context ctx, String cc) {
         File tmp = new File(ctx.getFilesDir(), "country_" + cc + ".tmp");
         HttpURLConnection con = null;
         try {
@@ -152,7 +173,9 @@ public class CountryRepo {
             con.setConnectTimeout(10000);
             con.setReadTimeout(15000);
             con.setRequestProperty("User-Agent", "Mozilla/5.0 UMAYMultiTV");
-            if (con.getResponseCode() != 200) return false;
+            int code = con.getResponseCode();
+            if (code == 404) return DL_GONE;
+            if (code != 200) return DL_FAIL;
             InputStream in = con.getInputStream();
             java.io.ByteArrayOutputStream bo = new java.io.ByteArrayOutputStream();
             byte[] buf = new byte[16384];
@@ -162,7 +185,7 @@ public class CountryRepo {
             String json = new String(bo.toByteArray(), "UTF-8");
             org.json.JSONObject root = new org.json.JSONObject(json);
             org.json.JSONArray items = root.optJSONArray("items");
-            if (items == null || items.length() == 0) return false;
+            if (items == null || items.length() == 0) return DL_GONE;
 
             StringBuilder m3u = new StringBuilder("#EXTM3U\n");
             for (int i = 0; i < items.length(); i++) {
@@ -183,13 +206,16 @@ public class CountryRepo {
 
             List<Channel> check = parse(new BufferedReader(new InputStreamReader(
                     new FileInputStream(tmp), "UTF-8")));
-            if (check.isEmpty()) { tmp.delete(); return false; }
+            if (check.isEmpty()) { tmp.delete(); return DL_GONE; }
             File target = cacheFile(ctx, cc);
             if (target.exists()) target.delete();
-            return tmp.renameTo(target);
+            boolean ok = tmp.renameTo(target);
+            if (!ok) { tmp.delete(); return DL_FAIL; }
+            Prefs.clearCountryMiss(ctx, cc);
+            return DL_OK;
         } catch (Exception e) {
             tmp.delete();
-            return false;
+            return DL_FAIL;
         } finally {
             if (con != null) try { con.disconnect(); } catch (Exception ignored) { }
         }

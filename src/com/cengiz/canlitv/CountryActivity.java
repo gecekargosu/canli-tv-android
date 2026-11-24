@@ -15,9 +15,18 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 /**
  * Ulke secimi: secilen ulkenin kanal listesi indirilir (veya hazirsa acilir) ve ana liste o ulkeye gecer.
  * Listeye uzun basmak, o ulkenin listesini yeniden indirir (guncelleme icin).
+ *
+ * M-85: sirala → listesi hazir ulkeler (Türkiye ilk), sonra indirilebilenler, en sonda "yakında".
  */
 public class CountryActivity extends Activity {
     private ListView list;
@@ -30,6 +39,13 @@ public class CountryActivity extends Activity {
 
     private BaseAdapter adapter;
     private String selected;
+
+    /** Gorunen sira ve ulke basina kanal sayisi (her satirda dosya okumayalim). */
+    private final List<String> order = new ArrayList<String>();
+    private final Map<String, Integer> counts = new HashMap<String, Integer>();
+
+    private TextView infoBody;
+    private boolean infoOpen;
 
     @Override
     protected void onCreate(Bundle b) {
@@ -73,17 +89,19 @@ public class CountryActivity extends Activity {
         head.addView(top);
         root.addView(head);
 
+        addInfoCard(root);
+
         list = new ListView(this);
         list.setDivider(null);
         list.setDividerHeight(dp(6));
         list.setPadding(0, dp(4), 0, dp(8));
         list.setClipToPadding(false);
         adapter = new BaseAdapter() {
-            @Override public int getCount() { return Countries.LIST.length; }
-            @Override public Object getItem(int i) { return Countries.LIST[i][0]; }
+            @Override public int getCount() { return order.size(); }
+            @Override public Object getItem(int i) { return order.get(i); }
             @Override public long getItemId(int i) { return i; }
             @Override public View getView(int i, View v, ViewGroup p) {
-                String code = Countries.LIST[i][0];
+                String code = order.get(i);
                 boolean active = code.equals(selected);
                 LinearLayout row = new LinearLayout(CountryActivity.this);
                 row.setOrientation(LinearLayout.HORIZONTAL);
@@ -108,25 +126,19 @@ public class CountryActivity extends Activity {
                 n.setTextColor(TEXT);
                 n.setTextSize(14);
                 TextView s = new TextView(CountryActivity.this);
-                boolean ready = CountryRepo.isReady(CountryActivity.this, code);
-                int cnt = ready ? CountryRepo.count(CountryActivity.this, code) : 0;
+                int cnt = countOf(code);
+                boolean ready = "tr".equals(code) || cnt > 0;
                 if (ready) {
-                    s.setText(cnt + " kanal · " + Lang.t(CountryActivity.this, "ready"));
+                    s.setText(Lang.channels(CountryActivity.this, cnt)
+                            + " · " + Lang.t(CountryActivity.this, "ready"));
+                    s.setTextColor(MUTED);
+                } else if (Prefs.isCountryMiss(CountryActivity.this, code)) {
+                    // M-83: sunucuda bu ülkenin listesi yok (404) → boşuna indirme denemesi yok
+                    s.setText(Lang.t(CountryActivity.this, "soon_no_list"));
                     s.setTextColor(MUTED);
                 } else {
-                    int have = CountryRepo.count(CountryActivity.this, code);
-                    if (have > 0) {
-                        // M-16: 30'dan az doğrulanmış kanal → "yakında" (boş liste göstermeyelim)
-                        s.setText(have + " kanal · yakında (" + CountryRepo.READY_MIN + "+ gerekli)");
-                        s.setTextColor(MUTED);
-                    } else if (Prefs.isCountryMiss(CountryActivity.this, code)) {
-                        // M-83: sunucuda bu ülkenin listesi yok (404) → boşuna indirme denemesi yok
-                        s.setText("yakında · liste henüz yok");
-                        s.setTextColor(MUTED);
-                    } else {
-                        s.setText(Lang.t(CountryActivity.this, "download"));
-                        s.setTextColor(ACCENT);
-                    }
+                    s.setText(Lang.t(CountryActivity.this, "download"));
+                    s.setTextColor(ACCENT);
                 }
                 s.setTextSize(10);
                 cc.addView(n);
@@ -143,15 +155,18 @@ public class CountryActivity extends Activity {
                 return row;
             }
         };
+        rebuildOrder();
         list.setAdapter(adapter);
         list.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override public void onItemClick(AdapterView<?> p, View v, int pos, long id) {
-                pick(Countries.LIST[pos][0], false);
+                if (pos < 0 || pos >= order.size()) return;
+                pick(order.get(pos), false);
             }
         });
         list.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
             @Override public boolean onItemLongClick(AdapterView<?> p, View v, int pos, long id) {
-                String code = Countries.LIST[pos][0];
+                if (pos < 0 || pos >= order.size()) return true;
+                String code = order.get(pos);
                 if ("tr".equals(code)) return true;
                 pick(code, true);
                 return true;
@@ -160,20 +175,109 @@ public class CountryActivity extends Activity {
         root.addView(list, new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
         AdManager.wrap(this, root);
-        // M-84: hangi ülkelerin listesi var, sunucudan bir kez öğren (~1 KB)
-        CountryRepo.syncIndex(this);
-        root.postDelayed(new Runnable() {
+        // M-84/M-85: hangi ülkelerin listesi var, sunucudan bir kez öğren (~1 KB).
+        // Cevap gelince sıra ve etiketler tazelenir (yeni liste "indir" olarak görünür).
+        CountryRepo.syncIndex(this, new Runnable() {
             @Override public void run() {
-                if (list != null && list.getAdapter() instanceof android.widget.BaseAdapter) {
-                    ((android.widget.BaseAdapter) list.getAdapter()).notifyDataSetChanged();
-                }
+                runOnUiThread(new Runnable() {
+                    @Override public void run() {
+                        rebuildOrder();
+                        if (adapter != null) adapter.notifyDataSetChanged();
+                    }
+                });
             }
-        }, 2500);
+        });
+    }
+
+    /**
+     * "Kanal neden açılmıyor?" bilgi kartı — kullanıcının kendi dilinde.
+     * Kısa metin her zaman görünür; dokununca ayrıntı ve çözüm açılır.
+     */
+    private void addInfoCard(LinearLayout root) {
+        final LinearLayout card = new LinearLayout(this);
+        card.setOrientation(LinearLayout.VERTICAL);
+        card.setPadding(dp(12), dp(9), dp(12), dp(9));
+        card.setBackground(infoBg(false));
+
+        TextView title = new TextView(this);
+        title.setText("ⓘ " + Lang.t(this, "info_title"));
+        title.setTextColor(ACCENT);
+        title.setTextSize(11);
+        title.setTypeface(title.getTypeface(), android.graphics.Typeface.BOLD);
+
+        infoBody = new TextView(this);
+        infoBody.setText(Lang.t(this, "info_short"));
+        infoBody.setTextColor(MUTED);
+        infoBody.setTextSize(10);
+        infoBody.setLineSpacing(dp(2), 1f);
+
+        card.addView(title);
+        card.addView(infoBody);
+        card.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) {
+                infoOpen = !infoOpen;
+                infoBody.setText(Lang.t(CountryActivity.this, infoOpen ? "info_full" : "info_short"));
+                card.setBackground(infoBg(infoOpen));
+            }
+        });
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        lp.bottomMargin = dp(6);
+        root.addView(card, lp);
+    }
+
+    private GradientDrawable infoBg(boolean open) {
+        GradientDrawable d = new GradientDrawable();
+        d.setColor(Color.parseColor(open ? "#1E2A38" : "#17202B"));
+        d.setCornerRadius(dp(14));
+        d.setStroke(dp(1), Color.parseColor(open ? "#3A4A5E" : "#28333F"));
+        return d;
+    }
+
+    /** Listesi hazır ülkeler üstte (Türkiye ilk), sonra indirilebilenler, en sonda "yakında". */
+    private void rebuildOrder() {
+        counts.clear();
+        final List<String> ready = new ArrayList<String>();
+        final List<String> open = new ArrayList<String>();
+        final List<String> soon = new ArrayList<String>();
+        for (String[] row : Countries.LIST) {
+            String code = row[0];
+            int cnt = CountryRepo.isReady(this, code) ? CountryRepo.count(this, code) : 0;
+            counts.put(code, cnt);
+            if ("tr".equals(code) || cnt > 0) ready.add(code);
+            else if (Prefs.isCountryMiss(this, code)) soon.add(code);
+            else open.add(code);
+        }
+        Comparator<String> byName = new Comparator<String>() {
+            @Override public int compare(String a, String b) {
+                return Countries.name(a, false).compareToIgnoreCase(Countries.name(b, false));
+            }
+        };
+        Collections.sort(ready, new Comparator<String>() {
+            @Override public int compare(String a, String b) {
+                if ("tr".equals(a)) return -1;
+                if ("tr".equals(b)) return 1;
+                int ca = countOf(a), cb = countOf(b);
+                if (ca != cb) return cb - ca;
+                return Countries.name(a, false).compareToIgnoreCase(Countries.name(b, false));
+            }
+        });
+        Collections.sort(open, byName);
+        Collections.sort(soon, byName);
+        order.clear();
+        order.addAll(ready);
+        order.addAll(open);
+        order.addAll(soon);
+    }
+
+    private int countOf(String code) {
+        Integer v = counts.get(code);
+        return v == null ? 0 : v;
     }
 
     private void pick(final String code, final boolean force) {
         if (!force && !CountryRepo.isReady(this, code) && Prefs.isCountryMiss(this, code)) {
-            Toast.makeText(this, "Bu ülke için liste henüz yok (yakında).", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, Lang.t(this, "no_list_toast"), Toast.LENGTH_SHORT).show();
             return;
         }
         if (!force && CountryRepo.isReady(this, code)) {
@@ -188,21 +292,26 @@ public class CountryActivity extends Activity {
         dlg.show();
         new Thread(new Runnable() {
             @Override public void run() {
-                final boolean ok = CountryRepo.download(CountryActivity.this, code);
+                final int st = CountryRepo.downloadStatus(CountryActivity.this, code);
                 runOnUiThread(new Runnable() {
                     @Override public void run() {
                         if (dlg.isShowing()) dlg.dismiss();
-                        if (!ok) {
-                            // M-83: liste sunucuda yok → "yakında" olarak işaretle, kullanıcıya net söyle.
-                            Prefs.markCountryMiss(CountryActivity.this, code);
-                            if (list != null && list.getAdapter() instanceof android.widget.BaseAdapter) {
-                                ((android.widget.BaseAdapter) list.getAdapter()).notifyDataSetChanged();
+                        if (st != CountryRepo.DL_OK) {
+                            // 404 → "yakında" işaretle. Ağ hatası → işaretleme, tekrar denenebilsin.
+                            if (st == CountryRepo.DL_GONE) {
+                                Prefs.markCountryMiss(CountryActivity.this, code);
                             }
+                            rebuildOrder();
+                            if (adapter != null) adapter.notifyDataSetChanged();
                             Toast.makeText(CountryActivity.this,
-                                    "Bu ülke için kanal listesi henüz yok (yakında ekleniyor).",
+                                    st == CountryRepo.DL_GONE
+                                            ? Lang.t(CountryActivity.this, "no_list_toast")
+                                            : Lang.t(CountryActivity.this, "download_failed"),
                                     Toast.LENGTH_LONG).show();
                             return;
                         }
+                        // M-85: indirilen ülkenin "çalışan kanallar önce" sırası hemen kurulsun
+                        CountryRepo.fetchGood(CountryActivity.this, code);
                         Prefs.setCountry(CountryActivity.this, code);
                         ChannelRepo.reload(CountryActivity.this);
                         finish();
@@ -216,6 +325,7 @@ public class CountryActivity extends Activity {
     protected void onResume() {
         super.onResume();
         selected = Prefs.country(this);
+        rebuildOrder();
         if (adapter != null) adapter.notifyDataSetChanged();
     }
 

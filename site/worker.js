@@ -53,13 +53,13 @@ export default {
 
 // ---------------------------------------------------------------- indirme sayfasi
 const APK_URL =
-  "https://github.com/gecekargosu/canli-tv-android/releases/download/v9.49/CanliTV-9.63.apk";
+  "https://github.com/gecekargosu/canli-tv-android/releases/download/v9.64/CanliTV-9.64.apk";
 
 function downloadPage() {
   return html(`<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <body style="font-family:system-ui;background:#11151c;color:#f5f7fa;padding:26px;max-width:520px;margin:0 auto">
 <h1 style="color:#ff7a18;margin:0 0 4px">UMAY Multi TV</h1>
-<p style="color:#9aa4b2;margin:0 0 20px">305 canli TV kanali + 50 radyo</p>
+<p style="color:#9aa4b2;margin:0 0 20px">3.400+ canli TV kanali (55 ulke) + radyo</p>
 <a href="${APK_URL}" style="display:block;text-align:center;background:#ff7a18;color:#111;padding:18px;border-radius:16px;text-decoration:none;font-weight:bold;font-size:18px">⬇ APK indir (Android 8+)</a>
 <h2 style="font-size:16px;margin:26px 0 8px">Nasil kurulur?</h2>
 <ol style="color:#c7d0dc;line-height:1.6;padding-left:20px;font-size:14px">
