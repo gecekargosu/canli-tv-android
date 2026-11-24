@@ -53,7 +53,7 @@ export default {
 
 // ---------------------------------------------------------------- indirme sayfasi
 const APK_URL =
-  "https://github.com/gecekargosu/canli-tv-android/releases/download/v9.48/CanliTV-9.48.apk";
+  "https://github.com/gecekargosu/canli-tv-android/releases/download/v9.49/CanliTV-9.49.apk";
 
 function downloadPage() {
   return html(`<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">

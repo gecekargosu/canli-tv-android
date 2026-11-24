@@ -23,8 +23,8 @@ android {
         applicationId 'com.cengiz.canlitv'
         minSdk 26
         targetSdk 36
-        versionCode 57
-        versionName '9.48'
+        versionCode 58
+        versionName '9.49'
     }
 
     signingConfigs {

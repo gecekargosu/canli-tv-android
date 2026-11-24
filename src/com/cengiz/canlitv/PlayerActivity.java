@@ -461,6 +461,23 @@ public class PlayerActivity extends android.app.Activity {
                     + sessionBytes.get()) + " bugün");
             if (sessionBytes.get() > 2097152L) flushUsage();
             checkLimit();
+            if (AdManager.isShowingFullScreen()) {
+                if (!adPaused) {
+                    adPaused = true;
+                    try { player.pause(); } catch (Throwable ignored) { }
+                    ui.removeCallbacks(watchdog);
+                }
+            } else if (adPaused) {
+                // Reklam kapandı: kaldığı yerden devam etmek yerine canlıya yeniden bağlan.
+                adPaused = false;
+                sameRetries = 0;
+                stallCount = 0;
+                showNotice("✅ Reklam kapandı · yayına dönülüyor");
+                ui.postDelayed(new Runnable() {
+                    @Override public void run() { hideNotice(); }
+                }, 3000);
+                play();
+            }
             checkStall();
             AdManager.maybeTimerAd(PlayerActivity.this);
             ui.postDelayed(this, 1000);
@@ -495,6 +512,8 @@ public class PlayerActivity extends android.app.Activity {
 
     /** Aynı yayına kaç kez yeniden bağlanıldı (zayıf internet). */
     private int sameRetries = 0;
+    // Reklam açıkken yayın duraklatılır; kapanınca canlı kenara yeniden bağlanılır.
+    private boolean adPaused = false;
 
     /** ExoPlayer hatası: aynı adres → yedek kaynak → sonraki kanal. */
     private void onPError() {
@@ -543,6 +562,8 @@ public class PlayerActivity extends android.app.Activity {
 
     private void checkStall() {
         try {
+            // Reklam açıkken yayın duraklatıldığı için donma saymayalım.
+            if (AdManager.isShowingFullScreen() || adPaused) return;
             // M-23: eskiden "isPlaying() false" ise hiç bakmıyordu; tamponlama sırasında
             // tam da donma anını kaçırıyordu. Artık BUFFERING de izleniyor.
             int state = player.getPlaybackState();

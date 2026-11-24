@@ -63,6 +63,9 @@ public final class AdManager {
     private static int opens = 0;
     private static boolean showingAd = false;   // ayni anda iki tam ekran reklam acilmasin
 
+    /** Tam ekran reklam (geçiş/zamanlayıcı) açık mı? Oynatıcı bu sırada beklemede kalır. */
+    public static boolean isShowingFullScreen() { return showingAd; }
+
     private AdManager() { }
 
     /**

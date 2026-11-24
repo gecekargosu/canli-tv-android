@@ -308,6 +308,19 @@ M-11 mağaza görselleri, M-57/58 mağaza metinleri.
 
 **Yayın:** GitHub `v9.48`, site `/indir` 9.48 (+ `/kanallar.json` yayında), `releases/v9.48/`, zip 9.48.
 
+### Oturum 24 Kasım 2026 (altıncı yarı) — TV reklam kesintisi, doğrulama listesi (v9.49)
+
+**Bu oturumda biten: 1 madde**
+
+- **M-74 (✅, cihaz doğrulaması bekliyor):** TV'de tam ekran reklam açıkken yayın duraklatılıyor,
+  donma/zaman aşımı sayaçları duruyor; reklam kapanınca kaldığı yerden değil **canlıya yeniden
+  bağlanıyor**. Kök neden: reklam sırasında oynatıcı arka planda çalışıp tamponu geride bırakıyor,
+  15 sn sayacı da "açılmadı" diyebiliyordu.
+- **Doğrulama listesi:** `docs/DOGRULANACAKLAR.md` — 12 cihaz testi, 8 hesap/Play işi, 5 yarım kod işi.
+
+**Durum sayısı (24 Kasım 2026 sonu):** toplam **74 madde** · **14 ✅ bitti** · **7 👤 kullanıcı işi** ·
+**53 açık**.
+
 ---
 
 ## EK MADDELER (24 Kasım 2026, kullanıcı geri bildirimi)
@@ -318,3 +331,5 @@ M-11 mağaza görselleri, M-57/58 mağaza metinleri.
 | M-70 | **Radyoda reklam kesintisi:** radyo seçiminde geçiş reklamı kaldırıldı; başka ekranda reklam açılırsa radyo duraklar, reklam kapanınca kendiliğinden devam eder. | ✅ v9.43 |
 | M-71 | **Radyo geçiş reklamı geliri:** M-70 ile kaybedilen radyo geçiş reklamı yerine radyo listesinde banner + 40 dk sonraki ödüllü teklif korunuyor; ileride radyo içi sesli reklam (opsiyonel) değerlendirilecek. | 🔧 planlı |
 | M-72 | **Tam media3 radyo:** MediaPlayer yerine ExoPlayer + MediaSession (ICY/302, Bluetooth/kilit ekranı tuşları). | 🔧 (M-20'nin devamı) |
+| M-73 | **Radyoyu her yerden kapat:** radyo arkada çalarken ana ekranda "🎧 X çalıyor · ⏹ Kapat" şeridi. | ✅ v9.48 (cihazda doğrulandı) |
+| M-74 | **Reklam sırasında TV duraklıyor:** tam ekran reklam açıkken yayın duraklatılır, reklam kapanınca canlıya yeniden bağlanılır; reklam sırasında donma sayılmaz. | ✅ v9.49 (cihaz doğrulaması bekliyor — D-05) |
