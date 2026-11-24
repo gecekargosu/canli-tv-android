@@ -93,6 +93,25 @@ public class Quality {
         cb.onUrl(url);                                      // master playlist
     }
 
+    /**
+     * Çoklu ekran (MediaPlayer) için: MediaPlayer'da track seçimi olmadığı için master
+     * playlist verilirse ABR en yüksek kaliteyi (1080p) çekebiliyor ve veri hızla gidiyor.
+     * Bu yüzden burada tercih edilen **varyant** URL'i seçilir.
+     */
+    public static void resolveForPlayer(final Context ctx, final String url,
+                                        final UrlCallback cb) {
+        if (cb == null) return;
+        String custom = Prefs.quality(ctx, url);
+        if (custom != null) { cb.onUrl(custom); return; }
+        final int pref = Prefs.economy(ctx) ? -1 : Prefs.maxHeight(ctx);
+        if (pref == 0) { cb.onUrl(url); return; }
+        load(url, new Callback() {
+            @Override public void onResult(List<Variant> variants) {
+                cb.onUrl(variants.isEmpty() ? url : pick(variants, pref));
+            }
+        });
+    }
+
     /** Kalite tercihini oynatıcıya uygula (varyant URL'i yerine track sınırı). */
     public static void applyPref(android.content.Context ctx,
                                  androidx.media3.exoplayer.ExoPlayer player) {

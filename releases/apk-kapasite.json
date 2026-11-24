@@ -42,5 +42,27 @@
   "unpackedBytes": 17035108,
   "dexFiles": 2,
   "classes": 17508
+ },
+ {
+  "versionName": "9.60",
+  "versionCode": "69",
+  "apkBytes": 7114009,
+  "sha256": "d4da4906fc7caa0e683701d8f212b07ececea976ef15519d4ad4d7cda7daf945",
+  "signSha256": "f3996c67ef0e0e0420f442fe3fcf6303a17caa88dcba8a2b19a10cd95c92b8d5",
+  "zipEntries": 400,
+  "unpackedBytes": 17035990,
+  "dexFiles": 2,
+  "classes": 17509
+ },
+ {
+  "versionName": "9.61",
+  "versionCode": "70",
+  "apkBytes": 7114193,
+  "sha256": "9624c4e173edbc341109dca84b897d36f7d7b6190ff3006af287932f541fa8f9",
+  "signSha256": "f3996c67ef0e0e0420f442fe3fcf6303a17caa88dcba8a2b19a10cd95c92b8d5",
+  "zipEntries": 400,
+  "unpackedBytes": 17036356,
+  "dexFiles": 2,
+  "classes": 17509
  }
 ]

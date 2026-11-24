@@ -126,3 +126,15 @@ dokunma + `uiautomator dump` + `logcat` + ekran görüntüsü. "Kanıt" sütunu 
 | D-20 | Radyo aramasında yabancı sonuç | **✅** “ntv” → yalnız NTV Radyo / ntv Live; Kentville yok (`_build/v3.jpg`). |
 | D-21 | Ağ geri gelince yayın donuk kalıyordu | **✅ düzeltildi (M-80)** — cihazda doğrulandı. |
 | D-05 | Reklam sonrası canlıya dönüş | **⏳ açık** — test süresinde tam ekran reklam çıkmadı. |
+
+### 11. yarı (v9.61) — kalite, sayaç, gerçek ağ testi
+
+| # | Konu | Sonuç / kanıt |
+|---|------|----------------|
+| D-22 | Tüm kanallar en düşük (360p) açılıyor mu | **✅ kod + cihaz** — varsayılan `maxHeight=360`; oynatıcıda “360p” rozeti; çoklu ekran 360p varyantı (3 pencere ≈650 kbps/kanal). |
+| D-23 | Çoklu ekranda veri sayacı | **✅** 643,5 → 661,0 MB / 72 sn (`_build/r1.jpg`, `_build/r2.jpg`). |
+| D-24 | Mobil veri kapalıyken ağ kesintisi | **✅** 30 sn “(1/3)”, 60 sn “yayın açılmadı”, ağ dönünce kendiliğinden açıldı (`_build/n3/n4/n5.jpg`). |
+| D-25 | “Ne var, ne yok?” güncel mi | **✅** 25 satır, cihazda görüldü (`_build/nv1.jpg`). |
+| D-05 | Reklam sonrası canlıya dönüş | **⏳** reklam anı yakalanacak |
+| D-08 | Ülke “yakında” etiketi | **⏳** |
+| D-09 | Hata bildir → e-posta | **⏳** |

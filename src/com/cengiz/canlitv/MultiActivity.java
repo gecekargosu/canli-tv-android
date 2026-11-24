@@ -228,11 +228,34 @@ public class MultiActivity extends android.app.Activity {
      * - oynarken konumu 12 sn ilerlemeyen (donan) yayın → yeniden bağlan
      * Böylece ATV gibi boş kalan pencere ve TV8 gibi takılan yayın kendini toparlar.
      */
+    // M-81: çoklu ekran MediaPlayer ile oynuyor; ExoPlayer'ın bayt sayacı burada devrede
+    // değildi ve günlük veri sayacı çoklu ekranda HİÇ artmıyordu.
+    private long lastRx = -1;
+    private long pendingBytes = 0;
+
+    /** Çoklu ekranda indirilen baytları günlük sayaca yaz (TrafficStats farkı). */
+    private void countData() {
+        try {
+            long rx = android.net.TrafficStats.getUidRxBytes(android.os.Process.myUid());
+            if (rx < 0) return;
+            if (lastRx < 0) { lastRx = rx; return; }
+            if (rx > lastRx) {
+                pendingBytes += (rx - lastRx);
+                lastRx = rx;
+            }
+            if (pendingBytes >= 100000L) {
+                Prefs.addUsage(this, "multi", pendingBytes, 0);
+                pendingBytes = 0;
+            }
+        } catch (Throwable ignored) { }
+    }
+
     private final Runnable watchdog = new Runnable() {
         @Override public void run() {
             if (foreground) {
                 long now = System.currentTimeMillis();
                 for (Slot s : slots) if (s != null) s.check(now);
+                countData();
             }
             ui.postDelayed(this, 3000);
         }
@@ -483,7 +506,7 @@ public class MultiActivity extends android.app.Activity {
             if (!surfaceReady) return;
 
             if (attempt == 0) {
-                Quality.resolve(MultiActivity.this, c.url, new Quality.UrlCallback() {
+                Quality.resolveForPlayer(MultiActivity.this, c.url, new Quality.UrlCallback() {
                     @Override public void onUrl(final String url) {
                         runOnUiThread(new Runnable() {
                             @Override public void run() { open(url, my); }
@@ -502,7 +525,7 @@ public class MultiActivity extends android.app.Activity {
                 // Aynı kaynağı taze playlist ile dene (CDN oturumu/token yenilenir).
                 label.setText("yeniden bağlanıyor…");
                 label.setVisibility(View.VISIBLE);
-                Quality.resolve(MultiActivity.this, c.url, new Quality.UrlCallback() {
+                Quality.resolveForPlayer(MultiActivity.this, c.url, new Quality.UrlCallback() {
                     @Override public void onUrl(final String url) {
                         runOnUiThread(new Runnable() {
                             @Override public void run() { open(url, my); }
@@ -815,6 +838,12 @@ public class MultiActivity extends android.app.Activity {
 
     @Override
     protected void onDestroy() {
+        try {
+            if (pendingBytes > 0) {
+                Prefs.addUsage(this, "multi", pendingBytes, 0);
+                pendingBytes = 0;
+            }
+        } catch (Throwable ignored) { }
         ui.removeCallbacksAndMessages(null);
         if (recorder.isRunning()) recorder.stop();
         try {
