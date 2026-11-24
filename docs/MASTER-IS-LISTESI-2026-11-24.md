@@ -294,6 +294,20 @@ mağaza görselleri), M-20/M-72 tam media3, M-25 radyo sayacı, M-15 sunucu filt
 **Sonraki oturum (öncelik):** M-72/M-20 tam media3 radyo, M-21 çoklu ekran media3, M-13 kanal envanteri,
 M-11 mağaza görselleri, M-57/58 mağaza metinleri.
 
+### Oturum 24 Kasım 2026 (beşinci yarı) — radyo kapatma şeridi, kanal envanteri (v9.48)
+
+**Bu oturumda biten: 2 madde**
+
+- **M-73 (yeni, ✅):** Radyo arkada çalarken **ana ekranda "🎧 X çalıyor · ⏹ Kapat" şeridi**. Kapat
+  dokunuşu servisi durduruyor; radyo çalar ekranındaki Durdur/Çık ve bildirimdeki Durdur zaten vardı.
+  Cihazda test edildi: şerit kayboluyor, AudioService çalışmıyor (dumpsys 0).
+- **M-13 (✅ ilk adım):** `tools/make-inventory.py` → `site/public/kanallar.json` (177 kayıt:
+  145 TV + 32 radyo; ad, tür, adres, kaynak alan adı, **hak durumu**, son kontrol tarihi, durum).
+  Çıplak IP / raw.github / ücretli marka otomatik "review". **UYARI (yarım):** uygulama henüz bu
+  dosyadan beslenmiyor; M-15 sunucu filtresi ve uygulama entegrasyonu M-13'ün devamı.
+
+**Yayın:** GitHub `v9.48`, site `/indir` 9.48 (+ `/kanallar.json` yayında), `releases/v9.48/`, zip 9.48.
+
 ---
 
 ## EK MADDELER (24 Kasım 2026, kullanıcı geri bildirimi)

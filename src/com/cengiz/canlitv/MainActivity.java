@@ -44,6 +44,9 @@ public class MainActivity extends android.app.Activity {
     private String query = "";
     private LinearLayout chipsRow;
     private TextView dataBar;
+    // M-73: radyo çalarken ana ekranda kapatma şeridi
+    private LinearLayout radioNow;
+    private TextView radioNowText;
     private TextView emptyView;
     private ListView listView;
     private boolean onlyHidden = false;
@@ -169,6 +172,48 @@ public class MainActivity extends android.app.Activity {
         head.addView(dataBar);
 
         root.addView(head);
+
+        // --- radyo çalarken her zaman görünen kapatma şeridi ---
+        radioNow = new LinearLayout(this);
+        radioNow.setOrientation(LinearLayout.HORIZONTAL);
+        radioNow.setGravity(Gravity.CENTER_VERTICAL);
+        radioNow.setPadding(dp(12), dp(6), dp(8), dp(6));
+        radioNow.setBackground(rounded(SOFT, 12));
+        LinearLayout.LayoutParams rnlp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        rnlp.setMargins(dp(14), 0, dp(14), dp(6));
+        radioNow.setLayoutParams(rnlp);
+        radioNow.setVisibility(View.GONE);
+
+        radioNowText = new TextView(this);
+        radioNowText.setTextSize(12);
+        radioNowText.setTextColor(TEXT);
+        radioNow.addView(radioNowText, new LinearLayout.LayoutParams(
+                0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+
+        TextView radioStop = new TextView(this);
+        radioStop.setText("⏹ Kapat");
+        radioStop.setTextSize(12);
+        radioStop.setTextColor(Color.parseColor("#111111"));
+        radioStop.setTypeface(radioStop.getTypeface(), android.graphics.Typeface.BOLD);
+        radioStop.setPadding(dp(12), dp(5), dp(12), dp(5));
+        radioStop.setBackground(rounded(ACCENT, 10));
+        radioStop.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) {
+                AudioService.stop(MainActivity.this);
+                radioNow.setVisibility(View.GONE);
+                Toast.makeText(MainActivity.this, "Radyo kapatıldı", Toast.LENGTH_SHORT).show();
+            }
+        });
+        radioNow.addView(radioStop);
+        radioNow.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) {
+                AudioService.stop(MainActivity.this);
+                radioNow.setVisibility(View.GONE);
+                Toast.makeText(MainActivity.this, "Radyo kapatıldı", Toast.LENGTH_SHORT).show();
+            }
+        });
+        root.addView(radioNow);
 
         // --- arama + kanal no ---
         LinearLayout searchRow = new LinearLayout(this);
@@ -911,6 +956,21 @@ public class MainActivity extends android.app.Activity {
         s += Prefs.audioOnlyMobile(this) ? "  · 🎧 mobilde sadece ses" : "";
         dataBar.setText(s);
         dataBar.setTextColor(lim > 0 && used > lim * 1048576L ? Color.parseColor("#FF5252") : MUTED);
+        updateRadioBar();
+    }
+
+    /** Radyo arkada çalıyorsa "🎧 X çalıyor · Kapat" şeridi. */
+    private void updateRadioBar() {
+        try {
+            if (radioNow == null) return;
+            String nm = AudioService.nowPlayingName();
+            if (nm == null) {
+                radioNow.setVisibility(View.GONE);
+                return;
+            }
+            radioNow.setVisibility(View.VISIBLE);
+            radioNowText.setText("🎧 " + nm + " çalıyor");
+        } catch (Throwable ignored) { }
     }
 
     @Override

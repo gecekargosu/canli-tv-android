@@ -92,6 +92,15 @@ public class AudioService extends Service {
     private static volatile String stateUrl = "";
 
     public static int stateStatic() { return state; }
+
+    /** Ekranlarda "çalıyor" şeridi için istasyon adı (çalmıyorsa null). */
+    public static String nowPlayingName() {
+        try {
+            if (INSTANCE == null || state == S_ERROR) return null;
+            if (state == S_PAUSED) return null;
+            return INSTANCE.name;
+        } catch (Throwable t) { return null; }
+    }
     public static String stateUrlStatic() { return stateUrl; }
 
     /** Yayin gercekten caliyor mu (tamponlama bitmis, hata yok). */
