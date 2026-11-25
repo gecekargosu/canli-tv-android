@@ -58,15 +58,15 @@ Bunlar kapanınca Play'e kapalı test için yükleme yapılabilir. (Kapalı test
 |----|----|--------|-------|
 | MP-10 | ExoPlayer'ı çoklu ekrana taşı (MediaPlayer → media3) | PDF-09, ANT-01 | 🔧 |
 | MP-11 | Radyo/servis tarafını media3'e taşı (MediaSessionService) | PDF-09 | 🔧 |
-| MP-12 | Radyo kapanınca kayıt oturumunu kapat (dosya birikmesi) | ANT-02 | 🔧 |
-| MP-13 | Çoklu ekranda geri tuşu ana listeye dönsün | ANT-03 | 🔧 |
-| MP-14 | Kalite seçimi ↔ veri tasarrufu tutarlılığı (kalite seçilince tasarruf kapanır, "otomatik"e dönülebilir) | ANT-05 | 🔧 |
-| MP-15 | 720p/1080p varyantı olmayan kanalda otomatik düşüş + tek satır açıklama | ANT-04 | 🔧 |
+| MP-12 | Radyo kapanınca kayıt oturumunu kapat (dosya birikmesi) | ANT-02 | ✅ 9.74 |
+| MP-13 | Çoklu ekranda geri tuşu ana listeye dönsün | ANT-03 | ✅ 9.74 |
+| MP-14 | Kalite seçimi ↔ veri tasarrufu tutarlılığı (kalite seçilince tasarruf kapanır, "otomatik"e dönülebilir) | ANT-05 | ✅ 9.74 |
+| MP-15 | 720p/1080p varyantı olmayan kanalda otomatik düşüş + tek satır açıklama | ANT-04 | ✅ 9.74 |
 | MP-16 | Sabit metinleri `Lang`'e taşı, EN+TR tamamla (RU/AR sonra) | PDF-11, ANT-10 | 🔧 |
 | MP-17 | Ölü hesap metinleri silindi (4 anahtar) | PDF-08 | ✅ 9.71 |
 | MP-18 | `setMaxAdContentRating` G → PG | PDF-16 | ✅ 9.71 |
 | MP-19 | R8/minify + shrinkResources aç, sürüm doğrula | PDF-12 | 🔧 |
-| MP-20 | Üst bar ikonlarını 48dp dokunma alanına çıkar | ANT-07 | 🔧 |
+| MP-20 | Üst bar ikonlarını 48dp dokunma alanına çıkar | ANT-07 | ✅ 9.74 |
 | MP-21 | Liste düzenleme: "kaydet" ve geri ekleme donmasını düzelt | ANT-06 | 🧪 önce üret |
 | MP-22 | Gizlilik sayfası + `/app-ads.txt` + depoyu private yap | PDF-14 | 👤 |
 
@@ -78,8 +78,8 @@ Bunlar kapanınca Play'e kapalı test için yükleme yapılabilir. (Kapalı test
 | MP-24 | Reklam kurallarını `good/config.json`'dan uzaktan oku | PDF-19 | 🔧 |
 | MP-25 | GitHub Actions ile günlük kanal sağlık taraması | PDF-20 | 🔧 |
 | MP-26 | Yurtdışı IP testi + EN/DE mağaza metni | PDF-21 | 👤 |
-| MP-27 | Grup adları düzgün ("Muzik" → "Müzik") | PDF-17 | 🔧 |
-| MP-28 | Ayarlar "kullanım verisi" satırı taşması | ANT-08 | 🔧 |
+| MP-27 | Grup adları düzgün ("Muzik" → "Müzik") | PDF-17 | ✅ 9.74 |
+| MP-28 | Ayarlar "kullanım verisi" satırı taşması | ANT-08 | ✅ 9.74 |
 | MP-29 | ListView → RecyclerView (300+ öğe) | ANT-12 | 🔧 |
 | MP-30 | Keystore şifresini ortam değişkenine taşı | ANT-13 | 🔧 |
 
@@ -141,6 +141,21 @@ Bu 6 adım bitince "Play'e yüklenebilir" noktasına geliyoruz; P1 maddeleri yay
 | MP-44 | README/mağaza/Play veri beyanı metinleri | ✅ 9.73 | `README.md`, `docs/play/PLAY-UYGUNLUK-2026-11-25.md` |
 | MP-08/09 | AAB yükleme, Data Safety, 12 tester | 👤 sende | AAB: `releases/v9.73/UMAY-MULTI-TV-9.73.aab` |
 
-Kalan açık işler değişmedi: MP-10/11 (çoklu ekran + radyo media3), MP-13 (çoklu ekran geri tuşu),
-MP-14/15 (kalite↔tasarruf, varyantsız kanalda düşüş), MP-19 (R8), MP-20 (48dp), MP-23 (yatay tablet),
-MP-24 (uzaktan reklam kuralı), MP-25 (günlük sağlık taraması), MP-28/29/30.
+Kalan açık işler: MP-10/11 (çoklu ekran + radyo media3), MP-19 (R8), MP-23 (yatay tablet),
+MP-24 (uzaktan reklam kuralı), MP-25 (günlük sağlık taraması), MP-29/30.
+ATV yayını kullanıcı isteğiyle **sona bırakıldı**: 9.74'te 720p adres oynatılıyor ama
+kullanıcı "ATV'de sorun var" dedi; ayrı oturumda ele alınacak (bkz. D-70).
+
+---
+
+## 10. 9.74 oturumu (25 Kasım 2026, akşam)
+
+| ID | İş | Durum | Kanıt |
+|----|----|-------|-------|
+| MP-13 | Çoklu ekranda geri tuşu ana listeye | ✅ 9.74 | Cihazda geri → ana başlık/düğmeler geri geldi |
+| MP-14 | Kalite ↔ veri tasarrufu tutarlılığı | ✅ 9.74 | Ayarlar: "Kapalı: seçili kalite kullanılıyor (360p)"; kapatınca 360p |
+| MP-15 | Varyantsız kanalda otomatik düşüş | ✅ 9.74 | 360p tercihle ATV: günlük "varyant yok: tercih 360p, gelen 720p", kanal 720p açıldı |
+| MP-12 | Kayıt oturumu kapanışı | ✅ 9.74 | Çoklu ekran kapat/geri yolunda `recorder.stop()` (PlayerActivity onDestroy zaten vardı) |
+| MP-27 | Grup adları | ✅ 9.74 | Cihazda "Eğlence"; "Eglence" kalmadı |
+| MP-20 | 48dp dokunma alanı | ✅ 9.74 | Üst bar düğmeleri `minHeight/minWidth 48dp` |
+| MP-28 | Ayarlar satır taşması | ✅ 9.74 | Başlık tek satır, açıklama 2 satır, değer 120dp ile kesiliyor |

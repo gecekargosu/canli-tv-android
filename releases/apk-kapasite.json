@@ -196,5 +196,16 @@
   "unpackedBytes": 17062508,
   "dexFiles": 2,
   "classes": 17530
+ },
+ {
+  "versionName": "9.74",
+  "versionCode": "83",
+  "apkBytes": 7130353,
+  "sha256": "52f60c9522265b512290421a8099e597f75a1d4dc0cd29bd0e7f43d02091631e",
+  "signSha256": "f3996c67ef0e0e0420f442fe3fcf6303a17caa88dcba8a2b19a10cd95c92b8d5",
+  "zipEntries": 400,
+  "unpackedBytes": 17064088,
+  "dexFiles": 2,
+  "classes": 17530
  }
 ]

@@ -258,3 +258,17 @@ dokunma + `uiautomator dump` + `logcat` + ekran görüntüsü. "Kanıt" sütunu 
 | D-66 | ATV oynatma | **✅** 720p adresle açıldı (5 dk, 31,6 MB); master adres cihazda hazırlanmadığı için 720p birincil yapıldı. |
 | D-67 | Hata günlüğü penceresi | **✅** Uzun adresler sarılıyor, pencere en yeni olaya kayıyor; "Gönder / Temizle / Kapat" ve "Günlük gönderimi" satırı göründü. |
 | D-68 | 9.73 kapasite denetimi | **✅** `verify-apk --prev v9.72 --expect-version 9.73`: sınıf +10, dosya +0, imza `f3996c67…b8d5`, 9.73 (82). |
+
+### 24. yarı — 9.74 doğrulamaları
+
+| # | Konu | Sonuç / kanıt |
+|---|------|----------------|
+| D-69 | Radyo sesi (kullanıcı bildirimi) | **✅** Kullanıcı radyoyu açıp dinledi, ses geldi. Bu oturumda yeniden dinlenmedi. |
+| D-70 | ATV sorunu | **⏳** Kullanıcı "ATV'de sorun var" dedi ve **sona bırakıldı**. 9.74'te ATV 720p açıldı (günlük: `hazır: ATV (Turkiye)`, 5 dk 31,6 MB); kök neden ayrı oturumda incelenecek. |
+| D-71 | Çoklu ekran geri tuşu | **✅** 3'lü ekran → geri → ana liste; arka plan sesi/kayıt kapatılıyor. |
+| D-72 | Kalite ↔ veri tasarrufu | **✅** 360p seçildi, Ayarlar "Kapalı: seçili kalite kullanılıyor (360p)" yazdı; tasarruf kapatınca 360p'ye dönüyor. |
+| D-73 | Varyantsız kanalda düşüş | **✅** 360p tercihle ATV (yalnız 720p) açıldı; günlükte `varyant yok: tercih 360p, gelen 720p`, ekranda 720p. |
+| D-74 | Grup adları | **✅** Ana ekran filtresinde "Eğlence" göründü; "Eglence" yok. |
+| D-75 | 9.74 kapasite denetimi | **✅** `verify-apk --prev v9.73 --expect-version 9.74`: sınıf +0, dosya +0, 9.74 (83), imza aynı. |
+
+| D-76 | 48dp düğme sonrası başlık düzeni | **✅** İlk denemede başlık "UMAY Mul..." kesildi; düğmeler kendi satırına alındı, başlık ve alt yazı tam görünüyor (`_build/t974_main3.png`). |

@@ -5,9 +5,18 @@ Hepsi GitHub Releases sayfasında:
 
 **https://github.com/gecekargosu/canli-tv-android/releases**
 
-- En son sürüm: `v9.73` — `CanliTV-9.73.apk` (telefon/tablet), `UMAY-MULTI-TV-9.73.aab` (Play).
+- En son sürüm: `v9.74` — `CanliTV-9.74.apk` (telefon/tablet), `UMAY-MULTI-TV-9.74.aab` (Play).
 - İndirme sayfası: https://umay-multi-tv-gq3zer.freebuff.site/indir
 - Sürüm notları: `releases/vX.YY/SURUM-NOTLARI.md`
+
+## v9.74 — kalite/veri tutarlılığı, çoklu ekran geri, kategori adları
+
+- Veri tasarrufu kapanınca 360p'ye döner; Ayarlar gerçek seçimi yazar.
+- Varyantı olmayan kanalda kalite kısıtı kalkar, tek satır bilgi gösterilir.
+- Çoklu ekranda geri tuşu ana listeye döner; açık kayıt durdurulur.
+- "Eglence/Muzik/Cocuk" → "Eğlence/Müzik/Çocuk".
+- Üst bar düğmeleri 48dp; Ayarlar satırları taşmıyor.
+- ATV bu sürümde değişmedi (ayrı iş).
 
 ## v9.73 — reklam güvenilirliği, hata günlüğü, ATV
 

@@ -368,7 +368,9 @@ public class Prefs {
     }
 
     public static void setDataSaver(Context c, boolean v) {
-        setMaxHeight(c, v ? -1 : 0);
+        // MP-14: kapatınca "otomatik" (kanalın en iyisi) seçilip veri harcaması
+        // artıyordu; 360p'ye dön ki tasarruf düğmesi ile kalite aynı şeyi söylesin.
+        setMaxHeight(c, v ? -1 : 360);
     }
 
     // --- liste sirasi (sekme basina: "Tümü", "★ Favoriler", grup adi...) ---

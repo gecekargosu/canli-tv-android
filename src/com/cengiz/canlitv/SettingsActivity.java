@@ -178,9 +178,11 @@ public class SettingsActivity extends Activity {
                         });
                     }
                 });
+        // MP-14: "Kapalı: kanalın en iyi kalitesi" yanlıştı — kalite 360p olabiliyor.
+        // Tasarruf artık doğrudan kalite tercihini gösteriyor.
         row("💾", "Veri tasarrufu", pref < 0
                         ? "Açık: bütün yayınlar en düşük çözünürlükte açılır"
-                        : "Kapalı: kanalın en iyi kalitesi kullanılır",
+                        : "Kapalı: seçili kalite kullanılıyor (" + QualityDialog.label(this) + ")",
                 pref < 0 ? "Açık" : "Kapalı", new View.OnClickListener() {
                     @Override public void onClick(View v) {
                         Prefs.setDataSaver(SettingsActivity.this, !Prefs.dataSaver(SettingsActivity.this));
@@ -1011,11 +1013,15 @@ public class SettingsActivity extends Activity {
         n.setText(title);
         n.setTextColor(TEXT);
         n.setTextSize(13);
+        n.setSingleLine(true);
+        n.setEllipsize(android.text.TextUtils.TruncateAt.END);
         n.setTypeface(n.getTypeface(), android.graphics.Typeface.BOLD);
         TextView m = new TextView(this);
         m.setText(desc);
         m.setTextColor(MUTED);
         m.setTextSize(10);
+        m.setMaxLines(2);
+        m.setEllipsize(android.text.TextUtils.TruncateAt.END);
         m.setPadding(0, dp(2), 0, 0);
         col.addView(n);
         col.addView(m);
@@ -1026,6 +1032,11 @@ public class SettingsActivity extends Activity {
         v.setTextColor(ACCENT);
         v.setTextSize(11);
         v.setGravity(Gravity.END);
+        // MP-28: "Bugünkü kullanım" gibi uzun değerler satırı ekran dışına itiyordu.
+        v.setSingleLine(true);
+        v.setMaxLines(1);
+        v.setEllipsize(android.text.TextUtils.TruncateAt.END);
+        v.setMaxWidth(dp(120));
         row.addView(v);
 
         if (click != null) row.setOnClickListener(click);

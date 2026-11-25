@@ -121,6 +121,16 @@ public class MainActivity extends android.app.Activity {
         topRow.addView(titleCol, new LinearLayout.LayoutParams(0,
                 ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
 
+        // MP-20: 48dp dokunma alanlı düğmeler başlığı sıkıştırıyordu ("UMAY Mul...").
+        // Düğmeler kendi satırında, sağa yaslı; başlık tam genişlikte kalıyor.
+        LinearLayout actionRow = new LinearLayout(this);
+        actionRow.setOrientation(LinearLayout.HORIZONTAL);
+        actionRow.setGravity(Gravity.END);
+        LinearLayout.LayoutParams arlp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        arlp.setMargins(0, dp(6), 0, 0);
+        actionRow.setLayoutParams(arlp);
+
         TextView multi = pill("▦ 3'lü", ACCENT);
         multi.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View v) {
@@ -133,7 +143,7 @@ public class MainActivity extends android.app.Activity {
                 return true;
             }
         });
-        topRow.addView(multi);
+        actionRow.addView(multi);
 
         TextView radio = pill("📻", SOFT);
         radio.setOnClickListener(new View.OnClickListener() {
@@ -145,7 +155,7 @@ public class MainActivity extends android.app.Activity {
                 ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         rlp.setMargins(dp(6), 0, 0, 0);
         radio.setLayoutParams(rlp);
-        topRow.addView(radio);
+        actionRow.addView(radio);
 
         // --- ulke secimi: secilen ulkenin kanallari listeye gelir ---
         TextView countryBtn = pill(Countries.flag(shownCountry), SOFT);
@@ -158,7 +168,7 @@ public class MainActivity extends android.app.Activity {
                 ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         cblp.setMargins(dp(6), 0, 0, 0);
         countryBtn.setLayoutParams(cblp);
-        topRow.addView(countryBtn);
+        actionRow.addView(countryBtn);
 
         TextView settings = pill("⚙", SOFT);
         settings.setOnClickListener(new View.OnClickListener() {
@@ -170,9 +180,10 @@ public class MainActivity extends android.app.Activity {
                 ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         slp.setMargins(dp(6), 0, 0, 0);
         settings.setLayoutParams(slp);
-        topRow.addView(settings);
+        actionRow.addView(settings);
 
         head.addView(topRow);
+        head.addView(actionRow);
 
         dataBar = new TextView(this);
         dataBar.setTextSize(11);
@@ -1023,8 +1034,13 @@ public class MainActivity extends android.app.Activity {
         t.setTextColor(Color.WHITE);
         t.setTextSize(12);
         t.setGravity(Gravity.CENTER);
-        t.setPadding(dp(12), dp(9), dp(12), dp(9));
+        // MP-20: üst bar düğmeleri 34dp yükseklikteydi; erişilebilirlik için 48dp.
+        // Yatay dolgu 12→6: dört düğme büyürken başlığı sıkıştırıp "UMAY Mul..." yapıyordu.
+        t.setPadding(dp(6), dp(8), dp(6), dp(8));
         t.setBackground(rounded(color, 18));
+        t.setGravity(Gravity.CENTER);
+        t.setMinHeight(dp(48));
+        t.setMinWidth(dp(48));
         return t;
     }
 

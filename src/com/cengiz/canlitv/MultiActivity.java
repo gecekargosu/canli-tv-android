@@ -809,6 +809,15 @@ public class MultiActivity extends android.app.Activity {
         dlg.show();
     }
 
+    /**
+     * MP-13: geri tuşu rastgele bir ekrana değil, her zaman ana kanal listesine dönsün.
+     * (Önceden varsayılan davranış uygulamadan çıkabiliyordu.)
+     */
+    @Override
+    public void onBackPressed() {
+        goHome();
+    }
+
     private void goHome() {
         stopAllAndClose();
         Intent i = new Intent(this, MainActivity.class);
@@ -819,6 +828,9 @@ public class MultiActivity extends android.app.Activity {
     /** Butun pencereleri ve arkadaki sesi kapatir, kanal listesine doner. */
     private void stopAllAndClose() {
         for (Slot s : slots) if (s != null) s.release();
+        // MP-12: çoklu ekran kapanınca açık kayıt oturumu arka planda dosya yazmaya
+        // devam ediyordu; buradan da kapat.
+        if (recorder.isRunning()) recorder.stop();
         AudioService.stop(this);
         finish();
     }

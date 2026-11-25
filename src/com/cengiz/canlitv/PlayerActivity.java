@@ -53,6 +53,8 @@ public class PlayerActivity extends android.app.Activity {
     private TextView nameView, errorView, favButton, playButton, counter, recButton, clockBar;
     private LinearLayout top, bottom;
     private HlsRecorder recorder = new HlsRecorder();
+    /** MP-15: bu kanalda tercih edilen çözünürlük yok uyarısı bir kez gösterilsin. */
+    private int warnedNoVariant = -1;
     private final Handler ui = new Handler();
     private boolean barsVisible = true;
     private long sleepUntil = 0;
@@ -451,7 +453,10 @@ public class PlayerActivity extends android.app.Activity {
             @Override public void onVideoSizeChanged(androidx.media3.common.VideoSize size) {
                 // Etiket yalnız tercihi gösteriyordu ("360p"); tek varyantlı kanalda yayın
                 // 1080p geliyor ve etiket yalan söylüyordu. Gerçek çözünürlüğü yaz.
-                if (size != null && size.height > 0) showRealQuality(size.height);
+                if (size != null && size.height > 0) {
+                    showRealQuality(size.height);
+                    noteVariantGap(size.height);
+                }
             }
         });
 
@@ -829,6 +834,26 @@ public class PlayerActivity extends android.app.Activity {
         qualityBtn.setText(height + "p");
     }
 
+    /**
+     * MP-15: kullanıcı 360p seçti ama kanalda 360p varyantı yoksa oynatıcı hiç görüntü
+     * seçemiyor / "yayın bulunamadı" görünüyordu. Gerçek yükseklik tercihin üstündeyse
+     * kalite kısıtını kaldır, tek satır açıkla ve bir daha tekrarlama.
+     */
+    private void noteVariantGap(int h) {
+        int pref = Prefs.maxHeight(this);
+        if (pref <= 0 || h <= pref || index == warnedNoVariant || isFinishing()) return;
+        warnedNoVariant = index;
+        try {
+            androidx.media3.common.TrackSelectionParameters.Builder b =
+                    player.getTrackSelectionParameters().buildUpon();
+            b.clearOverridesOfType(androidx.media3.common.C.TRACK_TYPE_VIDEO);
+            player.setTrackSelectionParameters(b.build());
+        } catch (Throwable ignored) { }
+        Toast.makeText(this, "Bu kanalda " + pref + "p yok · en düşük " + h
+                + "p oynatılıyor (veri artabilir)", Toast.LENGTH_LONG).show();
+        CrashLog.event(this, "tv", "varyant yok: tercih " + pref + "p, gelen " + h + "p");
+    }
+
     private void chooseQuality() {
         QualityDialog.show(this, new Runnable() {
             @Override public void run() {
@@ -1123,6 +1148,7 @@ public class PlayerActivity extends android.app.Activity {
         finishUsage();
         ui.removeCallbacks(watchdog);
         index = (index + d + list.size()) % list.size();
+        warnedNoVariant = -1;
         // v9.25: her kanal değişiminde geçiş reklamı (varsa) gösterilir.
         final Channel next = list.get(index);
         AdManager.maybeInterstitial(this, next.url, new Runnable() {

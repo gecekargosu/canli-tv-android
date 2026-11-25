@@ -127,6 +127,23 @@ public class CountryRepo {
         return out;
     }
 
+    /**
+     * MP-27: kaynak listelerde grup adları Türkçe karakter olmadan geliyor
+     * ("Muzik", "Eglence", "Cocuk"); listede yanlış görünüyordu.
+     */
+    static String niceGroup(String g) {
+        String k = g.trim().toLowerCase(java.util.Locale.ROOT);
+        if (k.equals("muzik") || k.equals("music")) return "Müzik";
+        if (k.equals("eglence") || k.equals("entertainment")) return "Eğlence";
+        if (k.equals("cocuk") || k.equals("kids")) return "Çocuk";
+        if (k.equals("haber") || k.equals("news")) return "Haber";
+        if (k.equals("spor") || k.equals("sports")) return "Spor";
+        if (k.equals("sinema") || k.equals("movies")) return "Sinema";
+        if (k.equals("belgesel") || k.equals("documentary")) return "Belgesel";
+        if (k.equals("dini") || k.equals("religious")) return "Dini";
+        return g.trim();
+    }
+
     /** m3u icerigini kanal listesine cevirir; numaralar sirayla verilir. */
     static List<Channel> parse(BufferedReader r) throws IOException {
         List<Channel> out = new ArrayList<Channel>();
@@ -140,6 +157,7 @@ public class CountryRepo {
                 name = comma >= 0 ? line.substring(comma + 1).trim() : "Kanal";
                 group = attr(line, "group-title", "Genel");
                 if (group.trim().length() == 0) group = "Genel";
+                group = niceGroup(group);
                 country = attr(line, "tvg-country", "");
                 logo = attr(line, "tvg-logo", "");
             } else if (!line.startsWith("#")) {
