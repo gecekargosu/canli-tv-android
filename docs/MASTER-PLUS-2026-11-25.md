@@ -203,3 +203,28 @@ kullanıcı "ATV'de sorun var" dedi; ayrı oturumda ele alınacak (bkz. D-70).
 2. **MP-11** radyo/servisi media3'e taşı (AudioService hâlâ MediaPlayer).
 3. **MP-19** R8/minify, **MP-23** yatay tablet, **MP-29** RecyclerView.
 4. **MP-08/09** (sende): AAB → kapalı test → 12 tester / 14 gün.
+
+---
+
+## 12. 9.79 oturumu (25 Kasım 2026, akşam) — üst bar 3 satıra indi
+
+Kullanıcı geri bildirimi: kutular büyümüştü (istenen ikonların büyümesiydi), üstte yeniden
+3+ satır oluşmuştu, logonun altındaki "no ile aç, 3'lü izle, kayıt" yazısı alakasız duruyordu,
+Git kutusu büyüktü ve logo parlaması görünmüyordu.
+
+| ID | İş | Durum | Kanıt |
+|----|----|-------|-------|
+| MP-61 | Düğme kutuları 56 → **44dp**, içindeki ikonlar 15 → **21sp** (kutu küçük, ikon büyük) | ✅ 9.79 | Ekran: 📻 / ⏺ / ⚙ / bayrak belirgin büyük |
+| MP-62 | Logonun altındaki alt başlık **kaldırıldı**; başlık tek satır, logo yüksekliğinde (46dp) | ✅ 9.79 | "Umay Multi: Canlı TV & Radyo" tek satır |
+| MP-63 | 2. ve 3. satır **aynı yükseklik** (44dp), içerik iki kenara eşit hizalı (12dp) | ✅ 9.79 | Ekran |
+| MP-64 | Arama + No + Git tek satır **44dp**; Git kutusu küçültüldü | ✅ 9.79 | Ekran |
+| MP-65 | "Favoriler" → "★ Favori" (sekme genişliğine sığmıyordu) | ✅ 9.79 | Sekme satırında kırpma yok |
+| MP-66 | Logo parlaması görünür hâle geldi: arkada turuncu nabız (alfa 0,42↔0,05, 1,1 sn) + logo 1↔0,65 | ✅ 9.79 | Ekran (parlama katmanı logonun arkasında) |
+| MP-67 | Üç satır **sabit**, liste altında kayıyor (korunan davranış) | ✅ 9.79 | — |
+
+Not: üst bardaki logo uygulamanın kendi simgesidir (`@mipmap/ic_launcher`), rengi değişmedi.
+Marka adı artık TV + radyo + çoklu izlemeyi tek satırda söylüyor; ikonun yeniden çizilmesi
+(radyo dalgası + 3 pencere) istenirse ayrı iş olarak yapılır.
+
+Sonraki iş: **MP-57** kaynak sağlık taraması + **MP-58** yedek adresler (kullanıcı onayı:
+"bu işler bitince geç, gerekirse sonraki oturumda").

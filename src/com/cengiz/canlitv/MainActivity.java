@@ -15,6 +15,7 @@ import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.BaseAdapter;
 import android.widget.EditText;
+import android.widget.FrameLayout;
 import android.widget.HorizontalScrollView;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -92,52 +93,75 @@ public class MainActivity extends android.app.Activity {
         head.setOrientation(LinearLayout.VERTICAL);
         // 9.76: üst kısım ekranın ~1/3'ünü kaplıyordu. Başlık + düğmeler tek satıra
         // alındı, arama/sekme/satır araçları sıkıştırıldı; liste daha erken başlıyor.
-        head.setPadding(dp(14), dp(10), dp(12), dp(2));
+        head.setPadding(dp(12), dp(8), dp(12), dp(0));
 
+        // 9.79: 1. satır = logo + tek satır başlık. Altındaki "no ile aç, 3'lü izle,
+        // kayıt" yazısı kaldırıldı (alakasız duruyordu, satırı da şişiriyordu).
         LinearLayout topRow = new LinearLayout(this);
         topRow.setOrientation(LinearLayout.HORIZONTAL);
         topRow.setGravity(Gravity.CENTER_VERTICAL);
+        topRow.setLayoutParams(new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, dp(52)));
+
+        // Logo kutusunun arkasında nabız gibi atan turuncu halka: parlama artık belli oluyor.
+        FrameLayout brandBox = new FrameLayout(this);
+        LinearLayout.LayoutParams bbp = new LinearLayout.LayoutParams(dp(44), dp(44));
+        bbp.setMargins(0, 0, dp(8), 0);
+        bbp.gravity = Gravity.CENTER_VERTICAL;
+        brandBox.setLayoutParams(bbp);
+
+        // İkonun arkasında nabız gibi atan turuncu parlama (halka ikonun arkasında
+        // kayboluyordu, dolu yumuşak katman çok daha görünür).
+        View halo = new View(this);
+        halo.setBackground(rounded(ACCENT, 14));
+        halo.setAlpha(0.4f);
+        brandBox.addView(halo, new FrameLayout.LayoutParams(dp(42), dp(42), Gravity.CENTER));
 
         ImageView brand = new ImageView(this);
-        // 9.78: logo + başlık büyütüldü;yükseklik artık sağdaki ikon çerçeveleriyle aynı (56dp).
-        LinearLayout.LayoutParams blp = new LinearLayout.LayoutParams(dp(46), dp(46));
-        blp.setMargins(0, 0, dp(9), 0);
-        blp.gravity = Gravity.CENTER_VERTICAL;
-        brand.setLayoutParams(blp);
+        brand.setLayoutParams(new FrameLayout.LayoutParams(dp(34), dp(34), Gravity.CENTER));
         brand.setScaleType(ImageView.ScaleType.FIT_CENTER);
         try { brand.setImageDrawable(getPackageManager().getApplicationIcon(getPackageName())); }
         catch (Exception ignored) { }
-        // Logonun hafifçe parlayıp sönmesi: dikkat çeker ama göz yormaz.
-        try {
-            android.animation.ObjectAnimator glow = android.animation.ObjectAnimator
-                    .ofFloat(brand, "alpha", 1f, 0.72f);
-            glow.setDuration(1700);
-            glow.setStartDelay(800);
-            glow.setRepeatMode(android.animation.ValueAnimator.REVERSE);
-            glow.setRepeatCount(android.animation.ValueAnimator.INFINITE);
-            glow.start();
-        } catch (Throwable ignored) { }
-        topRow.addView(brand);
+        brandBox.addView(brand);
 
-        LinearLayout titleCol = new LinearLayout(this);
-        titleCol.setOrientation(LinearLayout.VERTICAL);
+        try {
+            android.animation.ObjectAnimator ring = android.animation.ObjectAnimator
+                    .ofFloat(halo, "alpha", 0.42f, 0.05f);
+            ring.setDuration(1100);
+            ring.setRepeatMode(android.animation.ValueAnimator.REVERSE);
+            ring.setRepeatCount(android.animation.ValueAnimator.INFINITE);
+            ring.start();
+            android.animation.ObjectAnimator ringSx = android.animation.ObjectAnimator
+                    .ofFloat(halo, "scaleX", 1.04f, 0.94f);
+            ringSx.setDuration(1100);
+            ringSx.setRepeatMode(android.animation.ValueAnimator.REVERSE);
+            ringSx.setRepeatCount(android.animation.ValueAnimator.INFINITE);
+            ringSx.start();
+            android.animation.ObjectAnimator ringSy = android.animation.ObjectAnimator
+                    .ofFloat(halo, "scaleY", 1.04f, 0.94f);
+            ringSy.setDuration(1100);
+            ringSy.setRepeatMode(android.animation.ValueAnimator.REVERSE);
+            ringSy.setRepeatCount(android.animation.ValueAnimator.INFINITE);
+            ringSy.start();
+            android.animation.ObjectAnimator logoPulse = android.animation.ObjectAnimator
+                    .ofFloat(brand, "alpha", 1f, 0.65f);
+            logoPulse.setDuration(1100);
+            logoPulse.setRepeatMode(android.animation.ValueAnimator.REVERSE);
+            logoPulse.setRepeatCount(android.animation.ValueAnimator.INFINITE);
+            logoPulse.start();
+        } catch (Throwable ignored) { }
+        topRow.addView(brandBox);
+
+        // 9.79: tek satır — logo yüksekliğinde (46dp). Ad; TV, radyo ve çoklu izlemeyi söylüyor.
         TextView title = new TextView(this);
-        title.setText("UMAY Multi TV");
+        title.setText("Umay Multi: Canlı TV & Radyo");
         title.setTextColor(TEXT);
-        title.setTextSize(19);
+        title.setTextSize(17);
         title.setSingleLine(true);
         title.setEllipsize(android.text.TextUtils.TruncateAt.END);
+        title.setGravity(Gravity.CENTER_VERTICAL);
         title.setTypeface(title.getTypeface(), android.graphics.Typeface.BOLD);
-        TextView sub = new TextView(this);
-        sub.setText(Lang.subtitle(this, all.size()));
-        sub.setTextColor(MUTED);
-        sub.setTextSize(10.5f);
-        sub.setSingleLine(true);
-        sub.setEllipsize(android.text.TextUtils.TruncateAt.END);
-        titleCol.addView(title);
-        titleCol.addView(sub);
-        topRow.addView(titleCol, new LinearLayout.LayoutParams(0,
-                ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+        topRow.addView(title, new LinearLayout.LayoutParams(0, dp(46), 1f));
 
         // 9.76: düğmeler başlığın sağına, tek satıra alındı (ayrı satır ~55 dp yiyordu
         // ve altında boş alan bırakıyordu). Başlık kalan genişliği alır.
@@ -147,7 +171,9 @@ public class MainActivity extends android.app.Activity {
         LinearLayout actionRow = new LinearLayout(this);
         actionRow.setOrientation(LinearLayout.HORIZONTAL);
         actionRow.setGravity(Gravity.END | Gravity.CENTER_VERTICAL);
-        actionRow.setPadding(dp(14), dp(4), dp(12), dp(2));
+        actionRow.setPadding(dp(12), dp(2), dp(12), dp(2));
+        actionRow.setLayoutParams(new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, dp(48)));
         head.addView(actionRow);
 
         TextView multi = pill("▦ 3'lü", ACCENT);
@@ -162,8 +188,7 @@ public class MainActivity extends android.app.Activity {
                 return true;
             }
         });
-        LinearLayout.LayoutParams mlp = new LinearLayout.LayoutParams(0,
-                ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
+        LinearLayout.LayoutParams mlp = new LinearLayout.LayoutParams(0, dp(44), 1f);
         mlp.setMargins(0, 0, dp(6), 0);
         multi.setLayoutParams(mlp);
         actionRow.addView(multi);
@@ -174,8 +199,7 @@ public class MainActivity extends android.app.Activity {
                 startActivity(new Intent(MainActivity.this, RadioActivity.class));
             }
         });
-        LinearLayout.LayoutParams rlp = new LinearLayout.LayoutParams(0,
-                ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
+        LinearLayout.LayoutParams rlp = new LinearLayout.LayoutParams(0, dp(44), 1f);
         rlp.setMargins(0, 0, dp(6), 0);
         radio.setLayoutParams(rlp);
         actionRow.addView(radio);
@@ -187,8 +211,7 @@ public class MainActivity extends android.app.Activity {
                 startActivity(new Intent(MainActivity.this, CountryActivity.class));
             }
         });
-        LinearLayout.LayoutParams cblp = new LinearLayout.LayoutParams(0,
-                ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
+        LinearLayout.LayoutParams cblp = new LinearLayout.LayoutParams(0, dp(44), 1f);
         cblp.setMargins(0, 0, dp(6), 0);
         countryBtn.setLayoutParams(cblp);
         actionRow.addView(countryBtn);
@@ -200,8 +223,7 @@ public class MainActivity extends android.app.Activity {
                 startActivity(new Intent(MainActivity.this, RecordingsActivity.class));
             }
         });
-        LinearLayout.LayoutParams reclp = new LinearLayout.LayoutParams(0,
-                ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
+        LinearLayout.LayoutParams reclp = new LinearLayout.LayoutParams(0, dp(44), 1f);
         reclp.setMargins(0, 0, dp(6), 0);
         recordings.setLayoutParams(reclp);
         actionRow.addView(recordings);
@@ -212,8 +234,7 @@ public class MainActivity extends android.app.Activity {
                 startActivity(new Intent(MainActivity.this, SettingsActivity.class));
             }
         });
-        LinearLayout.LayoutParams slp = new LinearLayout.LayoutParams(0,
-                ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
+        LinearLayout.LayoutParams slp = new LinearLayout.LayoutParams(0, dp(44), 1f);
         settings.setLayoutParams(slp);
         actionRow.addView(settings);
 
@@ -267,20 +288,19 @@ public class MainActivity extends android.app.Activity {
         searchRow.setGravity(Gravity.CENTER_VERTICAL);
         LinearLayout.LayoutParams srlp = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        srlp.setMargins(dp(12), dp(6), dp(12), dp(2));
+        srlp.setMargins(dp(12), dp(6), dp(12), dp(4));
         searchRow.setLayoutParams(srlp);
 
         EditText search = new EditText(this);
         search.setHint(Lang.t(this, "search"));
         search.setHintTextColor(MUTED);
         search.setTextColor(TEXT);
-        search.setTextSize(15);
+        search.setTextSize(14);
         search.setSingleLine(true);
         GradientDrawable sbg = rounded(CARD, 14);
         search.setBackground(sbg);
-        search.setPadding(dp(12), dp(10), dp(12), dp(10));
-        searchRow.addView(search, new LinearLayout.LayoutParams(0,
-                ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+        search.setPadding(dp(10), 0, dp(10), 0);
+        searchRow.addView(search, new LinearLayout.LayoutParams(0, dp(44), 1f));
         search.addTextChangedListener(new TextWatcher() {
             public void beforeTextChanged(CharSequence s, int a, int b, int c) { }
             public void onTextChanged(CharSequence s, int a, int b, int c) {
@@ -294,18 +314,23 @@ public class MainActivity extends android.app.Activity {
         noInput.setHint("No");
         noInput.setHintTextColor(MUTED);
         noInput.setTextColor(TEXT);
-        noInput.setTextSize(15);
+        noInput.setTextSize(14);
         noInput.setSingleLine(true);
         noInput.setInputType(InputType.TYPE_CLASS_NUMBER);
         noInput.setGravity(Gravity.CENTER);
+        noInput.setPadding(0, 0, 0, 0);
         noInput.setBackground(rounded(CARD, 14));
-        LinearLayout.LayoutParams nlp = new LinearLayout.LayoutParams(dp(58),
-                ViewGroup.LayoutParams.WRAP_CONTENT);
-        nlp.setMargins(dp(6), 0, 6, 0);
+        // 9.79: No ve Git kutuları arama kutusuyla aynı 44dp yükseklikte, daha dar.
+        LinearLayout.LayoutParams nlp = new LinearLayout.LayoutParams(dp(52), dp(44));
+        nlp.setMargins(dp(5), 0, dp(5), 0);
         noInput.setLayoutParams(nlp);
         searchRow.addView(noInput);
 
         TextView go = pill("Git", ACCENT);
+        go.setTextSize(14);
+        go.setPadding(dp(14), 0, dp(14), 0);
+        go.setLayoutParams(new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, dp(44)));
         go.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View v) {
                 try {
@@ -504,12 +529,14 @@ public class MainActivity extends android.app.Activity {
             chip.setText(Lang.tab(this, c));
             // 9.78: "Gizlenenler" sığmıyordu; kısaltıldı (anlam aynı).
             if ("🗑 Gizlenenler".equals(c)) chip.setText("🗑 Gizli");
-            chip.setTextSize(11.5f);
+            // 9.79: "Favoriler" sekme genişliğine sığmıyordu.
+            if ("★ Favoriler".equals(c)) chip.setText("★ Favori");
+            chip.setTextSize(12);
             chip.setGravity(Gravity.CENTER);
             chip.setSingleLine(true);
             chip.setEllipsize(android.text.TextUtils.TruncateAt.END);
-            chip.setPadding(dp(2), dp(10), dp(2), dp(10));
-            chip.setMinHeight(dp(40));
+            chip.setPadding(dp(2), 0, dp(2), 0);
+            chip.setMinHeight(0);
             chip.setTag(c);
             chip.setOnClickListener(new View.OnClickListener() {
                 @Override public void onClick(View v) {
@@ -520,20 +547,19 @@ public class MainActivity extends android.app.Activity {
                     refresh();
                 }
             });
-            LinearLayout.LayoutParams clp = new LinearLayout.LayoutParams(0,
-                    ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
-            if (i > 0) clp.setMargins(dp(6), 0, 0, 0);
+            LinearLayout.LayoutParams clp = new LinearLayout.LayoutParams(0, dp(44), 1f);
+            if (i > 0) clp.setMargins(dp(5), 0, 0, 0);
             chip.setLayoutParams(clp);
             chipsRow.addView(chip);
         }
         // Kalite seçimi: yeni satır açmadan bu satıra sığdırıldı.
         qualityBtn = new TextView(this);
         qualityBtn.setText("🎚 " + shortQuality());
-        qualityBtn.setTextSize(10.5f);
+        qualityBtn.setTextSize(12);
         qualityBtn.setTextColor(MUTED);
         qualityBtn.setGravity(Gravity.CENTER);
         qualityBtn.setSingleLine(true);
-        qualityBtn.setPadding(dp(6), dp(10), dp(6), dp(10));
+        qualityBtn.setPadding(dp(8), 0, dp(8), 0);
         qualityBtn.setBackground(rounded(CARD, 18));
         qualityBtn.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View v) {
@@ -547,7 +573,7 @@ public class MainActivity extends android.app.Activity {
             }
         });
         LinearLayout.LayoutParams qlp = new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+                ViewGroup.LayoutParams.WRAP_CONTENT, dp(44));
         qlp.setMargins(dp(5), 0, 0, 0);
         qualityBtn.setLayoutParams(qlp);
         chipsRow.addView(qualityBtn);
@@ -555,15 +581,15 @@ public class MainActivity extends android.app.Activity {
         // Düzenleme düğmesi: sekme satırının sonunda, ikon olarak.
         editBtn = new TextView(this);
         editBtn.setText(editMode ? "✓" : "✏️");
-        editBtn.setTextSize(15);
+        editBtn.setTextSize(17);
         editBtn.setGravity(Gravity.CENTER);
-        editBtn.setPadding(dp(9), dp(10), dp(9), dp(10));
+        editBtn.setPadding(dp(10), 0, dp(10), 0);
         editBtn.setBackground(rounded(editMode ? ACCENT : CARD, 18));
         editBtn.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View v) { setEditMode(!editMode); }
         });
         LinearLayout.LayoutParams elp = new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+                ViewGroup.LayoutParams.WRAP_CONTENT, dp(44));
         elp.setMargins(dp(5), 0, 0, 0);
         editBtn.setLayoutParams(elp);
         chipsRow.addView(editBtn);
@@ -1107,13 +1133,14 @@ public class MainActivity extends android.app.Activity {
         TextView t = new TextView(this);
         t.setText(s);
         t.setTextColor(Color.WHITE);
-        // 9.78: 44dp düğmeler parmakla denk gelmiyordu; 56dp ve daha büyük yazı.
-        t.setTextSize(15);
+        // 9.79: kutular 56dp'den 44dp'ye indi; asıl istenen buydu — içindeki ikon büyüdü.
+        // Tek karakterli (ikon) düğmeler 21sp, yazılı düğmeler 14sp.
+        t.setTextSize(s.codePointCount(0, s.length()) <= 1 ? 21 : 14);
         t.setGravity(Gravity.CENTER);
-        t.setPadding(dp(9), dp(6), dp(9), dp(6));
+        t.setPadding(dp(4), 0, dp(4), 0);
         t.setBackground(rounded(color, 16));
-        t.setMinHeight(dp(56));
-        t.setMinWidth(dp(56));
+        t.setMinHeight(dp(44));
+        t.setMinWidth(0);
         return t;
     }
 
