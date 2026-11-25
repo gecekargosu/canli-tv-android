@@ -111,9 +111,15 @@ public class MainActivity extends android.app.Activity {
         bbp.setMargins(0, 0, dp(10), 0);
         brandBox.setLayoutParams(bbp);
 
+        // Halka: içi boş, 2dp parlak turuncu çerçeve. Dolu hâli logonun arkasında
+        // kahverengi leke gibi duruyordu; halka gerçek bir ışık gibi görünüyor.
         final View halo = new View(this);
-        halo.setBackground(rounded(ACCENT, 16));
-        halo.setAlpha(0.65f);
+        GradientDrawable ringBg = new GradientDrawable();
+        ringBg.setCornerRadius(dp(16));
+        ringBg.setColor(Color.TRANSPARENT);
+        ringBg.setStroke(dp(2), Color.parseColor("#FF9A3C"));
+        halo.setBackground(ringBg);
+        halo.setAlpha(0.95f);
         brandBox.addView(halo, new FrameLayout.LayoutParams(dp(46), dp(46), Gravity.CENTER));
 
         ImageView brand = new ImageView(this);
@@ -128,7 +134,7 @@ public class MainActivity extends android.app.Activity {
         // Logonun kendisi hep tam parlak (eskiden soluyordu, gri gorunuyordu).
         try {
             android.animation.ObjectAnimator glow = android.animation.ObjectAnimator
-                    .ofFloat(halo, "alpha", 0.75f, 0.28f);
+                    .ofFloat(halo, "alpha", 0.95f, 0.3f);
             glow.setDuration(1300);
             glow.setRepeatMode(android.animation.ValueAnimator.REVERSE);
             glow.setRepeatCount(android.animation.ValueAnimator.INFINITE);
@@ -195,6 +201,8 @@ public class MainActivity extends android.app.Activity {
 
         // --- ulke secimi: secilen ulkenin kanallari listeye gelir ---
         TextView countryBtn = pill(Countries.flag(shownCountry), SOFT);
+        // Bayrak emojisi aynı punto ile daha küçük çiziliyor; diğer ikonlarla eşitlensin.
+        countryBtn.setTextSize(34);
         countryBtn.setContentDescription("Ülke seç");
         countryBtn.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View v) {
