@@ -23,8 +23,8 @@ android {
         applicationId 'com.cengiz.canlitv'
         minSdk 26
         targetSdk 36
-        versionCode 91
-        versionName '9.82'
+        versionCode 97
+        versionName '9.88'
     }
 
     signingConfigs {
@@ -54,7 +54,12 @@ android {
             signingConfig signingConfigs.debug
         }
         release {
-            minifyEnabled false
+            // K-15: R8 + kaynak küçültme. Keep kuralları: app/proguard-rules.pro
+            // (Billing, AdMob/UMP, Media3 yansıma kullanıyor).
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'),
+                    'proguard-rules.pro'
             signingConfig signingConfigs.release
         }
         // Halka acik APK: gercek reklam kimlikleri ve ÜRETİM imzası (Play ile aynı anahtar).

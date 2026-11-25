@@ -46,7 +46,7 @@ Durum: ✅ hazır · 🟡 kısmen · 👤 senin yapman gereken (Play Console / h
 3. **İçerik derecelendirmesi:** Sorular → şiddet/cinsellik/kumar **yok**; "kullanıcılar arası etkileşim" **yok**;
    "kullanıcı tarafından oluşturulan içerik paylaşımı" **yok**. Haber kanalları nedeniyle "Haber" uygulaması
    **değildir** (yalnızca yayın izleme); yine de incelemede "haber içeriği barındırır" notu eklenebilir.
-4. **Hedef kitle:** 18+ / yetişkin (çocuklara yönelik değil). "Çocuklara yönelik" **Hayır**.
+4. **Hedef kitle:** 13+ (çocuklara yönelik değil; listede çocuk kanalı yok). "Çocuklara yönelik" **Hayır**.
 5. **Haber uygulaması:** Hayır.
 6. **COVID-19 uygulaması:** Hayır.
 7. **Veri güvenliği (Data safety):** aşağıdaki tabloyu birebir doldur.

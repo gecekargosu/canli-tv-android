@@ -5,9 +5,30 @@ Hepsi GitHub Releases sayfasında:
 
 **https://github.com/gecekargosu/canli-tv-android/releases**
 
-- En son sürüm: `v9.76` — `CanliTV-9.76.apk`, `UMAY-MULTI-TV-9.76.aab` (Play).
+- En son sürüm: `v9.88` — `CanliTV-9.88.apk`, `UMAY-MULTI-TV-9.88.aab` (Play).
 - İndirme sayfası: https://umay-multi-tv-gq3zer.freebuff.site/indir
 - Sürüm notları: `releases/vX.YY/SURUM-NOTLARI.md`
+
+## v9.88 — Play kontrol listesi kapatıldı, R8, 120 kanal
+
+- **Abonelik beyanı:** mağaza metni, gizlilik politikası ve kullanım koşulları artık
+  aylık reklamsız aboneliği anlatıyor (P0-1).
+- **İzlerken reklam kaldırıldı:** 15 dakikalık zamanlayıcı reklam silindi; reklam yalnız
+  kanal değişiminde (3. zap / 180 sn). Mağaza metni "oynatma reklamla kesilmez" artık doğru (P0-2).
+- **Hedef kitle 13+**, 5 çocuk kanalı çıkarıldı → **120 kanal** (P0-3).
+- **`app=` parametresi 0:** NTV parametresiz, Kanal D + Show TV TürkNet yansısı;
+  Star TV, HT Spor, TRT Spor Yıldız çıkarıldı, TRT Spor eklendi (P0-4).
+- **Harici logo 0** (`tvg-logo` temizlendi); arayüz baş harf rozeti gösteriyor (P0-5).
+- **Oynatıcı (P1):** canlı kenar hatasında kanal ölmeden yeniden hizalanma, geçici ağ
+  hatasında 2-4-8 sn yeniden deneme, 8 sn "yavaş açılıyor" ipucu + 20 sn yedek kaynak,
+  açılış süresi `CrashLog`'a ms olarak yazılıyor. Ölü kanal sayacı 24 saatte sıfırlanıyor.
+- **Çoklu ekran:** pencere başına "açılamadı · dokun → tekrar dene"; sesi kapalı pencereye
+  640×360 / 700 kbps tavan; 4'lü modda çözücü uyarısı.
+- **Radyo:** ölü istasyon (Slow Türk) çıkarıldı, Süper Show Radyo adresi düzeltildi → 31 istasyon.
+- **R8 + shrinkResources** açıldı: APK 7,38 MB → **3,85 MB**, AAB 7,04 MB → **6,61 MB**.
+- Sürüm tek kaynakta (`app/build.gradle`); kök manifestten kaldırıldı.
+- Metinlerin bir bölümü `Lang`'e taşındı (oynatıcı/çoklu ekran mesajları); mağaza metni
+  "diller kısmen" olarak düzeltildi.
 
 ## v9.76 — kompakt üst bar, sekme sadeleştirme, tek veri şeridi
 

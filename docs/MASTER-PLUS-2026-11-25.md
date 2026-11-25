@@ -281,3 +281,33 @@ Yani kod/yerleşim doğru; eksik olan tek şey Google'ın reklamı doldurması.
 | MP-82 | 2. satırdaki ızgara (3'lü) turuncudan griye alındı — seçili gibi duruyordu | ✅ 9.82 | Ekran |
 
 Abonelik kurulumu: `docs/PLAY-ABONELIK.md` (ürün kimliği `umay_reklamsiz_aylik`, aylık 20 ₺, Play Konsol'da tanımlanacak).
+
+---
+
+## 16. 9.83–9.86 oturumu — abonelik en üstte, tam kullanıcı testi, radyo düzeltmeleri
+
+| ID | İş | Durum | Kanıt |
+|----|----|-------|-------|
+| MP-83 | **Ayarlar'da "Reklamsız izleme" en başa alındı** (özet kartından önce) | ✅ 9.83 | `docs/test-983/05-ayarlar-abonelik-ustte.png` |
+| MP-84 | **Klavye oynatıcı dönüşünde kapanır**, "No" alanı odağı temizlenir | ✅ 9.84 | `docs/test-984/klavye-sonra.png` |
+| MP-85 | Radyo üst barı: `⏻/⏱/⏹` glifleri kutu görünüyordu → düz metin (Çık/Uyku/Durdur) | ✅ 9.84 | `docs/test-984/radyo-durum.png` |
+| MP-86 | Kayıt listesinde 1 dk altı kayıtlar `<1 dk` | ✅ 9.84 | Kod |
+| MP-87 | **Radyo hiç açılmıyordu**: `Quality.resolveLowest` canlı AAC akışında sonsuz okuyordu; `.m3u8` değilse doğrudan çal, fetch 256 KB sınırı | ✅ 9.85 | `logcat -s UmayRadio`: `deneme 0: ... trtfm` |
+| MP-88 | **"bağlanıyor…" da kalma**: `isAudibleStatic()` eklendi, bekçi ve durum yazısı bunu kullanıyor | ✅ 9.86 | Kod |
+| MP-89 | Tam kullanıcı senaryosu: 17 adım + ekran görüntüsü arşivi, AI rapor karşılaştırması, derin hata analizi | ✅ | `docs/TEST-RAPORU-2026-11-25.md`, `docs/YENI-IS-LISTESI-2026-11-25.md`, `docs/HATA-ANALIZI-2026-11-25.md` |
+
+Paketler: `releases/v9.86/CanliTV-9.86.apk`, `releases/v9.86/UMAY-MULTI-TV-9.86.aab` (versionCode 95).
+Açık işler: `docs/YENI-IS-LISTESI-2026-11-25.md` → MP-90…MP-103.
+
+---
+
+## 17. 9.87 — radyo ExoPlayer'a taşındı, veri sayacı düzeltildi
+
+| ID | İş | Durum | Kanıt |
+|----|----|-------|-------|
+| MP-90 | **Radyo Media3 ExoPlayer**: cihazın MediaPlayer'ı AAC+ (HE-AAC) akışlarında `-1004` verip hiç açmıyordu. TRT FM (AAC+ 130) ve TRT Radyo 1 (AAC+ 129) artık çalıyor; istasyon değiştirme çalışıyor | ✅ 9.87 | `_build/r987.png`, `_build/next2.png`, log `UmayRadio: deneme 0 …` |
+| MP-104 | **Arka plan veri sayacı**: sayım `state==PLAYING` şartına bağlıydı ve TrafficStats farkı yanlış yerde alınıyordu → arka planda hiç artmıyordu. Bağımsız `usageTick` (5 sn, 256 KB'ta yaz) | ✅ 9.87 | 454,8 MB → 457,1 MB (radyo arka planda) |
+| MP-105 | Sahte "https deneniyor" geri dönüşü kaldırıldı (http MP3 akışlarını bozuyordu); radyo grace 30 sn, yeniden deneme 8 sn | ✅ 9.87 | Kod |
+| MP-106 | Claude kontrol paketi: AAB + APK + mağaza metinleri + görseller + politikalar + analiz + kaynak | ✅ | `UMAY-MULTI-TV-Play-Kontrol-9.87.zip` (17 MB) |
+
+Paketler: `releases/v9.87/UMAY-MULTI-TV-9.87.aab` (versionCode 96), `CanliTV-9.87.apk`.

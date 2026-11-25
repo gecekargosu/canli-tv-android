@@ -186,7 +186,8 @@ public class Quality {
             java.io.ByteArrayOutputStream bo = new java.io.ByteArrayOutputStream();
             byte[] buf = new byte[8192];
             int n;
-            while ((n = in.read(buf)) > 0) bo.write(buf, 0, n);
+            // canli akista okuma bitmez: playlist icin ilk 256 KB yeter (9.84)
+            while (bo.size() < 262144 && (n = in.read(buf)) > 0) bo.write(buf, 0, n);
             in.close();
             return new String(bo.toByteArray(), "UTF-8");
         } catch (Exception e) { return null; }

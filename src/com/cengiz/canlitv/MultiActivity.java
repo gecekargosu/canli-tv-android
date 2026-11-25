@@ -323,6 +323,29 @@ public class MultiActivity extends android.app.Activity {
         ui.postDelayed(hideControls, 4500);
     }
 
+    /**
+     * K-08: cihazın video çözücü sayısı 4'ten azsa 4'lü modda uyar.
+     * (Yazılım çözücüler de sayılır; amaç kesin sayı değil, "zorlanabilir" uyarısı.)
+     */
+    private void warnIfFourPanesUnsafe() {
+        try {
+            android.media.MediaCodecList list =
+                    new android.media.MediaCodecList(android.media.MediaCodecList.REGULAR_CODECS);
+            int decoders = 0;
+            for (android.media.MediaCodecInfo info : list.getCodecInfos()) {
+                if (info.isEncoder()) continue;
+                try {
+                    info.getCapabilitiesForType("video/avc");
+                    decoders++;
+                } catch (Throwable ignored) { }
+            }
+            if (decoders > 0 && decoders < 4) {
+                Toast.makeText(this, "Bu cihazda 4 görüntü aynı anda zorlanabilir; "
+                        + "takılırsa 3'e düşür.", Toast.LENGTH_LONG).show();
+            }
+        } catch (Throwable ignored) { }
+    }
+
     private void setPaneCount(int n) {
         paneCount = n;
         for (int i = 0; i < 4; i++) {
@@ -331,6 +354,7 @@ public class MultiActivity extends android.app.Activity {
         }
         col.removeAllViews();
         if (n == 4) {
+            warnIfFourPanesUnsafe();
             LinearLayout r1 = new LinearLayout(this);
             LinearLayout r2 = new LinearLayout(this);
             r1.setOrientation(LinearLayout.HORIZONTAL);
@@ -559,7 +583,27 @@ public class MultiActivity extends android.app.Activity {
         void setAudible(boolean b) {
             on = b;
             try { if (ex != null) ex.setVolume(b ? 1f : 0f); } catch (Throwable ignored) { }
+            // K-08: ses geri açılınca kalite tavanı kalkar.
+            applyQualityCap(ex);
             speaker.setText(b ? "🔊" : "🔇");
+        }
+
+        /**
+         * K-08: sesi kapalı pencere tam kalitede indirmesin. Dört pencere aynı anda
+         * 1080p çekince hem veri hem çözücü yetmiyordu; sessiz pencere 640×360 tavanlı.
+         */
+        void applyQualityCap(androidx.media3.exoplayer.ExoPlayer p) {
+            if (p == null) return;
+            try {
+                androidx.media3.common.TrackSelectionParameters.Builder b =
+                        p.getTrackSelectionParameters().buildUpon();
+                b.clearOverridesOfType(androidx.media3.common.C.TRACK_TYPE_VIDEO);
+                if (!on) {
+                    b.setMaxVideoSize(640, 360);
+                    b.setMaxVideoBitrate(700000);
+                }
+                p.setTrackSelectionParameters(b.build());
+            } catch (Throwable ignored) { }
         }
 
         void reload() {
@@ -600,7 +644,7 @@ public class MultiActivity extends android.app.Activity {
             }
             if (attempt <= 4) {
                 // Aynı kaynağı taze playlist ile dene (CDN oturumu/token yenilenir).
-                label.setText("yeniden bağlanıyor…");
+                label.setText(Lang.t(MultiActivity.this, "multi_reconnect"));
                 label.setVisibility(View.VISIBLE);
                 Quality.resolveForPlayer(MultiActivity.this, c.url, new Quality.UrlCallback() {
                     @Override public void onUrl(final String url) {
@@ -636,6 +680,7 @@ public class MultiActivity extends android.app.Activity {
                 ex = player;
                 player.setVideoSurfaceView(surface);
                 player.setVolume(on ? 1f : 0f);
+                applyQualityCap(player);
                 player.addListener(new androidx.media3.common.Player.Listener() {
                     @Override public void onPlaybackStateChanged(int state) {
                         if (player != ex) return;
@@ -684,7 +729,7 @@ public class MultiActivity extends android.app.Activity {
             attempt++;
             if (attempt > 8) { showFail(); return; }
             if (attempt > 1) {
-                label.setText("yeniden bağlanıyor…");
+                label.setText(Lang.t(MultiActivity.this, "multi_reconnect"));
                 label.setVisibility(View.VISIBLE);
             }
             startAttempt();
@@ -694,8 +739,20 @@ public class MultiActivity extends android.app.Activity {
             failed = true;
             releasePlayer();
             Channel c = list.get(chan);
-            label.setText("açılamadı · №" + c.no + " " + c.name + "\nuzun bas → başka kanal");
+            // K-08: pencere başına durum katmanı — dokununca aynı kanal yeniden denenir.
+            label.setText("№" + c.no + " " + c.name + "\n"
+                    + Lang.t(MultiActivity.this, "multi_fail"));
             label.setVisibility(View.VISIBLE);
+            label.setClickable(true);
+            label.setOnClickListener(new View.OnClickListener() {
+                @Override public void onClick(View v) {
+                    failed = false;
+                    gen++;
+                    attempt = 0;
+                    label.setText(Lang.t(MultiActivity.this, "multi_reconnect"));
+                    startAttempt();
+                }
+            });
         }
 
         /** 3 saniyede bir çağrılır: hazırlanmayan, görüntü vermeyen veya donan yayını kurtarır. */
@@ -726,8 +783,8 @@ public class MultiActivity extends android.app.Activity {
             if (now - lastPosAt > 12000) {
                 stalls++;
                 label.setText(stalls >= 2
-                        ? "yayıncı reklam aralığında olabilir · bekleniyor"
-                        : "yayın durakladı · yeniden bağlanıyor…");
+                        ? Lang.t(MultiActivity.this, "multi_ad")
+                        : Lang.t(MultiActivity.this, "multi_stall"));
                 label.setVisibility(View.VISIBLE);
                 retry();
             }

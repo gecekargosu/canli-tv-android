@@ -48,6 +48,12 @@ public final class CrashLog {
                 + " (SDK " + Build.VERSION.SDK_INT + ")\n"
                 + "Is parcacigi: " + (t == null ? "?" : t.getName()) + "\n\n";
         File f = new File(c.getFilesDir(), FILE);
+        // K-17: çökme dosyası da 512 KB'ı aşarsa eskisini yedek olarak bırak.
+        if (f.exists() && f.length() > 512 * 1024) {
+            File old = new File(c.getFilesDir(), "crash.1.txt");
+            if (old.exists()) old.delete();
+            f.renameTo(old);
+        }
         FileOutputStream fos = new FileOutputStream(f);
         fos.write((head + sw.toString()).getBytes("UTF-8"));
         fos.close();
@@ -63,7 +69,12 @@ public final class CrashLog {
     public static void event(Context c, String tag, String msg) {
         try {
             File f = new File(c.getApplicationContext().getFilesDir(), EVENTS);
-            if (f.exists() && f.length() > 96 * 1024) f.delete();
+            // K-17: 512 KB'a ulaşınca dosyayı silmek yerine bir öncekini sakla (tek yedek).
+            if (f.exists() && f.length() > 512 * 1024) {
+                File old = new File(c.getApplicationContext().getFilesDir(), "events.1.txt");
+                if (old.exists()) old.delete();
+                f.renameTo(old);
+            }
             String line = new SimpleDateFormat("MM-dd HH:mm:ss", Locale.US).format(new Date())
                     + " [" + tag + "] " + msg + "\n";
             FileOutputStream fos = new FileOutputStream(f, true);

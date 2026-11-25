@@ -32,14 +32,11 @@ public class ChannelRepo {
         // yedeklerden de kaldırıldı. Yayın TürkNet/ERC yansısından, yedek olarak 480p yansısı.
         mirror("https://rkhubpaomb.turknet.ercdn.net/fwjkgpasof/tv8/tv8_720p.m3u8",
                 "https://rkhubpaomb.turknet.ercdn.net/fwjkgpasof/tv8/tv8_480p.m3u8");
-        // 9.78: Show TV. TürkNet yansısının varyant listesi sık sık BOŞ dönüyor; oynatıcı
-        // sonsuz "yükleniyor" çemberinde kalıyordu (kullanıcı bildirdi). Artık birincil kaynak
-        // showtv.com.tr'nin kendi sitesinde gömülü olan Daion adresi; TürkNet yansısı yedek.
-        String showOld = "https://rmtftbjlne.turknet.ercdn.net/bpeytmnqyp/showtv/showtv.m3u8";
-        String showNew = "https://ciner.daioncdn.net/showtv/showtv.m3u8?ce=3&app=4bc856ef-4c68-4a94-bc87-37dfaaa66558";
-        String show720 = "https://rmtftbjlne.turknet.ercdn.net/bpeytmnqyp/showtv/showtv_720p.m3u8";
-        FALLBACK.put(showNew, new String[]{show720, showOld});
-        FALLBACK.put(showOld, new String[]{showNew, show720});
+        // 9.88 (K-04): Show TV artık yayıncının `app=` kimliğini taşımayan TürkNet/ERC
+        // yansısından açılıyor. 720p varyantı bazen boş döndüğü için yedek 1080p varyant.
+        String showMain = "https://rmtftbjlne.turknet.ercdn.net/bpeytmnqyp/showtv/showtv.m3u8";
+        String show1080 = "https://rmtftbjlne.turknet.ercdn.net/bpeytmnqyp/showtv/showtv_1080p.m3u8";
+        mirror(showMain, show1080);
 
         // Büyük ulusal kanallar için TürkNet/ERC yansıları (#103).
         mirror("https://ackaxsqacw.turknet.ercdn.net/ozfkfbbjba/kanald/kanald.m3u8",
@@ -74,11 +71,12 @@ public class ChannelRepo {
 
     /**
      * 9.75: Türkiye'de büyük ulusal kanallar her zaman listenin başında durur.
-     * Doğrulanmış liste (Good) sırası değişse de bu beş kanal 1-5 numaraya alınır;
+     * Doğrulanmış liste (Good) sırası değişse de bu kanallar 1-4 numaraya alınır;
      * ayrıca "ölü kanal" sayacı bunları gizleyemez (kullanıcı TV8'i listede bulamıyordu).
+     * 9.88 (K-04): Star TV, parametresiz kaynak bulunamadığı için listeden çıkarıldı.
      */
     private static final String[] PINNED_TR = {
-            "ATV", "TV8", "SHOW TV", "STAR TV", "KANAL D"
+            "ATV", "TV8", "SHOW TV", "KANAL D"
     };
 
     static boolean pinned(String name) {

@@ -106,7 +106,7 @@ async function listLogs(env, url) {
 
 // ---------------------------------------------------------------- indirme sayfasi
 const APK_URL =
-  "https://github.com/gecekargosu/canli-tv-android/releases/download/v9.82/CanliTV-9.82.apk";
+  "https://github.com/gecekargosu/canli-tv-android/releases/download/v9.88/CanliTV-9.88.apk";
 
 function downloadPage() {
   return html(`<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
@@ -116,7 +116,7 @@ function downloadPage() {
 <a href="${APK_URL}" style="display:block;text-align:center;background:#ff7a18;color:#111;padding:18px;border-radius:16px;text-decoration:none;font-weight:bold;font-size:18px">⬇ APK indir (Android 8+)</a>
 <h2 style="font-size:16px;margin:26px 0 8px">Nasil kurulur?</h2>
 <ol style="color:#c7d0dc;line-height:1.6;padding-left:20px;font-size:14px">
-<li>Yukaridaki dugmeye bas, dosya insin (yaklasik 7 MB).</li>
+<li>Yukaridaki dugmeye bas, dosya insin (yaklasik 4 MB).</li>
 <li>Inen dosyaya dokun. \"Bilinmeyen kaynaklara izin ver\" derse, ayarlardan bu tarayici icin izin ver.</li>
 <li>Kur → Ac. Baska izin gerekmez.</li>
 </ol>

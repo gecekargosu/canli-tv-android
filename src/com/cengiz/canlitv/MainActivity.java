@@ -11,6 +11,7 @@ import android.text.InputType;
 import android.text.TextWatcher;
 import android.view.Gravity;
 import android.view.View;
+import android.view.inputmethod.InputMethodManager;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.BaseAdapter;
@@ -958,6 +959,15 @@ public class MainActivity extends android.app.Activity {
     }
 
     private void open(final Channel c) {
+        // klavye acik kalirsa oynaticidan donuste liste sikisiyor (9.83)
+        try {
+            View f = getCurrentFocus();
+            if (f != null) {
+                InputMethodManager im = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
+                if (im != null) im.hideSoftInputFromWindow(f.getWindowToken(), 0);
+                f.clearFocus();
+            }
+        } catch (Throwable ignored) { }
         // 4. kanal acilisinda bir, en fazla 10 dakikada 1 gecis reklami
         AdManager.maybeInterstitial(this, new Runnable() {
             @Override public void run() {

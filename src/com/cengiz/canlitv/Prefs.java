@@ -46,13 +46,13 @@ public class Prefs {
     }
 
     // --- olu kanal sayaci ---
-    /** Ölü sayacı bu süreden sonra geçersiz sayılır (9.76). */
-    private static final long FAIL_TTL_MS = 3L * 24 * 60 * 60 * 1000;
+    /** Ölü sayacı bu süreden sonra geçersiz sayılır (9.88 / K-07: 24 saat). */
+    private static final long FAIL_TTL_MS = 24L * 60 * 60 * 1000;
 
     /**
      * 9.76: sayaç hiç sıfırlanmadığı için aylar içinde iki kez tökezleyen kanal
      * kalıcı olarak gizleniyordu (cihazda liste 128'den 32'ye düşmüştü).
-     * Artık yalnız son 3 gün içindeki hatalar sayılır; eski kayıtlar yok sayılır.
+     * Artık yalnız son 24 saat içindeki hatalar sayılır; eski kayıtlar yok sayılır.
      */
     public static int fails(Context c, String url) {
         SharedPreferences p = sp(c);

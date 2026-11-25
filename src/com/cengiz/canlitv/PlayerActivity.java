@@ -448,7 +448,16 @@ public class PlayerActivity extends android.app.Activity {
                 // Hata günlüğü: teknik kod, kullanıcının gördüğü mesajdan bağımsız.
                 lastError = e == null ? "?" : (e.getErrorCodeName() + " · " + e.getMessage());
                 CrashLog.event(PlayerActivity.this, "tv", "oynatıcı hatası: " + lastError);
-                onPError();
+                // K-07: hatayı sınıflandır — canlı kenar, geçici ağ hatası ve kalıcı hata
+                // aynı muameleyi görmemeli (eskiden hepsi kanalı ölü sayabiliyordu).
+                int code = e == null ? 0 : e.errorCode;
+                if (code == androidx.media3.common.PlaybackException.ERROR_CODE_BEHIND_LIVE_WINDOW) {
+                    resyncLive();
+                } else if (isNetworkError(code)) {
+                    retryNetwork();
+                } else {
+                    onPError();
+                }
             }
 
             @Override public void onVideoSizeChanged(androidx.media3.common.VideoSize size) {
@@ -499,14 +508,15 @@ public class PlayerActivity extends android.app.Activity {
                 adPaused = false;
                 sameRetries = 0;
                 stallCount = 0;
-                showNotice("✅ Reklam kapandı · yayına dönülüyor");
+                showNotice(Lang.t(PlayerActivity.this, "tv_ad_done"));
                 ui.postDelayed(new Runnable() {
                     @Override public void run() { hideNotice(); }
                 }, 3000);
                 play();
             }
             checkStall();
-            AdManager.maybeTimerAd(PlayerActivity.this);
+            // K-02: izlerken zamanlanmış tam ekran reklam kaldırıldı.
+            // Reklam yalnız kanal değişiminde (3. zap / 180 sn) çıkar.
             ui.postDelayed(this, 1000);
         }
     };
@@ -520,7 +530,11 @@ public class PlayerActivity extends android.app.Activity {
         if (ready) return;
         ready = true;
         everPlayed = true;   // M-99: ilk kare geldi, bu kanal ölü sayılmayacak
-        CrashLog.event(this, "tv", "hazır: " + list.get(index).name);
+        netTries = 0;
+        ui.removeCallbacks(slowHint);
+        // K-09: açılış süresi ölçülür — hangi kanal yavaş, veriyle görünsün.
+        long openMs = tryStartedAt > 0 ? System.currentTimeMillis() - tryStartedAt : 0;
+        CrashLog.event(this, "tv", "hazır (" + openMs + " ms): " + list.get(index).name);
         progress.setVisibility(View.GONE);
         errorView.setVisibility(View.GONE);
         player.setVolume(muted ? 0f : 1f);
@@ -553,6 +567,8 @@ public class PlayerActivity extends android.app.Activity {
 
     /** Aynı yayına kaç kez yeniden bağlanıldı (zayıf internet). */
     private int sameRetries = 0;
+    /** K-07: geçici ağ hatasında kaç kez yeniden denendi (2-4-8 sn, en çok 3). */
+    private int netTries = 0;
     /** Ağ olayı yüzünden kaç kez yeniden bağlanıldı (oynak bağlantı koruması). */
     private int netReconnects = 0;
     /** Yayın hiç hazır oldu mu (ölü kanal zaman aşımı). */
@@ -607,32 +623,96 @@ public class PlayerActivity extends android.app.Activity {
     // Reklam açıkken yayın duraklatılır; kapanınca canlı kenara yeniden bağlanılır.
     private boolean adPaused = false;
 
-    /** ExoPlayer hatası: aynı adres → yedek kaynak → sonraki kanal. */
+    /** Ağ kaynaklı geçici hata mı? (K-07) */
+    private boolean isNetworkError(int code) {
+        return code == androidx.media3.common.PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_TIMEOUT
+                || code == androidx.media3.common.PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_FAILED
+                || code == androidx.media3.common.PlaybackException.ERROR_CODE_IO_UNSPECIFIED
+                || code == androidx.media3.common.PlaybackException.ERROR_CODE_TIMEOUT;
+    }
+
+    /** Canlı pencerenin gerisinde kaldık: kanalı öldürmeden canlı kenara atla. */
+    private void resyncLive() {
+        try {
+            showNotice(Lang.t(this, "tv_live_resync"));
+            CrashLog.event(this, "tv", "canlı pencere gerisinde · yeniden hizalanıyor");
+            ready = false;
+            player.seekToDefaultPosition();
+            player.prepare();
+            player.play();
+        } catch (Throwable t) {
+            onPError();
+        }
+    }
+
+    /** Geçici ağ hatası: 2-4-8 sn bekleyip aynı adresi yeniden dene (en çok 3). */
+    private void retryNetwork() {
+        if (netTries >= 3) { onPError(); return; }
+        netTries++;
+        final long delay = 2000L << (netTries - 1);   // 2, 4, 8 sn
+        final String cur = list.get(index).url;
+        showNotice(String.format(java.util.Locale.getDefault(),
+                Lang.t(this, "tv_net_retry"), delay / 1000, netTries));
+        progress.setVisibility(View.VISIBLE);
+        ready = false;
+        ui.postDelayed(new Runnable() {
+            @Override public void run() {
+                try {
+                    if (isFinishing()) return;
+                    player.stop();
+                    player.clearMediaItems();
+                    player.setMediaItem(androidx.media3.common.MediaItem.fromUri(cur));
+                    player.prepare();
+                    player.play();
+                    ui.postDelayed(watchdog, 15000);
+                } catch (Throwable ignored) { }
+            }
+        }, delay);
+    }
+
+    /** Yedek kaynak varsa ona geç (K-09: 20 sn'de bir deneme). */
+    private boolean tryNextFallback() {
+        try {
+            String cur = list.get(index).url;
+            String[] alts = ChannelRepo.fallbacks(cur);
+            if (alts == null || fbTried >= alts.length) return false;
+            String alt = alts[fbTried++];
+            CrashLog.event(this, "tv", "yavaş açılış · yedek kaynağa geçiliyor: " + alt);
+            showNotice(Lang.t(this, "tv_backup"));
+            ready = false;
+            player.stop();
+            player.clearMediaItems();
+            player.setMediaItem(androidx.media3.common.MediaItem.fromUri(alt));
+            player.prepare();
+            player.play();
+            ui.postDelayed(watchdog, 15000);
+            return true;
+        } catch (Throwable t) {
+            return false;
+        }
+    }
+
+    /** K-09: 8 sn'de "yavaş açılıyor" ipucu, 20 sn'de yedek kaynak. */
+    private long slowHintAt = 0;
+    private final Runnable slowHint = new Runnable() {
+        @Override public void run() {
+            if (ready || isFinishing() || !Net.online(PlayerActivity.this)) return;
+            long waited = System.currentTimeMillis() - slowHintAt;
+            if (waited < 18000) {
+                showNotice(Lang.t(PlayerActivity.this, "tv_slow"));
+                ui.postDelayed(this, 12000);
+                return;
+            }
+            if (!tryNextFallback()) {
+                showNotice(Lang.t(PlayerActivity.this, "tv_slow"));
+            }
+        }
+    };
+
+    /** ExoPlayer kalıcı hatası: yedek kaynak → sonraki kanal. */
     private void onPError() {
         progress.setVisibility(View.GONE);
         final String cur = list.get(index).url;
-        // Zayıf internet: kanalı hemen bırakmak yerine aynı yayına 2 kez daha bağlan.
-        if (sameRetries < 3) {
-            sameRetries++;
-            final int n = sameRetries;
-            showNotice("📶 Bağlantı sorunu · yeniden bağlanıyorum (" + n + "/3)");
-            CrashLog.event(this, "tv", "hata, tekrar deneniyor " + n + "/3: " + cur);
-            progress.setVisibility(View.VISIBLE);
-            ready = false;   // yeniden bağlanınca onReady() çalışsın
-            ui.postDelayed(new Runnable() {
-                @Override public void run() {
-                    try {
-                        player.stop();
-                        player.clearMediaItems();
-                        player.setMediaItem(androidx.media3.common.MediaItem.fromUri(cur));
-                        player.prepare();
-                        player.play();
-                        ui.postDelayed(watchdog, 15000);
-                    } catch (Throwable ignored) { }
-                }
-            }, 5000);
-            return;
-        }
         String[] alts = ChannelRepo.fallbacks(cur);
         if (alts != null && fbTried < alts.length) {
             String alt = alts[fbTried++];
@@ -649,13 +729,12 @@ public class PlayerActivity extends android.app.Activity {
         }
         // İnternet/DNS sorunu kanalın suçu değil: ölü işaretleme, kullanıcıya doğru mesajı ver.
         if (!Net.online(this) || isDnsError()) {
-            errorView.setText("İnternet bağlantısı kurulamadı.\n\nWi-Fi / mobil veriyi kontrol et,\n"
-                    + "sonra dokun → tekrar dene");
+            errorView.setText(Lang.t(this, "tv_net_fail"));
             errorView.setVisibility(View.VISIBLE);
             return;
         }
         Prefs.addFail(this, cur);
-        errorView.setText("Bu kanal şu an açılamadı.\n\nDokun → tekrar dene\nveya ⏭ ile sonraki kanal");
+        errorView.setText(Lang.t(this, "tv_channel_fail"));
         errorView.setVisibility(View.VISIBLE);
         autoNext();
     }
@@ -728,11 +807,12 @@ public class PlayerActivity extends android.app.Activity {
             lastPosAt = now;
             stallCount++;
             if (stallCount <= 2) {
-                showNotice("⏳ Yayın durakladı · yeniden bağlanıyorum (" + stallCount + "/2)");
+                showNotice(String.format(java.util.Locale.getDefault(),
+                        Lang.t(this, "tv_stall"), stallCount));
             } else {
                 // Star TV / TV8 gibi kanallarda "dijital reklam kuşağı" karesi yayıncıdan gelir;
                 // uygulama atlayamaz, ama boş siyah ekran yerine durumu söyleyip bekler.
-                showNotice("📺 Yayıncı reklam aralığında olabilir · yayın dönünce kendiliğinden gelecek");
+                showNotice(Lang.t(this, "tv_ad_break"));
             }
             play();
         } catch (Exception ignored) { }
@@ -938,7 +1018,7 @@ public class PlayerActivity extends android.app.Activity {
     private void play() {
         final Channel c = list.get(index);
         if (!Net.online(this)) {
-            errorView.setText("İnternet bağlantısı yok.\n\nBağlanınca dokun → tekrar dene");
+            errorView.setText(Lang.t(this, "tv_no_net"));
             errorView.setVisibility(View.VISIBLE);
             progress.setVisibility(View.GONE);
             return;
@@ -1008,8 +1088,14 @@ public class PlayerActivity extends android.app.Activity {
         // döngüye açıktı; ölü kanal kararı artık zamana bağlı.
         tryStartedAt = System.currentTimeMillis();
         everPlayed = false;
+        netTries = 0;
+        fbTried = 0;
         tracking = true;
         openedAt = System.currentTimeMillis();
+        // K-09: 8 sn'de ipucu, 20 sn'de yedek kaynak denemesi.
+        slowHintAt = System.currentTimeMillis();
+        ui.removeCallbacks(slowHint);
+        ui.postDelayed(slowHint, 8000);
         // TV acilinca arkadaki radyo sussun (tek ses kaynagi kalsin)
         AudioService.stop(this);
         screenOffAudio = false;

@@ -123,7 +123,9 @@ public class RecordingsActivity extends Activity {
                     names.add(name);
                     // HATA (tur 4): .ts kayıtlarda MediaStore DURATION=0 geliyor,
                     // listede her kayıt "0 dk" görünüyordu.
-                    metas.add((dur > 0 ? (dur / 1000 / 60) + " dk · " : "") + Net.mb(size));
+                    String len = dur <= 0 ? ""
+                            : (dur < 60000 ? "<1 dk · " : (dur / 1000 / 60) + " dk · ");
+                    metas.add(len + Net.mb(size));
                     uris.add(Uri.withAppendedPath(q, String.valueOf(id)));
                 }
                 c.close();

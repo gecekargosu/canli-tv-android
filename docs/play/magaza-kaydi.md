@@ -1,4 +1,4 @@
-# Play mağaza kaydı — kopyala/yapıştır metinler (9.77)
+# Play mağaza kaydı — kopyala/yapıştır metinler (9.88 / kod 97)
 
 Play Console'da **Uygulama oluştur** ekranı açıldığında bu dosyadaki metinleri aynen kullan.
 Karakter sınırları: ad 30, kısa açıklama 80, tam açıklama 4000.
@@ -22,7 +22,7 @@ Karakter sınırları: ad 30, kısa açıklama 80, tam açıklama 4000.
 ## 2. Kısa açıklama (80 karakter)
 
 ```
-120+ canlı TV kanalı ve radyo: numaralı kanal, favoriler, 3'lü izleme, uyku modu.
+120 TV kanalı + radyo: numaralı kanal, favoriler, 3'lü izleme, uyku modu.
 ```
 
 ## 3. Tam açıklama (kopyala)
@@ -36,8 +36,9 @@ uygulamada toplar. Kumanda alışkanlığına uygun numaralı kanal sistemi, fav
 Üstteki No kutusuna kanal numarasını yaz, Git'e bas: kanal hemen açılır.
 Kanallar Türkçe/yabancı ve türe göre gruplanmıştır.
 
-📺 120'DEN FAZLA CANLI KANAL
-Ulusal, haber, spor, müzik, çocuk ve belgesel kanalları; ayrıca 50 ülkenin listesi.
+📺 120 CANLI KANAL
+Ulusal, haber, spor, müzik ve belgesel kanalları; ayrıca 55 ülkenin listesi
+(31 ülkede 30'dan fazla çalışan kanal).
 Ülke seç: seçtiğin ülkenin kanalları listeye eklenir (Türkiye listesi gömülü,
 internet gerekmez).
 
@@ -55,14 +56,14 @@ Kalite seç (360p/480p/720p/1080p), veri tasarrufu ve günlük internet limiti.
 Kanalda seçtiğin kalite yoksa uygulama en düşük mevcut kaliteye geçer ve bunu söyler.
 
 ⏺ KAYIT (KAMU KANALLARI)
-TRT, TBMM ve Diyanet gibi kamu yayınlarını sesiyle birlikte telefona kaydet
+Kamu yayınlarını sesiyle birlikte telefona kaydet
 (Movies/TV-Kayitlari). Özel kanallarda telif nedeniyle kayıt kapalıdır.
 
 😴 UYKU ZAMANLAYICISI
 15/30/45/60/90/120 dakika veya saat gir; süre dolunca yayın kapanır.
 
-🌐 4 DİL
-Türkçe, English, Русский, العربية.
+🌐 DİLLER
+Arayüz Türkçe; İngilizce, Rusça ve Arapça kısmen çevrildi (tamamlanıyor).
 
 👤 HESAP GEREKMEZ
 Ne e-posta ne Google hesabı istenir; bütün özellikler açıktır.
@@ -70,8 +71,9 @@ Ne e-posta ne Google hesabı istenir; bütün özellikler açıktır.
 
 NEDEN ÜCRETSİZ?
 Uygulama reklamla ayakta kalır: liste altında küçük bir banner ve seyrek geçiş
-reklamı. Yayının üstüne reklam binmez, oynatma reklamla kesilmez. İstersen ödüllü
-reklam izleyip 15 dakika geçiş reklamlarını kapatabilirsin.
+reklamı. İzlerken tam ekran reklam çıkmaz, oynatma reklamla kesilmez. İstersen ödüllü
+reklam izleyip 15 dakika geçiş reklamlarını kapatabilirsin. Reklamları tamamen
+kapatmak istersen aylık reklamsız abonelik var (Google Play üzerinden).
 
 İÇERİK VE TELİF
 Kanallar yayıncıların halka açık akışlarıdır; uygulamada kanal barındırılmaz.
@@ -98,8 +100,8 @@ kanal/istasyon listesi görünüyor. Play en az 2, en çok 8 telefon görüntüs
 ## 5. Mağaza formu cevapları
 
 - **Reklam içeriyor mu?** Evet (banner + geçiş + ödüllü).
-- **Uygulama içi satın alma?** Hayır.
-- **Hedef kitle:** 18+ (çocuklara yönelik değil).
+- **Uygulama içi satın alma?** Evet — aylık reklamsız abonelik (20 ₺/ay, Google Play).
+- **Hedef kitle:** 13+ (çocuklara yönelik değil; listede çocuk kanalı yok).
 - **Haber uygulaması mı?** Hayır (canlı TV/radyo oynatıcı).
 - **Hükümet / finans / sağlık:** Hayır.
 - **İçerik derecelendirmesi:** Şiddet, cinsellik, kumar, kullanıcılar arası iletişim,
@@ -114,7 +116,8 @@ kanal/istasyon listesi görünüyor. Play en az 2, en çok 8 telefon görüntüs
 | Reklam kimliği (AD_ID) | Evet | Evet (Google AdMob) | Reklam/ölçüm | Uygulama kendi sunucusuna göndermez |
 | Cihaz kimliği | Evet (isteğe bağlı) | Hayır | Uygulama işlevi | Yalnız "günlük gönderimi" açılırsa; rastgele Android ID |
 | Çökme günlükleri | Evet (isteğe bağlı) | Hayır | Hata ayıklama | Varsayılan KAPALI, günde en fazla 1 |
-| Konum, ad, e-posta, ödeme, sağlık, mesaj, dosya | Hayır | — | — | Hesap ve ödeme yok |
+| Ödeme bilgisi | Hayır (uygulama toplamaz) | Evet (Google Play) | Abonelik | Kart bilgisi uygulamaya girmez; Google Play işler |
+| Konum, ad, e-posta, sağlık, mesaj, dosya | Hayır | — | — | Hesap yok |
 
 İşaretle: **"Veriler aktarım sırasında şifrelenir" → Evet**;
 **"Kullanıcı verilerinin silinmesini talep edebilir" → Evet** (e-posta ile).
@@ -124,6 +127,6 @@ kanal/istasyon listesi görünüyor. Play en az 2, en çok 8 telefon görüntüs
 1. Play Console → Uygulama oluştur (ad, dil, ücretsiz).
 2. Mağaza kaydı: metinler + ikon + öne çıkan görsel + 3 ekran görüntüsü.
 3. Uygulama içeriği: reklamlar, hedef kitle, içerik derecelendirme, veri güvenliği.
-4. Kapalı test → `releases/v9.77/UMAY-MULTI-TV-9.77.aab` (versionCode 86).
+4. Kapalı test → `releases/v9.88/UMAY-MULTI-TV-9.88.aab` (versionCode 97).
 5. En az 12 tester, 14 gün kesintisiz → üretim erişimi başvurusu.
 6. Onay sonrası üretim → aynı AAB → inceleme.

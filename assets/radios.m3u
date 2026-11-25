@@ -42,7 +42,7 @@ http://22343.live.streamtheworld.com:3690/SUPER_FMAAC_SC
 #EXTINF:-1,Süper FM 99.9 | AAC+ · 64 kbps | Viranşehir
 https://yayin.superfmradyo.com.tr/superfm/stream
 #EXTINF:-1,SÜPER SHOW RADYO | AAC+ · 128 kbps | Türkiye
-https://sslyayin.netyayin.net:6065/
+https://sslyayin.netyayin.net:6065/;
 #EXTINF:-1,Metro FM | AAC+ · 64 kbps | Türkiye
 http://29341.live.streamtheworld.com:3690/METRO_FMAAC_SC
 #EXTINF:-1,Joy Fm | AAC+ · 64 kbps | Türkiye
@@ -57,8 +57,6 @@ https://live.radyofenomen.com/fenomenclubbin/128/icecast.audio
 http://showradyo.radyotvonline.net/showradyoaac/
 #EXTINF:-1,NTV Radyo | AAC+ · 139 kbps | Türkiye
 http://46.20.3.207/listen.pls
-#EXTINF:-1,Slow Turk | AAC | Türkiye
-https://radyo.duhnet.tv/ak_dtvh_slowturk
 #EXTINF:-1,Alem Fm | AAC · 128 kbps | Türkiye
 https://turkmedya.radyotvonline.net/alemfmaac
 #EXTINF:-1,Kalp FM | AAC+ · 128 kbps | Istanbul

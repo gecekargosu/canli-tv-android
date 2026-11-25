@@ -33,7 +33,9 @@ import java.util.Collections;
  * Reklam yonetimi (tek yer). Kurallar Ads.java icinde.
  *
  * - Banner: her ekranda, listenin/oynaticinin ALTINDA, her zaman gorunur.
- * - Gecis reklami: her kanal degisiminde bir + izlerken 15 dakikada bir.
+ * - Gecis reklami: yalniz kanal degisiminde (her 3. zap, en az 180 sn).
+ *   Izlerken tam ekran reklam GOSTERILMEZ (9.88 / K-02): mağaza metni "oynatma
+ *   reklamla kesilmez" diyor, kod da buna uyar.
  * - Reklamsiz sure kanal bazli DEGIL: uygulama geneli (odullu video ile 15 dk).
  * - Reklamsiz sure aktifse gecis reklami gosterilmez; banner yine kalir.
  * - Reklam yuklenemezse uygulama normal akisina devam eder.
@@ -65,7 +67,7 @@ public final class AdManager {
     private static int opens = 0;
     private static boolean showingAd = false;   // ayni anda iki tam ekran reklam acilmasin
     // Yükleme denemeleri arasında en az bekleme: eskiden saniyede bir istek gidiyordu
-    // (zamanlayıcı her saniye maybeTimerAd çağırıyor, reklam yoksa yeniden yüklüyordu).
+    // (oynatıcı her saniye reklam durumunu soruyordu, reklam yoksa yeniden yüklüyordu).
     private static long nextInterstitialTry = 0L;
     private static long nextRewardedTry = 0L;
     private static long interstitialBackoff = 30000L;
@@ -545,44 +547,6 @@ public final class AdManager {
                         android.widget.Toast.LENGTH_LONG).show();
             }
         } catch (Throwable ignored) { }
-    }
-
-    /**
-     * İzlerken 15 dakikada bir çıkan reklam. PlayerActivity her saniye çağırır;
-     * reklam hazır değilse sessizce geçer, uygulama akışı durmaz.
-     */
-    public static void maybeTimerAd(final Activity activity) {
-        // HATA (tur 3): rıza yokken de zamanlanmış reklam gösterilebiliyordu.
-        if (!Ads.SDK_READY || !adsAllowed || isAdFree(activity) || showingAd) return;
-        long now = System.currentTimeMillis();
-        long last = Prefs.lastAdAt(activity);
-        if (last <= 0) { Prefs.setLastAdAt(activity, now); return; }
-        if (now - last < Ads.AD_INTERVAL_MS) return;
-        final InterstitialAd ad = interstitial;
-        if (ad == null) { loadInterstitial(activity); return; }
-        interstitial = null;
-        lastInterstitial = now;
-        Prefs.setLastAdAt(activity, now);
-        showingAd = true;
-        ad.setFullScreenContentCallback(new FullScreenContentCallback() {
-            @Override public void onAdImpression() { AdStats.note(activity, "gecis"); }
-
-            @Override public void onAdDismissedFullScreenContent() {
-                showingAd = false;
-                loadInterstitial(activity);
-            }
-
-            @Override public void onAdFailedToShowFullScreenContent(AdError error) {
-                showingAd = false;
-                loadInterstitial(activity);
-            }
-        });
-        try {
-            ad.show(activity);
-        } catch (Throwable t) {
-            showingAd = false;
-            loadInterstitial(activity);
-        }
     }
 
     /** "15 dakika reklamsız" odullu reklami hazir mi? */

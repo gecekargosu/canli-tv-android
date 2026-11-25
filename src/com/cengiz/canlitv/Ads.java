@@ -48,8 +48,6 @@ public class Ads {
     public static final long INTERSTITIAL_GAP_MS = 180L * 1000L;
     /** Kaç kanal değişiminde bir geçiş reklamı gösterilir (3 zap = 1 reklam). */
     public static final int ZAPS_BEFORE_INTERSTITIAL = 3;
-    /** İzlerken kaç dakikada bir reklam çıkar (15 dakika). */
-    public static final long AD_INTERVAL_MS = 15L * 60L * 1000L;
     /** Odullu reklam karsiligi reklamsiz sure (uygulama geneli, kanal bazli değil). */
     public static final int REWARD_MINUTES = 15;
     /** Radyoda kac dakika sonra "reklamsiz devam?" teklifi gosterilir (zorlamasiz). */

@@ -20,7 +20,7 @@ public final class Popular {
             {"tr",
                     "trt 1", "trt1", "atv", "star tv", "show tv", "now tv", "tv8", "kanal d",
                     "trt haber", "haber global", "cnn türk", "ntv", "trt spor", "a spor",
-                    "bein sports", "trt 2", "trt belgesel", "trt müzik", "trt çocuk",
+                    "bein sports", "trt 2", "trt belgesel", "trt müzik",
                     "cartoon network", "power türk", "kral tv", "teve2", "tv100", "halk tv",
                     "360", "flash haber", "tvnet", "ülev", "beyaz tv", "tv 24", "ulusal"},
             {"us",

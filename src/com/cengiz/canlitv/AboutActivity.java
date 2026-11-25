@@ -89,7 +89,7 @@ public class AboutActivity extends Activity {
                 + "açtığın anda yayın başlar.", TEXT, 13);
         if (tr) {
             p(body, "Şu an Türkiye listesini görüyorsun: ATV, Star TV, TV8, Show TV, Kanal D, NOW, "
-                    + "TRT kanalları, haber ve müzik kanalları ile 80'e yakın Türk radyosu hazır gelir.", TEXT, 13);
+                    + "TRT kanalları, haber ve müzik kanalları ile 30'dan fazla Türk radyosu hazır gelir.", TEXT, 13);
         } else {
             p(body, "Şu an " + cname + " listesini görüyorsun. Bu listede o ülkenin yayıncılarının "
                     + "herkese açık kanalları ve en çok dinlenen radyoları yer alır; Türk kanalları "

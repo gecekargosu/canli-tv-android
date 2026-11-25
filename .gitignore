@@ -16,6 +16,11 @@ _build/
 # --- büyük ham medya ---
 *.mp4
 
+# --- Claude kontrol paketleri (yerelde kalır, git'e girmez) ---
+UMAY-MULTI-TV-Play-Kontrol-*.zip
+UMAY Multi TV v*.pdf
+YEDEK/
+
 # --- sürüm ikilileri yalnız GitHub Releases'te tutulur ---
 releases/**/*.apk
 releases/**/*.aab

@@ -117,6 +117,17 @@ public class SettingsActivity extends Activity {
 
     private void render() {
         body.removeAllViews();
+
+        // --- reklamsız abonelik: en başta (9.83) ---
+        subUiActive = Prefs.subActive(this);
+        section("Reklamsız izleme");
+        row("🚫", "Reklamsız abonelik",
+                "Aylık 20 ₺ · reklam videosu ve banner gösterilmez",
+                subUiActive ? "Etkin ✓" : "20 ₺ / ay",
+                new View.OnClickListener() {
+                    @Override public void onClick(View v) { subscriptionDialog(); }
+                });
+
         long used = Prefs.todayBytes(this);
         int lim = Prefs.limitMb(this);
         int pref = Prefs.maxHeight(this);
@@ -254,16 +265,6 @@ public class SettingsActivity extends Activity {
                 "Başlat ›", new View.OnClickListener() {
                     @Override public void onClick(View v) { healthScan(); }
                 });
-        // --- reklamsız abonelik (herkese görünür) ---
-        subUiActive = Prefs.subActive(this);
-        section("Reklamsız izleme");
-        row("🚫", "Reklamsız abonelik",
-                "Aylık 20 ₺ · reklam videosu ve banner gösterilmez",
-                subUiActive ? "Etkin ✓" : "20 ₺ / ay",
-                new View.OnClickListener() {
-                    @Override public void onClick(View v) { subscriptionDialog(); }
-                });
-
         // --- geliştirici (sahip) modu: kullanıcıya GÖSTERİLMEZ ---
         // Reklam sayacı, test modu ve "reklamları kapat" yalnız bu telefonda, gizli
         // mod açıkken görünür. Play'den indiren kullanıcı bu satırları görmez.

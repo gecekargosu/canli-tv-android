@@ -14,7 +14,6 @@ import android.media.AudioAttributes;
 import android.media.AudioFocusRequest;
 import android.media.AudioManager;
 import android.media.MediaMetadata;
-import android.media.MediaPlayer;
 import android.media.session.MediaSession;
 import android.media.session.PlaybackState;
 import android.net.wifi.WifiManager;
@@ -33,7 +32,9 @@ public class AudioService extends Service {
     public static final String CHANNEL_ID = "umay_audio";
     private static final int NOTIF_ID = 7;
 
-    private MediaPlayer player;
+    // 9.87: MediaPlayer bu cihazda AAC+ (HE-AAC) akışlarında -1004 veriyordu.
+    // Media3 ExoPlayer AAC/MP3/ICY akışlarını sorunsuz çözüyor.
+    private androidx.media3.exoplayer.ExoPlayer player;
     private MediaSession session;
     private String name = "Umay Multi TV";
     private String currentUrl;
@@ -111,6 +112,17 @@ public class AudioService extends Service {
         } catch (Throwable e) { return false; }
     }
 
+    /**
+     * Ses gercekten duyuluyor mu? Canli akista BUFFERING olaylari state'i
+     * S_BUFFERING'e cekiyor; bu yuzden durum yazisi "bağlanıyor…" da kaliyordu (9.85).
+     */
+    public static boolean isAudibleStatic() {
+        try {
+            return INSTANCE != null && INSTANCE.player != null
+                    && INSTANCE.preparedOk && INSTANCE.player.isPlaying();
+        } catch (Throwable e) { return false; }
+    }
+
     /** Yayin hala kurtarilabilir mi (baglaniyor / yeniden deneniyor). */
     public static boolean isConnectingStatic() {
         return state == S_BUFFERING;
@@ -157,6 +169,8 @@ public class AudioService extends Service {
     public void onCreate() {
         super.onCreate();
         registerNoisyReceiver();
+        ui.removeCallbacks(usageTick);
+        ui.post(usageTick);
     }
 
     @Override
@@ -196,6 +210,9 @@ public class AudioService extends Service {
             name = intent.getStringExtra("name") == null ? "Umay Multi TV" : intent.getStringExtra("name");
             currentUrl = url;
             requestFocus();
+            // Radyo akisi (.aac/.mp3) bir playlist degil: varyant cozumlemesi
+            // sonsuz akista hic bitmiyordu ve istasyon "bağlanıyor…" da kaliyordu (9.84).
+            if (!url.contains(".m3u8")) { playUrl(url); return START_STICKY; }
             // M-24: arka plan/"sadece ses" modunda master playlist verilince ABR 1080p'ye
             // çıkabiliyordu; "en az veri" iddiası yanlıştı. Önce en düşük varyantı seç.
             Quality.resolveLowest(this, url, new Quality.UrlCallback() {
@@ -296,7 +313,7 @@ public class AudioService extends Service {
         try {
             if (player == null) return;
             requestFocus();
-            player.start();
+            player.play();
             paused = false;
             state = S_PLAYING;
             updateState();
@@ -329,10 +346,10 @@ public class AudioService extends Service {
                                                     pause();
                                                     break;
                                                 case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK:
-                                                    if (player != null) player.setVolume(0.2f, 0.2f);
+                                                    if (player != null) player.setVolume(0.2f);
                                                     break;
                                                 case AudioManager.AUDIOFOCUS_GAIN:
-                                                    if (player != null) player.setVolume(1f, 1f);
+                                                    if (player != null) player.setVolume(1f);
                                                     if (resumeOnFocus) { resumeOnFocus = false; resume(); }
                                                     break;
                                             }
@@ -372,7 +389,7 @@ public class AudioService extends Service {
     /** Zayıf internette kaç kez yeniden bağlanılacağı. */
     private static final int MAX_ATTEMPTS = 3;
     /** Yavaş bağlantıda ilk bağlanma için tanınan süre. */
-    private static final long START_GRACE_MS = 15000L;
+    private static final long START_GRACE_MS = 30000L;
     private boolean preparedOk = false;
     private boolean retryPending = false;
     private int passiveTries = 0;
@@ -410,26 +427,12 @@ public class AudioService extends Service {
      */
     private final Runnable monitor = new Runnable() {
         @Override public void run() {
-            MediaPlayer p = player;
+            androidx.media3.exoplayer.ExoPlayer p = player;
             try {
                 if (p != null && state == S_PLAYING && p.isPlaying()) {
-                    int pos = p.getCurrentPosition();
-                    // Ağdan veri gelmiyorsa yayın sessizce takılmış demektir (tampon bitince ses kesilir).
-                    long rx = android.net.TrafficStats.getUidRxBytes(android.os.Process.myUid());
-                    // HATA (tur 1): once lastRx güncelleniyor, sonra (rx - lastRx) ölçülüyordu;
-                    // fark her zaman 0 çıkıyor ve radyo 12 saniyede bir kendini yeniden
-                    // başlatıyordu. Farkı güncellemeden ÖNCE al.
-                    long delta = (lastRx < 0 || rx < lastRx) ? 0 : rx - lastRx;
-                    lastRx = rx;
-                    // M-25: radyo dinlerken harcanan veriyi günlük sayaca yaz.
-                    if (delta > 0) {
-                        pendingBytes += delta;
-                        if (pendingBytes > 1048576L) flushUsage();
-                    }
-                    // 4 sn'de 8 KB'den az veri geldiyse yayın akışı durmuş demektir
-                    // (128 kbps radyo saniyede ~16 KB indirir).
-                    boolean noData = delta < 2000;   // 16 kbps ses ~2 KB/sn
-                    if (pos == lastPos || noData) {
+                    long pos = p.getCurrentPosition();
+                    // Veri sayımı artık monitor'den bağımsız: usageTick() (9.87).
+                    if (pos == lastPos) {
                         stallTicks++;
                         if (stallTicks >= 3) {
                             stallTicks = 0;
@@ -455,7 +458,7 @@ public class AudioService extends Service {
 
     private final Runnable watchdog = new Runnable() {
         @Override public void run() {
-            MediaPlayer p = player;
+            androidx.media3.exoplayer.ExoPlayer p = player;
             if (p == null) return;
             boolean playing = false;
             try { playing = p.isPlaying(); } catch (Exception ignored) { }
@@ -525,24 +528,11 @@ public class AudioService extends Service {
      */
     private void scheduleRetry(final String reason) {
         if (retryPending) return;
-        // Şifresiz http:// adres açılmıyorsa aynı yayının https:// sürümünü dene
-        // (bazı ağlar 80 portunu/CDN'i engelliyor; şifreli adres genelde geçiyor).
-        if (!httpsTried && currentUrl != null && currentUrl.startsWith("http://")) {
-            httpsTried = true;
-            final String secure = "https://" + currentUrl.substring("http://".length());
-            android.util.Log.w("UmayRadio", "https deneniyor: " + secure);
-            notifyText("Güvenli adres deneniyor…");
-            retryPending = true;
-            ui.postDelayed(new Runnable() {
-                @Override public void run() { retryPending = false; attemptPlay(secure); }
-            }, 1000L);
-            return;
-        }
         if (attempt < MAX_ATTEMPTS - 1) {
             attempt++;
             notifyText(reason + " · yeniden bağlanılıyor (" + attempt + "/" + (MAX_ATTEMPTS - 1) + ")");
             state = S_BUFFERING;
-            long delay = 5000L;
+            long delay = 8000L;
             android.util.Log.w("UmayRadio", "yeniden baglanma " + attempt + " gecikme=" + delay);
             retryPending = true;
             ui.postDelayed(new Runnable() {
@@ -571,6 +561,10 @@ public class AudioService extends Service {
      * Yayını açar. Takılırsa **aynı (güvenli) adres** bir kez daha denenir; v9.26'dan
      * itibaren şifresiz http:// adresine düşülmüyor (P0-5g: içerik bütünlüğü).
      */
+    /**
+     * 9.87: Radyo Media3 ExoPlayer ile calar. MediaPlayer bu cihazda AAC+ (HE-AAC)
+     * akislarinda -1004 verip hic acmiyordu; ExoPlayer AAC/MP3/ICY destekliyor.
+     */
     private void attemptPlay(final String url) {
         final String candidate = url;
         releasePlayer();
@@ -582,56 +576,77 @@ public class AudioService extends Service {
         ui.removeCallbacks(watchdog);
         CrashLog.event(this, "radio", "baglaniyor: " + candidate);
         try {
-            player = new MediaPlayer();
-            player.setAudioAttributes(new AudioAttributes.Builder()
-                    .setUsage(AudioAttributes.USAGE_MEDIA)
-                    .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC).build());
-            // Tarayıcı UA'sı: bazı CDN'ler aksi hâlde reklam kuşağı klibi döndürüyor.
-            player.setDataSource(AudioService.this, android.net.Uri.parse(candidate),
-                    Net.playerHeaders());
-            player.prepareAsync();
+            final androidx.media3.exoplayer.ExoPlayer ex =
+                    new androidx.media3.exoplayer.ExoPlayer.Builder(this).build();
+            player = ex;
+            ex.setAudioAttributes(new androidx.media3.common.AudioAttributes.Builder()
+                    .setUsage(androidx.media3.common.C.USAGE_MEDIA)
+                    .setContentType(androidx.media3.common.C.AUDIO_CONTENT_TYPE_MUSIC).build(), true);
+            ex.addListener(new androidx.media3.common.Player.Listener() {
+                @Override public void onPlaybackStateChanged(int st) {
+                    if (player != ex) return;
+                    if (st == androidx.media3.common.Player.STATE_READY) {
+                        onPreparedOnce();
+                    } else if (st == androidx.media3.common.Player.STATE_BUFFERING) {
+                        if (!preparedOk) state = S_BUFFERING;
+                    } else if (st == androidx.media3.common.Player.STATE_ENDED) {
+                        scheduleRetry("Yayın bitti");
+                    }
+                }
+                @Override public void onPlayerError(androidx.media3.common.PlaybackException e) {
+                    if (player != ex) return;
+                    state = S_ERROR;
+                    CrashLog.event(AudioService.this, "radio",
+                            "hata " + e.errorCode + " " + candidate);
+                    scheduleRetry("Yayın kesildi");
+                }
+            });
+            ex.setMediaItem(androidx.media3.common.MediaItem.fromUri(candidate));
+            ex.prepare();
+            ex.play();
             android.util.Log.i("UmayRadio", "deneme " + attempt + ": " + candidate);
             ui.removeCallbacks(watchdog);
-            ui.postDelayed(watchdog, 7000L);
-            player.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
-                                    @Override public void onPrepared(MediaPlayer mp) {
-                        preparedOk = true;
-                        state = S_PLAYING;
-                        CrashLog.event(AudioService.this, "radio", "hazir: " + candidate);
-                        attachEq(mp);
-                        mp.start();
-                        usageStartedAt = System.currentTimeMillis();
-                        lastPos = -1;
-                        lastRx = -1;
-                        stallTicks = 0;
-                        ui.removeCallbacks(monitor);
-                        ui.postDelayed(monitor, 4000L);
-                        armSleep();
-                        updateState();
-                    try { startForeground(NOTIF_ID, notification()); } catch (Exception ignored) { }
-                }
-            });
-                            player.setOnInfoListener(new MediaPlayer.OnInfoListener() {
-                @Override public boolean onInfo(MediaPlayer mp, int what, int extra) {
-                    if (what == MediaPlayer.MEDIA_INFO_BUFFERING_START) state = S_BUFFERING;
-                    else if (what == MediaPlayer.MEDIA_INFO_BUFFERING_END) state = S_PLAYING;
-                    return false;
-                }
-            });
-            player.setOnErrorListener(new MediaPlayer.OnErrorListener() {
-                    @Override public boolean onError(MediaPlayer mp, int w, int e) {
-                        android.util.Log.e("UmayRadio", "hata what=" + w + " extra=" + e + " " + currentUrl);
-                        state = S_ERROR;
-                        CrashLog.event(AudioService.this, "radio", "hata what=" + w + " extra=" + e + " " + currentUrl);
-                        scheduleRetry("Yayın kesildi");
-                        return true;
-                    }
-                });
-                android.util.Log.i("UmayRadio", "setDataSource tamam: " + candidate);
+            ui.postDelayed(watchdog, 8000L);
         } catch (Exception e) {
+            android.util.Log.e("UmayRadio", "kurulamadi: " + e);
             stopSelf();
         }
     }
+
+    /** Yayin ilk kez hazir oldu (tek sefer calisir). */
+    private void onPreparedOnce() {
+        if (preparedOk) return;
+        preparedOk = true;
+        state = S_PLAYING;
+        attachEq();
+        usageStartedAt = System.currentTimeMillis();
+        lastPos = -1;
+        stallTicks = 0;
+        armSleep();
+        updateState();
+        try { startForeground(NOTIF_ID, notification()); } catch (Exception ignored) { }
+        ui.removeCallbacks(monitor);
+        ui.postDelayed(monitor, 4000L);
+        CrashLog.event(this, "radio", "hazir: " + currentUrl);
+    }
+
+    // --- M-25: radyo veri sayaci. Durumdan bagimsiz calisir; arka planda da artar (9.87).
+    private long lastUsageRx = -1;
+    private final Runnable usageTick = new Runnable() {
+        @Override public void run() {
+            try {
+                long rx = android.net.TrafficStats.getUidRxBytes(android.os.Process.myUid());
+                if (lastUsageRx < 0 || rx < lastUsageRx) lastUsageRx = rx;
+                long delta = rx - lastUsageRx;
+                if (delta > 0) {
+                    lastUsageRx = rx;
+                    pendingBytes += delta;
+                    if (pendingBytes > 262144L) flushUsage();
+                }
+            } catch (Throwable ignored) { }
+            ui.postDelayed(this, 5000L);
+        }
+    };
 
     @SuppressWarnings("deprecation")
     private void locks() {
@@ -725,10 +740,10 @@ public class AudioService extends Service {
         } catch (Exception ignored) { }
     }
 
-    private void attachEq(MediaPlayer mp) {
+    private void attachEq() {
         try {
             if (eq != null) { eq.release(); eq = null; }
-            eq = new android.media.audiofx.Equalizer(0, mp.getAudioSessionId());
+            eq = new android.media.audiofx.Equalizer(0, 0);
             eq.setEnabled(true);
             short n = eq.getNumberOfBands();
             for (short i = 0; i < n && i < LEVELS.length; i++) {
@@ -739,7 +754,7 @@ public class AudioService extends Service {
 
     private void releasePlayer() {
         try {
-            if (player != null) { player.reset(); player.release(); player = null; }
+            if (player != null) { player.release(); player = null; }
         } catch (Exception ignored) { }
     }
 
@@ -749,6 +764,7 @@ public class AudioService extends Service {
         state = S_ERROR;
         flushUsage();
         ui.removeCallbacks(monitor);
+        ui.removeCallbacks(usageTick);
         abandonFocus();
         try { if (noisyReceiver != null) { unregisterReceiver(noisyReceiver); noisyReceiver = null; } }
         catch (Throwable ignored) { }

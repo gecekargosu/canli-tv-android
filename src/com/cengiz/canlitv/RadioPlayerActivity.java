@@ -103,7 +103,7 @@ public class RadioPlayerActivity extends Activity {
         head.addView(home);
 
         // Uygulamadan tamamen cik (radyo da durur)
-        TextView quit = chip("⏻ Çık");
+        TextView quit = chip("Çık");
         quit.setTextSize(12);
         quit.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View v) {
@@ -114,14 +114,14 @@ public class RadioPlayerActivity extends Activity {
         head.addView(quit);
 
         // uyku zamanlayici: gece dinlerken belirli sure sonra durdur
-        final TextView sleepBtn = chip("⏱ Uyku");
+        final TextView sleepBtn = chip("Uyku");
         sleepLabel = sleepBtn;
         sleepBtn.setTextSize(12);
         sleepBtn.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View v) { sleepDialog(); }
         });
         head.addView(sleepBtn);
-        TextView stopBtn = chip("⏹ Durdur");
+        TextView stopBtn = chip("Durdur");
         stopBtn.setTextSize(12);
         stopBtn.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View v) {
@@ -424,7 +424,10 @@ public class RadioPlayerActivity extends Activity {
         stationRetries = 0;
         customStatus = false;
         if (sleepLabel != null)
-            sleepLabel.setText(AudioService.sleepLeft() > 0 ? "⏱" : "⏱ Uyku");
+            sleepLabel.setText(AudioService.sleepLeft() > 0 ? "Uyku ✓" : "Uyku");
+        // ilk denemede ses gelince durum yazisi "bağlanıyor…" da kalıyordu (9.83)
+        ui.removeCallbacks(statusSync);
+        ui.post(statusSync);
         ui.removeCallbacks(radioWatchdog);
         ui.postDelayed(radioWatchdog, 15000);
     }
@@ -436,10 +439,23 @@ public class RadioPlayerActivity extends Activity {
      */
     private boolean customStatus = false;
 
+    /** Yayin gercekten calmaya baslayinca durum yazisini gunceller. */
+    private final Runnable statusSync = new Runnable() {
+        @Override public void run() {
+            if (!playing) return;
+            if (!customStatus && AudioService.isAudibleStatic()) {
+                statusView.setText("● Canlı yayın");
+                return; // caliyor: izlemeyi birak
+            }
+            if (!customStatus && stationRetries == 0)
+                ui.postDelayed(this, 1000);
+        }
+    };
+
     private final Runnable radioWatchdog = new Runnable() {
         @Override public void run() {
             if (names.isEmpty() || index < 0 || index >= urls.size()) return;
-            if (AudioService.isPlayingStatic()) {
+            if (AudioService.isAudibleStatic()) {
                 radioSkips = 0;
                 if (stationRetries > 0) {
                     customStatus = true;
