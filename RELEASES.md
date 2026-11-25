@@ -5,7 +5,7 @@ Hepsi GitHub Releases sayfasında:
 
 **https://github.com/gecekargosu/canli-tv-android/releases**
 
-- En son sürüm: `v9.90` — `CanliTV-9.90.apk`, `UMAY-MULTI-TV-9.90.aab` (Play).
+- En son sürüm: `v9.91` — `CanliTV-9.91.apk`, `UMAY-MULTI-TV-9.91.aab` (Play).
 - İndirme sayfası: https://umay-multi-tv-gq3zer.freebuff.site/indir
 - Sürüm notları: `releases/vX.YY/SURUM-NOTLARI.md`
 
@@ -14,6 +14,16 @@ Site production güncellendi: gizlilik/kullanım metinleri yeni abonelik bölüm
 `/indir` artık **9.88**'i indiriyor. APK telefona kuruldu (97 / 9.88).
 Kaynak yedeği: `YEDEK/UMAY-MULTI-TV-9.88-2026-11-25/` ve aynı adlı `.tar.gz`
 (imza anahtarı `upload-keystore.jks` + `keystore.properties` dahil).
+
+## v9.91 — RecyclerView, tablet düzeni
+
+- **K-16: kanal listesi RecyclerView'e taşındı.** `ListView`+`BaseAdapter` yerine
+  `RecyclerView`+`LinearLayoutManager`+`ViewHolder`; satır aralığı `ItemDecoration` ile.
+  Dokunma/uzun basma davranışı korundu (cihazda test edildi).
+- **K-18/K-20 tablet düzeni:** geniş ekranda içerik 560dp ile sınırlandı; üst bar
+  kutularının gerilmesi, ikonların ortada kalması ve alt şeridin taşması düzeldi
+  (1280x800 dp160 ölçekte doğrulandı).
+- Uygulama bilinçli olarak **portre kilitli** (TV listesi tek elle kullanım için).
 
 ## v9.90 — radyo kalıcı onarım, büyük istasyonlar önce
 

@@ -13,8 +13,10 @@ import android.view.Gravity;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 import android.view.ViewGroup;
-import android.widget.AdapterView;
-import android.widget.BaseAdapter;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+import android.graphics.Rect;
+import android.view.ViewGroup;
 import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.HorizontalScrollView;
@@ -50,7 +52,7 @@ public class MainActivity extends android.app.Activity {
     private LinearLayout radioNow;
     private TextView radioNowText;
     private TextView emptyView;
-    private ListView listView;
+    private RecyclerView listView;
     private boolean onlyHidden = false;
     /** En son bilinen abonelik durumu (değişince ekran yeniden kurulur). */
     private boolean subState;
@@ -93,6 +95,16 @@ public class MainActivity extends android.app.Activity {
         // boşluk kalıyordu). Pencere zaten güvenli alanın altında başladığı için
         // fitSystemWindows ek payı ikinci kez ekliyordu; tek pay yeter.
         root.setFitsSystemWindows(false);
+        // K-18: tablet / geniş ekranda içerik 560dp'yi geçmesin.
+        // Aksi halde üst bar kutuları ve liste satırları ekran boyunca geriliyor,
+        // ikonlar ortada kalıyor, alt durum şeridi taşıyordu.
+        try {
+            int wDp = getResources().getConfiguration().screenWidthDp;
+            if (wDp > 560) {
+                int pad = (int) ((wDp - 560) / 2f * getResources().getDisplayMetrics().density);
+                root.setPadding(pad, 0, pad, 0);
+            }
+        } catch (Throwable ignored) { }
 
         // --- baslik: 3 sabit satir, hepsi ayni 12dp kenardan baslar/biter ---
         LinearLayout head = new LinearLayout(this);
@@ -419,30 +431,23 @@ public class MainActivity extends android.app.Activity {
 
         root.addView(editBar);
 
-        // --- liste ---
-        ListView list = new ListView(this);
+        // --- liste (K-16: RecyclerView) ---
+        RecyclerView list = new RecyclerView(this);
         listView = list;
-        list.setDivider(null);
-        list.setDividerHeight(dp(6));
+        list.setLayoutManager(new LinearLayoutManager(this));
+        list.setHasFixedSize(true);
         list.setPadding(dp(12), dp(4), dp(12), dp(12));
         list.setClipToPadding(false);
-        list.setSelector(new android.graphics.drawable.ColorDrawable(Color.TRANSPARENT));
+        list.setBackgroundColor(Color.TRANSPARENT);
+        final int gap = dp(6);
+        list.addItemDecoration(new RecyclerView.ItemDecoration() {
+            @Override public void getItemOffsets(Rect out, View view, RecyclerView parent,
+                                                 RecyclerView.State state) {
+                out.bottom = gap;
+            }
+        });
         adapter = new ChannelAdapter();
         list.setAdapter(adapter);
-        list.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override public void onItemClick(AdapterView<?> p, View v, int pos, long id) {
-                Channel c = shown.get(pos);
-                if (editMode) { toggleSelect(c); return; }
-                if (onlyHidden) { channelMenu(c); return; }
-                open(c);
-            }
-        });
-        list.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
-            @Override public boolean onItemLongClick(AdapterView<?> p, View v, int pos, long id) {
-                channelMenu(shown.get(pos));
-                return true;
-            }
-        });
 
         emptyView = new TextView(this);
         emptyView.setTextColor(MUTED);
@@ -1227,13 +1232,48 @@ public class MainActivity extends android.app.Activity {
         return (int) (v * getResources().getDisplayMetrics().density);
     }
 
-    private class ChannelAdapter extends BaseAdapter {
-        @Override public int getCount() { return shown.size(); }
-        @Override public Object getItem(int i) { return shown.get(i); }
-        @Override public long getItemId(int i) { return i; }
+    /** K-16: RecyclerView ViewHolder'ı — her satır bir FrameLayout kabı. */
+    private static class RowVH extends RecyclerView.ViewHolder {
+        RowVH(View v) { super(v); }
+    }
 
-        @Override
-        public View getView(int i, View convert, ViewGroup parent) {
+    private class ChannelAdapter extends RecyclerView.Adapter<RowVH> {
+        @Override public int getItemCount() { return shown.size(); }
+
+        @Override public RowVH onCreateViewHolder(ViewGroup parent, int viewType) {
+            FrameLayout box = new FrameLayout(MainActivity.this);
+            box.setLayoutParams(new RecyclerView.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+            return new RowVH(box);
+        }
+
+        @Override public void onBindViewHolder(final RowVH holder, int position) {
+            final FrameLayout box = (FrameLayout) holder.itemView;
+            box.removeAllViews();
+            final LinearLayout row = buildRow(position);
+            box.addView(row);
+            final int pos = position;
+            row.setOnClickListener(new View.OnClickListener() {
+                @Override public void onClick(View v) {
+                    if (pos < 0 || pos >= shown.size()) return;
+                    Channel c = shown.get(pos);
+                    if (editMode) { toggleSelect(c); return; }
+                    if (onlyHidden) { channelMenu(c); return; }
+                    open(c);
+                }
+            });
+            row.setOnLongClickListener(new View.OnLongClickListener() {
+                @Override public boolean onLongClick(View v) {
+                    if (pos < 0 || pos >= shown.size()) return false;
+                    channelMenu(shown.get(pos));
+                    return true;
+                }
+            });
+        }
+    }
+
+    /** L-16: satırın görselini kurar (eski getView gövdesi). */
+    private LinearLayout buildRow(int i) {
             LinearLayout row = new LinearLayout(MainActivity.this);
             row.setOrientation(LinearLayout.HORIZONTAL);
             row.setGravity(Gravity.CENTER_VERTICAL);
@@ -1321,6 +1361,5 @@ public class MainActivity extends android.app.Activity {
             }
 
             return row;
-        }
     }
 }
