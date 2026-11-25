@@ -79,6 +79,22 @@ public class MainActivity extends android.app.Activity {
                 + " · ülke=" + Prefs.country(this)
                 + " · ekonomi=" + (Prefs.economy(this) ? "1" : "0")
                 + " · dil=" + Prefs.uiLang(this));
+        // 9.92: yeniden paketlenmiş (logo/adresi değiştirilmiş) kopya koruması.
+        // Play'den kurulan sürümler etkilenmez; yalnızca bizim sertifikamızla
+        // imzalanmamış APK'lar engellenir.
+        if (!Guard.official(this)) {
+            new android.app.AlertDialog.Builder(this)
+                    .setTitle("Resmi olmayan sürüm")
+                    .setMessage("Bu kopya UMAY Multi TV'nin resmi sürümü değil.\n\n"
+                            + "Uygulama değiştirilmiş olabilir; güvenliğin için çalıştırılmıyor.\n"
+                            + "Resmi sürümü Google Play'den veya umay-multi-tv-gq3zer.freebuff.site adresinden yükle.")
+                    .setCancelable(false)
+                    .setPositiveButton("Kapat", new android.content.DialogInterface.OnClickListener() {
+                        @Override public void onClick(android.content.DialogInterface d, int w) { finish(); }
+                    })
+                    .show();
+            return;
+        }
         Prefs.migrateNumbers(this);   // 9.75: eski numara/sıra kayıtları bir kez temizlenir
         Good.refreshIfNeeded(this);   // #101: doğrulanmış kanal listesi günde 1 kez tazelenir
         all = ChannelRepo.all(this);
