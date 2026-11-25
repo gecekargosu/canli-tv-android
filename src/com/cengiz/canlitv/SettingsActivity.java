@@ -334,9 +334,10 @@ public class SettingsActivity extends Activity {
                 new View.OnClickListener() {
                     @Override public void onClick(View v) { adDialog(); }
                 });
-        row("🐞", "Hata bildir", "Bir sorun olursa hata kaydını gönder, düzelteyim",
-                "Gönder ›", new View.OnClickListener() {
-                    @Override public void onClick(View v) { shareCrash(); }
+        row("🐞", "Hata günlüğü",
+                "Ne zaman ne oldu: bağlantı kopması, açılmayan kanal, çökme",
+                "Aç ›", new View.OnClickListener() {
+                    @Override public void onClick(View v) { errorLogDialog(); }
                 });
         row("⭐", "Bizi değerlendir",
                 "Play'de puan ver · uygulama daha çok kişiye ulaşsın",
@@ -348,6 +349,38 @@ public class SettingsActivity extends Activity {
                 "Paylaş ›", new View.OnClickListener() {
                     @Override public void onClick(View v) { shareApp(); }
                 });
+    }
+
+    /**
+     * Hata günlüğü: cihazda biriken olaylar (açılış, bağlantı kopması, ölü kanal,
+     * oynatıcı hata kodu, reklam yükleme hatası) zaman damgasıyla okunur.
+     */
+    private void errorLogDialog() {
+        String log = CrashLog.report(this);
+        android.widget.TextView tv = new android.widget.TextView(this);
+        tv.setText(log);
+        tv.setTextSize(11);
+        tv.setTypeface(android.graphics.Typeface.MONOSPACE);
+        tv.setTextIsSelectable(true);
+        int pad = (int) (14 * getResources().getDisplayMetrics().density);
+        tv.setPadding(pad, pad, pad, pad);
+        android.widget.ScrollView sv = new android.widget.ScrollView(this);
+        sv.addView(tv);
+        new AlertDialog.Builder(this)
+                .setTitle("Hata günlüğü")
+                .setView(sv)
+                .setPositiveButton("📧 Gönder", new DialogInterface.OnClickListener() {
+                    @Override public void onClick(DialogInterface d, int w) { mailCrash(CrashLog.report(SettingsActivity.this)); }
+                })
+                .setNeutralButton("Temizle", new DialogInterface.OnClickListener() {
+                    @Override public void onClick(DialogInterface d, int w) {
+                        CrashLog.clear(SettingsActivity.this);
+                        CrashLog.clearEvents(SettingsActivity.this);
+                        Toast.makeText(SettingsActivity.this, "Hata günlüğü temizlendi", Toast.LENGTH_SHORT).show();
+                    }
+                })
+                .setNegativeButton("Kapat", null)
+                .show();
     }
 
     /** Cihazda kayitli hata logunu paylasir (WhatsApp/mail ile gonderilebilir). */

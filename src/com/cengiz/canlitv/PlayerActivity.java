@@ -442,6 +442,9 @@ public class PlayerActivity extends android.app.Activity {
             }
 
             @Override public void onPlayerError(androidx.media3.common.PlaybackException e) {
+                // Hata günlüğü: teknik kod, kullanıcının gördüğü mesajdan bağımsız.
+                lastError = e == null ? "?" : (e.getErrorCodeName() + " · " + e.getMessage());
+                CrashLog.event(PlayerActivity.this, "tv", "oynatıcı hatası: " + lastError);
                 onPError();
             }
 
@@ -511,6 +514,7 @@ public class PlayerActivity extends android.app.Activity {
         if (ready) return;
         ready = true;
         everPlayed = true;   // M-99: ilk kare geldi, bu kanal ölü sayılmayacak
+        CrashLog.event(this, "tv", "hazır: " + list.get(index).name);
         progress.setVisibility(View.GONE);
         errorView.setVisibility(View.GONE);
         player.setVolume(muted ? 0f : 1f);
@@ -530,6 +534,9 @@ public class PlayerActivity extends android.app.Activity {
         ui.removeCallbacks(watchdog);
     }
 
+    /** Son oynatıcı hatası (hata günlüğüne yazılır). */
+    private String lastError = "";
+
     /** Aynı yayına kaç kez yeniden bağlanıldı (zayıf internet). */
     private int sameRetries = 0;
     /** Ağ olayı yüzünden kaç kez yeniden bağlanıldı (oynak bağlantı koruması). */
@@ -546,6 +553,9 @@ public class PlayerActivity extends android.app.Activity {
             android.net.ConnectivityManager cm =
                     (android.net.ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
             netCb = new android.net.ConnectivityManager.NetworkCallback() {
+                @Override public void onLost(android.net.Network n) {
+                    CrashLog.event(PlayerActivity.this, "net", "bağlantı koptu");
+                }
                 @Override public void onAvailable(android.net.Network n) {
                     ui.post(new Runnable() {
                         @Override public void run() {
@@ -634,6 +644,12 @@ public class PlayerActivity extends android.app.Activity {
      * Tek yerden yapılıyor ki dört ayrı "yeniden bağlanıyorum" yolu farklı davranmasın.
      */
     private void markDead(String neden) {
+        String nm = "?", u = "";
+        try { nm = list.get(index).name; u = list.get(index).url; } catch (Exception ignored) { }
+        // Hata günlüğü: kanal neden ve ne kadar sürede ölü sayıldı.
+        CrashLog.event(this, "tv", "ölü: " + nm + " · " + neden
+                + (lastError.length() > 0 ? " · son hata=" + lastError : "")
+                + " · " + u);
         try { Prefs.addFail(this, list.get(index).url); } catch (Exception ignored) { }
         try {
             progress.setVisibility(View.GONE);

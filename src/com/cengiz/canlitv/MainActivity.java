@@ -65,7 +65,12 @@ public class MainActivity extends android.app.Activity {
         // Kanal aramasında da klavye listeyi yutmasın.
         getWindow().setSoftInputMode(
                 android.view.WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING);
-        CrashLog.install(this);   // cokme olursa cihaza log yaz (Ayarlar -> Hata bildir)
+        CrashLog.install(this);   // cokme olursa cihaza log yaz (Ayarlar -> Hata günlüğü)
+        // Hata günlüğü: hangi sürüm, hangi ülke, hangi mod ile açıldı.
+        CrashLog.event(this, "app", "açılış " + BuildConfig.VERSION_NAME
+                + " · ülke=" + Prefs.country(this)
+                + " · ekonomi=" + (Prefs.economy(this) ? "1" : "0")
+                + " · dil=" + Prefs.uiLang(this));
         Good.refreshIfNeeded(this);   // #101: doğrulanmış kanal listesi günde 1 kez tazelenir
         all = ChannelRepo.all(this);
         shownCountry = Prefs.country(this);

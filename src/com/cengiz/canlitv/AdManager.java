@@ -362,6 +362,7 @@ public final class AdManager {
                             }
 
                             @Override public void onAdFailedToLoad(LoadAdError error) {
+                                CrashLog.event(activity, "ad", "geçiş reklamı yüklenemedi: " + error.getCode() + " " + error.getMessage());
                                 Log.w(TAG, "banner dolmadi, kendi barimiz: " + error.getMessage());
                                 view.setVisibility(View.GONE);
                                 house.setVisibility(View.VISIBLE);
