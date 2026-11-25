@@ -234,3 +234,14 @@ dokunma + `uiautomator dump` + `logcat` + ekran görüntüsü. "Kanıt" sütunu 
 |---|------|----------------|
 | D-50 | Gerçek ölü kanalla `Repair` testi | **🔧 Kısmen.** Masaüstünde 4 ölü kanal bulundu (#15 BLK, #100 RFO bağlantı yok; #16 BTL, #48 iSTUFF 403). Cihazda BLK açıldı: kanal **hiç hata üretmiyor**, 50-80 sn boyunca "yeniden bağlanıyorum" döngüsünde kalıyor, `addFail` çağrılmıyor → onarım hiç devreye giremiyor. Ayrıntı ve kök nedenler M-99'da. Düzeltme yazıldı ama cihazda doğrulanamadı, geri alındı. |
 | D-55 | 9.70 gerileme kontrolü (ölü kanal düzeltmesi geri alındıktan sonra) | **✅** Kaynaktan derlenen APK `releases/v9.70/CanliTV-9.70.apk` ile birebir (0 bayt fark), cihaza yeniden kuruldu. |
+
+### 22. yarı — 9.71 doğrulamaları
+
+| # | Konu | Sonuç / kanıt |
+|---|------|----------------|
+| D-50 | Gerçek ölü kanalla hata/onarım | **✅** Almanya listesi: RFO 16. sn'de "Bu kanal şu an açılamadı · Bağlantı kurulamadı" gösterdi, ardından sıradaki kanal (RiC) açıldı; BLK Regional TV de "yeniden bağlanıyorum (1/3)" sonrası işaretlenip geçildi. Sonsuz döngü yok (`_build/t16_rfo.jpg`). |
+| D-56 | Kanal listesi 126'ya indi mi | **✅** Ülke ekranı "Türkiye · 126 kanal · hazır"; ana başlık 127 (kullanıcının kendi eklediği 1 kanal). |
+| D-57 | Kayıt kısıtı | **✅** ATV'de "Kayıt yalnız kamu kanallarında açık (TRT, TBMM, Diyanet)" uyarısı, dosya oluşmadı; TRT 1'de `TRT_1_…ts` oluştu ve durdu. |
+| D-58 | Reklam test modu yayında görünmüyor mu | **✅** Ayarlar tarandı: "Reklam test modu" yok, "Reklam sayacım" var (175 reklam · ~₺1,78). |
+| D-59 | Reklam sıklığı (3 zap / 180 sn) | **⏳** Cihazda reklam doluluğu olmadığı için gözle doğrulanamadı; kod yolu denetlendi. |
+| D-60 | 9.71 kapasite/sürüm denetimi | **✅** `verify-apk --prev v9.70 --expect-version 9.71` temiz: sınıf +0, dosya +0, imza aynı. |

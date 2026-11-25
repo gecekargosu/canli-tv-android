@@ -382,6 +382,11 @@ public class MultiActivity extends android.app.Activity {
             return;
         }
         Channel c = list.get(slots[s].chan);
+        if (!ChannelRepo.canRecord(c.name)) {
+            Toast.makeText(this, "Kayıt yalnız kamu kanallarında açık (TRT, TBMM, Diyanet)",
+                    Toast.LENGTH_LONG).show();
+            return;
+        }
         btn.setText("⏹ durdur");
         recorder.start(this, c.url, "ekran" + (s + 1) + "_" + c.name, new HlsRecorder.Listener() {
             @Override public void onInfo(String msg) { }

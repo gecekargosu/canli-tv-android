@@ -75,8 +75,6 @@ public class Lang {
         if ("general".equals(key)) return pick(c, "Genel", "General", "Общие", "عام");
 
         // --- hesap / uyelik ---
-        if ("account".equals(key)) return pick(c, "Hesap", "Account", "Аккаунт", "الحساب");
-        if ("account_sub".equals(key)) return pick(c, "İsteğe bağlı üyelik · misafir kullanım açık", "Optional account · guest mode always available", "Аккаунт по желанию · гость всегда доступен", "حساب اختياري · الوضع الزائري متاح");
         if ("account_why".equals(key)) return pick(c, "Üye olursan favorilerin ve ayarların hesabına bağlanır, yeni bölümlerden ilk sen haberdar olursun. Zorunlu değil.", "With an account your favourites and settings are tied to it and you hear about new features first. Not required.", "С аккаунтом избранное и настройки привязаны к нему, а о новинках узнаёте первыми. Необязательно.", "بحساب تُربط مفضّلتك وإعداداتك به وتعلم بالميزات الجديدة أولًا. غير إلزامي.");
         if ("account_intro".equals(key)) return pick(c, "Hesabın yoksa misafir olarak devam edebilirsin: kanallar, kayıt ve favoriler aynen çalışır.", "No account? Continue as a guest: channels, recording and favourites work the same.", "Нет аккаунта? Продолжайте гостем: каналы, запись и избранное работают так же.", "لا حساب؟ تابع كزائر: القنوات والتسجيل والمفضلة تعمل كما هي.");
         if ("signin".equals(key)) return pick(c, "Giriş yap", "Sign in", "Войти", "تسجيل الدخول");
@@ -96,9 +94,7 @@ public class Lang {
         if ("have_code".equals(key)) return pick(c, "Google'dan aldığım kodla gireceğim", "I have a code from Google", "У меня есть код от Google", "لدي رمز من Google");
         if ("no_browser".equals(key)) return pick(c, "Tarayıcı açılamadı.", "Could not open a browser.", "Не удалось открыть браузер.", "تعذّر فتح المتصفح.");
         if ("guest_go".equals(key)) return pick(c, "Şimdi değil, misafir olarak devam et", "Not now, continue as guest", "Не сейчас, продолжить гостем", "ليس الآن، المتابعة كزائر");
-        if ("guest_short".equals(key)) return pick(c, "Misafir", "Guest", "Гость", "زائر");
         if ("code_title".equals(key)) return pick(c, "E-postana gelen kodu gir", "Enter the code sent to your e-mail", "Введите код из письма", "أدخل الرمز المُرسل إلى بريدك");
-        if ("code_sub".equals(key)) return pick(c, "6 haneli kod şu adrese gitti:", "6-digit code sent to:", "6-значный код отправлен на:", "الرمز المكوّن من ٦ أرقام أُرسل إلى:");
         if ("code".equals(key)) return pick(c, "Kod (6 hane)", "Code (6 digits)", "Код (6 цифр)", "الرمز (٦ أرقام)");
         if ("verify".equals(key)) return pick(c, "✔ Doğrula", "✔ Verify", "✔ Подтвердить", "✔ تأكيد");
         if ("resend".equals(key)) return pick(c, "Tekrar gönder", "Send again", "Отправить снова", "إعادة الإرسال");

@@ -762,3 +762,26 @@ doğrulanacak; sonra D-50 kapanacak.
 
 **Durum sayısı (24 Kasım 2026, 21. yarı sonu):** toplam **103 madde** · **54 ✅ bitti** ·
 **49 açık** (40 kod · 7 kullanıcı · 2 cihaz testi).
+
+### 22. yarı — iki rapor birleşti, 9.71 yayınlandı (25 Kasım 2026)
+
+**Yapılanlar (9.71):**
+- İki bağımsız rapor okunup ayrı listelere ayrıldı: `docs/ISLER-PDF-RAPOR-970.md`,
+  `docs/ISLER-ANTIGRAVITY-990.md`; birleşik liste `docs/MASTER-PLUS-2026-11-25.md`.
+- **MP-01:** kanal listesi 145 → 126 (12 lisanslı yabancı + 7 alakasız/siyasi çıkarıldı;
+  m3u, good_tr.json, site tr.json ve kanallar.json aynı anda temizlendi).
+- **MP-02:** TV8'in `?app=…` anahtarlı daioncdn adresi kanaldan ve yedekten kaldırıldı.
+- **MP-03:** reklam her 3 kanal değişiminde, araya en az 180 sn; metinler güncellendi.
+- **MP-04:** reklam test modu + kimlik kopyalama yalnız debug derlemede.
+- **MP-05:** kayıt yalnız TRT/TBMM/Diyanet kanallarında (telif gerekçesiyle).
+- **MP-18:** reklam içerik sınıfı G → PG.
+- **MP-17:** ölü hesap metinleri (4 anahtar) silindi.
+- **M-99/MP-06:** ölü kanal artık 45 sn'de hata veriyor, işaretleniyor, sonraki kanala geçiyor.
+- Reklam sayacı: gösterim anında sayma, ödülde sayma, test modunu saymama, günlük/aylık kırılım.
+
+**Cihaz doğrulaması:** 126 kanal listesi; ATV'de kayıt engeli (uyarı göründü, dosya yok);
+TRT 1'de kayıt dosyası oluştu ve durdu; Ayarlar'da test modu satırı yok, sayaç var;
+Almanya'da RFO 16. sn'de hata ekranı + sonraki kanal; BLK'ta sonsuz döngü bitti.
+
+**Durum:** 9.71 yayınlandı (versionCode 80). P0 listesinden kod/veri tarafı kapandı;
+kalan P0'lar kullanıcıda (AAB yükleme, mağaza metni, 12 tester) ve P1 maddeleri sırada.

@@ -23,8 +23,8 @@
   {
    "name": "TV8 (Turkiye)",
    "type": "tv",
-   "url": "https://tv8.daioncdn.net/tv8/tv8.m3u8?app=7ddc255a-ef47-4e81-ab14-c0e5f2949788&ce=3",
-   "host": "tv8.daioncdn.net",
+   "url": "https://rkhubpaomb.turknet.ercdn.net/fwjkgpasof/tv8/tv8_720p.m3u8",
+   "host": "rkhubpaomb.turknet.ercdn.net",
    "rights": "public",
    "checked": "2026-11-24",
    "status": "ok"
@@ -201,28 +201,10 @@
    "status": "ok"
   },
   {
-   "name": "Al-Zahra TV Turkic",
-   "type": "tv",
-   "url": "https://live.al-zahratv.com/live/playlist.m3u8",
-   "host": "live.al-zahratv.com",
-   "rights": "public",
-   "checked": "2026-11-24",
-   "status": "ok"
-  },
-  {
    "name": "Alanya Posta TV",
    "type": "tv",
    "url": "https://api-tv3.yayin.com.tr/postatv/postatv/playlist.m3u8",
    "host": "api-tv3.yayin.com.tr",
-   "rights": "public",
-   "checked": "2026-11-24",
-   "status": "ok"
-  },
-  {
-   "name": "Almahriah TV",
-   "type": "tv",
-   "url": "https://starmenajo.com/hls/almahriah/index.m3u8",
-   "host": "starmenajo.com",
    "rights": "public",
    "checked": "2026-11-24",
    "status": "ok"
@@ -336,15 +318,6 @@
    "status": "ok"
   },
   {
-   "name": "Disney Jr. (Turkiye)",
-   "type": "tv",
-   "url": "https://saran-live.ercdn.net/disneyjunior/index.m3u8",
-   "host": "saran-live.ercdn.net",
-   "rights": "public",
-   "checked": "2026-11-24",
-   "status": "ok"
-  },
-  {
    "name": "Diyanet TV",
    "type": "tv",
    "url": "https://eustr73.mediatriple.net/videoonlylive/mtikoimxnztxlive/broadcast_5e3bf95a47e07.smil/playlist.m3u8",
@@ -394,15 +367,6 @@
    "type": "tv",
    "url": "https://cdn.ekoturk.net/hls/master.m3u8",
    "host": "cdn.ekoturk.net",
-   "rights": "public",
-   "checked": "2026-11-24",
-   "status": "ok"
-  },
-  {
-   "name": "Elsharq TV",
-   "type": "tv",
-   "url": "https://mn-nl.mncdn.com/elsharq_live/live/playlist.m3u8",
-   "host": "mn-nl.mncdn.com",
    "rights": "public",
    "checked": "2026-11-24",
    "status": "ok"
@@ -705,15 +669,6 @@
    "status": "ok"
   },
   {
-   "name": "Mekameleen TV",
-   "type": "tv",
-   "url": "https://mn-nl.mncdn.com/mekameleen/smil:mekameleentv.smil/playlist.m3u8",
-   "host": "mn-nl.mncdn.com",
-   "rights": "public",
-   "checked": "2026-11-24",
-   "status": "ok"
-  },
-  {
    "name": "Meltem TV",
    "type": "tv",
    "url": "https://vhxyrsly.rocketcdn.com/meltemtv/playlist.m3u8",
@@ -880,15 +835,6 @@
    "type": "tv",
    "url": "https://canli.sercemtv.com.tr/hls/0/stream.m3u8",
    "host": "canli.sercemtv.com.tr",
-   "rights": "public",
-   "checked": "2026-11-24",
-   "status": "ok"
-  },
-  {
-   "name": "Spacetoon Turkey",
-   "type": "tv",
-   "url": "https://live-tr-next.spacetoongo.com/ST_TR_NEXT/hls/h7qefeiwfbjn1.m3u8",
-   "host": "live-tr-next.spacetoongo.com",
    "rights": "public",
    "checked": "2026-11-24",
    "status": "ok"
@@ -1128,15 +1074,6 @@
    "status": "ok"
   },
   {
-   "name": "UMSA TVU Internacional",
-   "type": "tv",
-   "url": "https://edge.enhdtv.com/8026/index.m3u8",
-   "host": "edge.enhdtv.com",
-   "rights": "public",
-   "checked": "2026-11-24",
-   "status": "ok"
-  },
-  {
    "name": "Sat 7 Turk",
    "type": "tv",
    "url": "https://live.artidijitalmedya.com/artidijital_sat7turk/sat7turk/playlist.m3u8",
@@ -1155,15 +1092,6 @@
    "status": "ok"
   },
   {
-   "name": "Persiana Turkiye",
-   "type": "tv",
-   "url": "https://turkhls.persiana.live/hls/stream.m3u8",
-   "host": "turkhls.persiana.live",
-   "rights": "public",
-   "checked": "2026-11-24",
-   "status": "ok"
-  },
-  {
    "name": "MediBizTV",
    "type": "tv",
    "url": "https://43wrzjnpqoxe-hls-live.wmncdn.net/marinebiztvlive/marinebiztvlive/playlist.m3u8",
@@ -1173,109 +1101,10 @@
    "status": "ok"
   },
   {
-   "name": "AVA Series",
-   "type": "tv",
-   "url": "https://avaserieshls.wns.live/hls/stream.m3u8",
-   "host": "avaserieshls.wns.live",
-   "rights": "public",
-   "checked": "2026-11-24",
-   "status": "ok"
-  },
-  {
-   "name": "InWonder",
-   "type": "tv",
-   "url": "https://amg00861-terninternation-inwonder-samsungau-1k63k.amagi.tv/playlist/amg00861-terninternation-inwonder-samsungau/playlist.m3u8",
-   "host": "amg00861-terninternation-inwonder-samsungau-1k63k.amagi.tv",
-   "rights": "public",
-   "checked": "2026-11-24",
-   "status": "ok"
-  },
-  {
-   "name": "Cosmos TV",
-   "type": "tv",
-   "url": "https://video.hostingcaaguazu.com:19360/cosmostv/cosmostv.m3u8",
-   "host": "video.hostingcaaguazu.com",
-   "rights": "public",
-   "checked": "2026-11-24",
-   "status": "ok"
-  },
-  {
-   "name": "MBC Masr Drama",
-   "type": "tv",
-   "url": "https://shd-gcp-live.edgenextcdn.net/live/bitmovin-mbc-masr-drama/567b703c19ede6598222de81b0e4508b/index.m3u8",
-   "host": "shd-gcp-live.edgenextcdn.net",
-   "rights": "public",
-   "checked": "2026-11-24",
-   "status": "ok"
-  },
-  {
    "name": "Eko TV",
    "type": "tv",
    "url": "https://ext.cdn.nashnet.tv/228.0.1.60/index.m3u8",
    "host": "ext.cdn.nashnet.tv",
-   "rights": "public",
-   "checked": "2026-11-24",
-   "status": "ok"
-  },
-  {
-   "name": "BabyTV Turkiye",
-   "type": "tv",
-   "url": "https://saran-live.ercdn.net/babytv/index.m3u8",
-   "host": "saran-live.ercdn.net",
-   "rights": "public",
-   "checked": "2026-11-24",
-   "status": "ok"
-  },
-  {
-   "name": "BBC Drama",
-   "type": "tv",
-   "url": "https://amg00793-amg00793c40-rakuten-es-5444.playouts.now.amagi.tv/playlist.m3u8",
-   "host": "amg00793-amg00793c40-rakuten-es-5444.playouts.now.amagi.tv",
-   "rights": "public",
-   "checked": "2026-11-24",
-   "status": "ok"
-  },
-  {
-   "name": "Wonder",
-   "type": "tv",
-   "url": "https://lds-wonder-rakuten.amagi.tv/playlist.m3u8",
-   "host": "lds-wonder-rakuten.amagi.tv",
-   "rights": "public",
-   "checked": "2026-11-24",
-   "status": "ok"
-  },
-  {
-   "name": "Doctor Who Classic",
-   "type": "tv",
-   "url": "https://bbc-classicdrwho-1-us.roku.wurl.tv/playlist.m3u8",
-   "host": "bbc-classicdrwho-1-us.roku.wurl.tv",
-   "rights": "public",
-   "checked": "2026-11-24",
-   "status": "ok"
-  },
-  {
-   "name": "Inside Crime",
-   "type": "tv",
-   "url": "https://aenetworks-insidecrime-rakuten.amagi.tv/playlist.m3u8",
-   "host": "aenetworks-insidecrime-rakuten.amagi.tv",
-   "rights": "public",
-   "checked": "2026-11-24",
-   "status": "ok"
-  },
-  {
-   "name": "MBC Drama USA",
-   "type": "tv",
-   "url": "https://shd-gcp-live.edgenextcdn.net/live/bitmovin-mbc-drama-usa/ea2f5db904aff224b7066e59c7f585a2/index.m3u8",
-   "host": "shd-gcp-live.edgenextcdn.net",
-   "rights": "public",
-   "checked": "2026-11-24",
-   "status": "ok"
-  },
-  {
-   "name": "Can Tho TV 2",
-   "type": "tv",
-   "url": "https://live.canthotv.vn/cs2/live.stream/playlist.m3u8",
-   "host": "live.canthotv.vn",
    "rights": "public",
    "checked": "2026-11-24",
    "status": "ok"

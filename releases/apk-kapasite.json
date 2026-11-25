@@ -157,10 +157,21 @@
   "versionName": "9.70",
   "versionCode": "79",
   "apkBytes": 7123653,
-  "sha256": "74f8d87d09b734eeb3603d6b9c486390dc8665d543396ff9d0f4aa807640e141",
+  "sha256": "e17af5b2f950f8d60d37c94004c6d8619ac0c22cd6f4c7c7cccae21ca267053d",
   "signSha256": "f3996c67ef0e0e0420f442fe3fcf6303a17caa88dcba8a2b19a10cd95c92b8d5",
   "zipEntries": 400,
   "unpackedBytes": 17054287,
+  "dexFiles": 2,
+  "classes": 17518
+ },
+ {
+  "versionName": "9.71",
+  "versionCode": "80",
+  "apkBytes": 7122465,
+  "sha256": "1440a07edc82218367260b241cee67634bb0631b7921bbbd0efffb83aa5b7bbd",
+  "signSha256": "f3996c67ef0e0e0420f442fe3fcf6303a17caa88dcba8a2b19a10cd95c92b8d5",
+  "zipEntries": 400,
+  "unpackedBytes": 17048024,
   "dexFiles": 2,
   "classes": 17518
  }

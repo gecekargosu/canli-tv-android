@@ -806,6 +806,11 @@ public class PlayerActivity extends android.app.Activity {
             return;
         }
         Channel c = list.get(index);
+        if (!ChannelRepo.canRecord(c.name)) {
+            Toast.makeText(this, "Kayıt yalnız kamu kanallarında açık (TRT, TBMM, Diyanet) · "
+                    + "özel kanallarda telif nedeniyle kapalı", Toast.LENGTH_LONG).show();
+            return;
+        }
         recorder.start(this, c.url, c.name, new HlsRecorder.Listener() {
             @Override public void onInfo(final String msg) {
                 runOnUiThread(new Runnable() {

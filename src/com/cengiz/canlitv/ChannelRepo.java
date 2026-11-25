@@ -26,14 +26,10 @@ public class ChannelRepo {
         FALLBACK.put(atvMain, new String[]{atv720, atv1080});
         FALLBACK.put(atv1080, new String[]{atv720, atvMain});
 
-        // TV8: asıl yayın (daioncdn) reklam kuşağında kilitlenirse TürkNet/ERC yansısına geç.
-        String tv8Main = "https://tv8.daioncdn.net/tv8/tv8.m3u8?app=7ddc255a-ef47-4e81-ab14-c0e5f2949788&ce=3";
-        String tv8Mirror = "https://rkhubpaomb.turknet.ercdn.net/fwjkgpasof/tv8/tv8_720p.m3u8";
-        String tv8Mirror2 = "https://rkhubpaomb.turknet.ercdn.net/fwjkgpasof/tv8/tv8_480p.m3u8";
-        FALLBACK.put(tv8Main, new String[]{tv8Mirror, tv8Mirror2});
-        FALLBACK.put(tv8Mirror, new String[]{tv8Mirror2, tv8Main});
-        FALLBACK.put(tv8Mirror2, new String[]{tv8Mirror, tv8Main});
-
+        // TV8: daioncdn adresi başka bir uygulamanın `app=` anahtarını taşıyordu; listeden de
+        // yedeklerden de kaldırıldı. Yayın TürkNet/ERC yansısından, yedek olarak 480p yansısı.
+        mirror("https://rkhubpaomb.turknet.ercdn.net/fwjkgpasof/tv8/tv8_720p.m3u8",
+                "https://rkhubpaomb.turknet.ercdn.net/fwjkgpasof/tv8/tv8_480p.m3u8");
         // Büyük ulusal kanallar için TürkNet/ERC yansıları (#103).
         mirror("https://rmtftbjlne.turknet.ercdn.net/bpeytmnqyp/showtv/showtv.m3u8",
                 "https://rmtftbjlne.turknet.ercdn.net/bpeytmnqyp/showtv/showtv_720p.m3u8");
@@ -47,6 +43,16 @@ public class ChannelRepo {
     private static void mirror(String a, String b) {
         FALLBACK.put(a, new String[]{b});
         FALLBACK.put(b, new String[]{a});
+    }
+
+    /**
+     * PDF-07: kayıt yalnız kamu yayıncılarında açık. Özel kanalların yayını telifli;
+     * kaydedilen .ts dosyası galeriden paylaşılabildiği için yayın öncesi kapatıldı.
+     */
+    public static boolean canRecord(String name) {
+        if (name == null) return false;
+        String n = name.toUpperCase(java.util.Locale.ROOT);
+        return n.startsWith("TRT") || n.contains("TBMM") || n.contains("DIYANET");
     }
 
     /** Yedek URL listesi (yoksa null). */

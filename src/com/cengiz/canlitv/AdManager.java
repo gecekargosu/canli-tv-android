@@ -95,18 +95,17 @@ public final class AdManager {
         if (!Ads.SDK_READY || inited) return;
         inited = true;
         try {
-            // Aile dostu reklam: yetiskin/erotik/"afterglow" turu icerikler istenmez.
-            // MAX_AD_CONTENT_RATING_G = yalnizca genel izleyiciye uygun reklamlar.
+            // Aile dostu: yetiskin/erotik icerik istenmez. PG secildi cunku G
+            // neredeyse hic reklam doldurmuyor (gelir kaybi), PG hala aile sinirinda.
             RequestConfiguration.Builder rc = new RequestConfiguration.Builder()
-                    .setMaxAdContentRating(RequestConfiguration.MAX_AD_CONTENT_RATING_G)
+                    .setMaxAdContentRating(RequestConfiguration.MAX_AD_CONTENT_RATING_PG)
                     .setTagForChildDirectedTreatment(
                             RequestConfiguration.TAG_FOR_CHILD_DIRECTED_TREATMENT_UNSPECIFIED)
                     .setTagForUnderAgeOfConsent(
                             RequestConfiguration.TAG_FOR_UNDER_AGE_OF_CONSENT_UNSPECIFIED);
-            // Test modu: debug derlemede her zaman, dağıtılan APK'da ise yalnızca
-            // kullanıcı Ayarlar'dan açtıysa. Test cihazında gerçek birimler test reklamı
-            // döndürür: reklam/ödül çalışır, para yazmaz, hesap riski olmaz.
-            if (Ads.TEST_MODE || Prefs.adTestMode(activity)) {
+            // Test modu yalnız debug derlemede. Release APK'da kullanıcı test moduna
+            // geçemez: test reklamı para yazmadığı için gelir sessizce sıfırlanıyordu.
+            if (Ads.TEST_MODE) {
                 java.util.List<String> ids = new java.util.ArrayList<String>();
                 if (Ads.TEST_DEVICE != null && Ads.TEST_DEVICE.length() > 0) ids.add(Ads.TEST_DEVICE);
                 String h = Prefs.adTestHashed(activity);
@@ -446,6 +445,11 @@ public final class AdManager {
         }
         // Aynı anda/art arda zap yapılırsa reklamlar üst üste binmesin.
         if (now - lastInterstitial < Ads.INTERSTITIAL_GAP_MS) {
+            then.run();
+            return;
+        }
+        // PDF-05: her zap'ta reklam cikmasin; kac zap'ta bir gosterilecegi Ads sabitinde.
+        if (opens % Ads.ZAPS_BEFORE_INTERSTITIAL != 0) {
             then.run();
             return;
         }

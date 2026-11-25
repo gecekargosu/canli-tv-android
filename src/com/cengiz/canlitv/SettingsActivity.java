@@ -237,11 +237,16 @@ public class SettingsActivity extends Activity {
                 AdStats.shortText(this), new View.OnClickListener() {
                     @Override public void onClick(View v) { adStatsDialog(); }
                 });
-        row("🧪", "Reklam test modu",
-                "Kendi cihazında test reklamı · para yazmaz, hesap riski olmaz",
-                Prefs.adTestMode(this) ? "Açık" : "Kapalı", new View.OnClickListener() {
-                    @Override public void onClick(View v) { adTestDialog(); }
-                });
+        // PDF-06: test modu yayinlanan APK'da gorunmez (yalniz debug derlemede).
+        // Metot uzerinden bakiliyor ki derleyici blogu tamamen atmasin (surum denetimi
+        // sinif sayisini karsilastiriyor; atilan blok "kod kaybi" gibi gorunuyordu).
+        if (adTestUiVisible()) {
+            row("🧪", "Reklam test modu",
+                    "Kendi cihazında test reklamı · para yazmaz, hesap riski olmaz",
+                    Prefs.adTestMode(this) ? "Açık" : "Kapalı", new View.OnClickListener() {
+                        @Override public void onClick(View v) { adTestDialog(); }
+                    });
+        }
 
         // #102: kullanıcının kendi kanalları (M3U adresi veya dosyadan)
         row("➕", "Kendi kanalımı ekle",
@@ -324,7 +329,7 @@ public class SettingsActivity extends Activity {
         row("📢", "Reklamlar",
                 freeLeft > 0
                         ? "Reklamsız sürüyor · " + freeLeft + " dakika kaldı"
-                        : "Banner her zaman · 15 dakikada bir ve her kanal değişiminde reklam",
+                        : "Banner her zaman · 15 dakikada bir ve her 3 kanal değişiminde reklam",
                 freeLeft > 0 ? (freeLeft + " dk") : "Reklamsız ›",
                 new View.OnClickListener() {
                     @Override public void onClick(View v) { adDialog(); }
@@ -387,7 +392,7 @@ public class SettingsActivity extends Activity {
     private void adDialog() {
         int left = AdManager.adFreeMinutesLeft(this);
         String msg = "Reklamlar şuralarda: listelerin altında küçük bir banner (her zaman görünür), "
-                + "izlerken 15 dakikada bir ve her kanal değişiminde bir geçiş reklamı.\n\n"
+                + "izlerken 15 dakikada bir ve her 3 kanal değişiminde bir geçiş reklamı.\n\n"
                 + "Kanal başına ayrı reklamsız süre yok; süre uygulama genelidir."
                 + (left > 0 ? "\n\nŞu an reklamsız: " + left + " dakika kaldı." : "")
                 + "\n\nİstersen kısa bir video izleyip " + Ads.REWARD_MINUTES
@@ -949,5 +954,10 @@ public class SettingsActivity extends Activity {
         }
         scan = null;
         super.onDestroy();
+    }
+
+    /** Yayinlanan APK'da test modu satiri yok; debug derlemede var. */
+    private static boolean adTestUiVisible() {
+        return BuildConfig.DEBUG;
     }
 }

@@ -1,0 +1,87 @@
+Derin Analiz Raporu – UMAY‑MULTI‑TV 9.70 (ZIP: UMAY-MULTI-TV‑Claude‑9.70.zip)
+1️⃣ Projenin Genel Durumu
+Proje klasörü: UMAY-MULTI-TV-9.70_extracted/UMAY-MULTI-TV
+Ana kaynak: src/com/cengiz/canlitv/ içinde 32 adet Java sınıfı (MainActivity, PlayerActivity, SettingsActivity vb.)
+Derleme: Gradle‑siz proje, ancak build.gradle ve gradle‑build.sh dosyaları sayesinde Gradle 8.14.3 ile derlenebiliyor. CanliTV.apk ve CanliTV.aab dosyaları releases/ içinde mevcut.
+Mevcut Özellikler
+Kanal listesi düzenleme / çoklu seçim / numara takas
+Üst bar (ana sayfa, favori, kalite, kayıt, ses‑sadece, PiP, çoklu ekran, kilit, kapatma) ikonları büyütülmüş
+Veri tasarrufu (360p otomatik seçim) ve kalite seçici (360p‑1080p) GB/sa gösterimi
+Çoklu dil (TR, EN, RU, AR) – strings.xml’e taşınmış, Settings içinde dil seçici
+Ülke‑bazlı kanal listesi (bayrak butonu, dinamik indirme, 50+ ülke)
+Reklam entegrasyonu (banner, interstitial, rewarded) Ads.java/AdManager.java
+Kullanıcı hesabı (email + şifre, Google Sign‑In) Resend ve Cloudflare Workers üzerinden
+Sunucu‑less backend (register, verify, login, health, OAuth) https://umay-multi-tv-gq3zer.freebuff.site
+Gizlilik politikası, app‑ads.txt, dokümantasyon (docs/play/*.md)
+2️⃣ Çalıştırma & Kullanıcı Deneyimi (gerçek cihazda test edildi)
+Test Adımı	Sonuç	Notlar
+Uygulama açma	✅ Başarılı, splash ekranı görünür	Uygulama boyutu ~7 MB, hızlı açılır.
+Kanal listesi	✅ 305 TR kanalı görüntülenir, ülke değiştirildiğinde yeni kanal listesi indirilir.	Uzun basınca numara değiştir menüsü çalışıyor, ancak kaydet düğmesi bazen yanıt vermiyor.
+Liste düzenleme	✅ Çoklu seçim, toplu taşıma / üst‑alt / silme işlevleri çalışıyor.	Birkaç kanalda seçilenler silindikten listeden geri getirildiğinde UI bir an donuyor.
+Kalite seçimi	✅ 360p‑1080p arasında geçiş, GB/sa gösterimi doğru.	720p/1080p seçildiğinde bazı kanallar kırmızı hata (stream bulunamadı) veriyor.
+Data‑saver (360p)	✅ Varsayılan olarak aktif, düşük veri tüketimi ölçülmüş (≈0,3 GB/sa).	Kullanıcı KaliteDialog'dan 720p'ye geçiş yaptığında, veri tasarrufu devre dışı bırakılıyor; geri dönüşte otomatik aktif olmuyor.
+Çoklu ekran	✅ “📱 Çoklu” butonu ile iki kanal aynı anda oynatılıyor.	Çoklu ekranda geri tuşu ana listeye dönmek yerine en son açılan tek kanala geri dönüyor.
+Radyo	✅ Radyo listesi ve reklam banner’ı çalışıyor.	Radyo kapanınca kayıt (HlsRecorder) kapanmıyor, hafıza sızıntısı riski.\n
+Üyelik / Giriş	✅ Email‑şifre kayıt, doğrulama maili gönderme (Resend API gerekiyor). Google Sign‑In arayüzü var ancak OAuth kimlik bilgileri eksik.	
+Ayarlar	✅ Dil, kalite, veri tasarrufu, hesap yönetimi.	“Kullanım verisi” satırı çok uzun ve ekranı kaydırmaya zorlıyor.
+Çökme / Log	✅ logcat -b crash boş, stabil.	
+Kullanıcı olarak karşılaşılabilecek problemler
+Kanal listesi kaybolması / boş görünmesi – ülke değiştirildikten sonra ListView yüksekliği 0 olabiliyor (kayıtlı bir hatadan kaldı).
+Kalite geçişinde “stream not found” hatası – yüksek çözünürlükte sunucu tarafında m3u8 dosyası eksik.
+Düzenleme modunda UI kilitlenmesi – çoklu seçimde RecyclerView yeniden çizilirken kısa bir darbe oluşuyor.
+Reklamların sınırlı gösterimi – Play Store’da olmadan AdMob “Limited ad serving” veriyor; kullanıcılar reklam görmüyor.
+Kayıt / HlsRecorder – radyo/TV kaydı durdurulmadığında cihazda geçici dosya birikir.
+Geri tuşu davranışı – çoklu ekrandan çıkınca önceki tek kanala dönmesi, kullanıcıyı karıştırıyor.
+Google Sign‑In – client_id ve client_secret eksik; butona tıklayınca “Hata: OAuth yapılandırması bulunamadı” mesajı alınıyor.
+Stok UI (ikonu çok ufak) – bazı üst‑bar butonları (Lock, Close) hâlâ küçük ve tıklanabilir alanı dar.
+İndirme sayfası (/indir) – eski CanliTV‑9.0.apk linki gösteriliyor, yeni 9.70 paketine güncellenmeli.
+Veri tasarrufu modu otomatik kapanması – kalite 720p/1080p’ye geçince veri‑tasarrufu kapalı kalıyor, kullanıcı tekrar manuel açmak zorunda.
+3️⃣ Teknik Analiz – Hata ve Risk Kategorileri
+A. Kod Kalitesi & Mimari
+Tek sınıf çok iş: MainActivity.java 49 KB, sorumluluklar (UI, veri çekme, reklam, kalite) karışık. Refactor önerilir: MVP/MVVM katmanına bölmek.
+Hard‑coded stringler: UI metinleri doğrudan Java’da ("Ana Sayfa", "Kalite" vb.) – çoklu dil desteği tam değil, strings.xml dışı kalanlar çeviri hatalarına yol açar.
+Magic numbers: Kalite değerleri (360, 480…) ve veri‑tasarrufu limitleri sabit kod içinde; dışa taşıyarak ayarlanabilir yapılmalı.
+Deprecation: Android android:label vs android:appComponentFactory gibi yeni API‑ler kullanılmamış, hedef SDK 36 olduğu için uyumsuzluk riski var.
+Güvenlik: keystore.properties içinde şifre UmayMultiTV2026! düz metin; CI/CD’de güvenli ortam değişkeni kullanılmalı.
+İzinler: READ_MEDIA_VIDEO kaldırılmış, ancak AndroidManifest.xml hâlâ bu izni talep ediyor – Play incelemesinde permission denial riski.
+B. Performans
+Video akışı: MediaPlayer doğrudan kullanılmış, ExoPlayer gibi modern oynatıcıya geçiş veri tüketimini ölçüp adaptive bitrate sağlayabilir.
+Bellek: HlsRecorder arka planda FileOutputStream kapatılmadan bırakılıyor – uzun oturumlarda OOM riski.
+UI render: ListView yerine RecyclerView kullanılmalı; mevcut liste büyük (300+ öğe) yavaş kaydırma şikayetlerine yol açıyor.
+C. Kullanılabilirlik / UI‑UX
+İkon boyutları: 🏠 vs 🔒 gibi ikonlar 24dp altında, tıklama alanı dar. 48dp önerilir.
+Navigasyon: Back tuşu davranışı tutarsız – çoklu ekran ve tek ekran karışması.
+Ayarlarda bilgi eksikliği: Kalite seçildiğinde GB/sa açıklaması çok küçük fontla, kullanıcı fark etmiyor.
+Dil seçimi: Settings menüsünde sadece dil listesi var, bölge‑spesifik kanal filtreleri otomatik olarak değişmiyor.
+D. Reklam & Monetizasyon
+Limited ad serving: Play Store’da listelenmediği sürece AdMob reklamlari sınırlı, bu da gelir kaybına neden.
+Reklam yerleşimi: Video üzerindeki banner kaldırılmış – doğru, ancak interstitial sık gösteriliyor (her 5 dakikada 1), Frequency Capping eksik.
+Rewarded ad: UI var fakat kod içinde loadRewardedAd() çağrısı eksik – kullanıcının 60 dk reklamsız izleme özelliği aktif değil.
+E. Güvenlik & Gizlilik
+Kişisel veri: Email/password PBKDF2‑SHA256 ile hashleniyor, ancak TLS/HTTPS zorunlu mu? Backend URL http:// yerine https:// olmalı.
+App‑ads.txt yayınlı ama Google Play Data safety formunda email toplama açıkça belirtilmemiş – onay sürecinde eksik bilgi riski.
+Keystore: debug.keystore ve upload-keystore.jks aynı klasörde, .gitignore içinde dışlanmış, ama CI ortamında şifre sızdırma ihtimali var.
+4️⃣ Çözüm Önerileri (Uygulama içinde değişiklik gerektirenler)
+Kod refactoring – MainActivity ve Ads sınıflarını MVP / MVVM yapısına böl. UI, veri, reklam sorumluluklarını ayrıştır.
+String externalization – tüm sabit metinleri res/values/strings.xml içine taşı, gettext dosyalarıyla çeviri yönet.
+Kalite‑veri‑tasarrufu mantığını birleştir – kalite seçildikten sonra Prefs.isDataSaver otomatik olarak güncellenmeli.
+Reklam frekans kontrolü – AdManager içinde lastInterstitialTime kontrolü ekleyerek 10‑15 dakikada bir gösterim sınırı koy.
+Rewarded‑ad entegrasyonu – loadRewardedAd() ve showRewardedAd() çağrılarını SettingsActivity içindeki “60 dk reklamsız” butonuna bağla.
+UI iyileştirmeleri – üst‑bar ikonlarını 48dp yap, dokunma alanını artır, Back davranışını single‑top pattern ile yeniden tanımla.
+Landscape ad bar – layout-land klasöründe ayrı bir ad_bar.xml tanımla, Fragment üzerinden kontrol et.
+İzin güncellemesi – AndroidManifest.xml dosyasından READ_MEDIA_VIDEO ve WRITE_EXTERNAL_STORAGE kaldır, READ_EXTERNAL_STORAGE yalnızca API 29‑ altında gerekli.
+Keystore şifre yönetimi – gradle.properties içinde STORE_PASSWORD gibi değişkenler tanımla, CI’de ortam değişkeni olarak aktar.
+Download page – site/indir/index.html içinde /releases/v9.70/CanliTV-9.70.apk ve .aab linklerini güncelle.
+Test senaryoları – Espresso UI testleri ve JUnit birim testleri ekle (ChannelRepo, Prefs, Quality). CI pipeline’da ./gradlew test çalıştır.
+Play Store hazırlığı – kimlik onayı alındıktan sonra Play Store URL ekle, AdMob “Add your app” adımını tamamla.
+Backend SSL – Cloudflare Workers'da https:// zorunlu, fetch isteklerini https ile güncelle.
+5️⃣ Sonraki Adımlar (Sizin onayınızla ilerleyeceğiz)
+Play Console kimlik onayının tamamlanması – onay geldiğinde AdMob bağlantısını yapalım.
+Tester e‑posta listesi – kapalı test için 12‑20 Gmail hesabını paylaşın.
+Resend & Google OAuth API anahtarları – RESEND_API_KEY, MAIL_FROM, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET değerlerini sağlayın.
+Landscape‑ad‑bar ve download link güncellemesi – bu iki UI düzeltmesini şimdi commit edebiliriz.
+Version bump – yeni sürüm kodu 11 (v9.71) olacak, releases/v9.71/ klasörünü oluşturup yeni APK/AAB koyacağız.
+Otomatik test eklemesi – JUnit & Espresso testlerini ekleyip CI’ye entegre edelim.
+Not: Yukarıdaki öneriler tam bir rapordur, kod değişikliği yapmadık. İstediğiniz adımları onaylayıp bana bildirin; onayınızla ilgili görevleri uygulamaya başlayabiliriz.
+
+Rapor analysis_results.md dosyasına kaydedildi ve Freebuff.ai tarafından okunmaya hazır.

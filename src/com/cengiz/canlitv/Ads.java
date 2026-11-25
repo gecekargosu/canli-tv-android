@@ -45,9 +45,9 @@ public class Ads {
 
     // --- politika kurallari (AdMob "yaniltici/zorlayici tik" ihlali olmasin diye) ---
     /** Art arda hızlı kanal değişiminde reklamlar üst üste binmesin (en az süre). */
-    public static final long INTERSTITIAL_GAP_MS = 20L * 1000L;
-    /** Her kanal değişiminde bir geçiş reklamı gösterilir. */
-    public static final int ZAPS_BEFORE_INTERSTITIAL = 1;
+    public static final long INTERSTITIAL_GAP_MS = 180L * 1000L;
+    /** Kaç kanal değişiminde bir geçiş reklamı gösterilir (3 zap = 1 reklam). */
+    public static final int ZAPS_BEFORE_INTERSTITIAL = 3;
     /** İzlerken kaç dakikada bir reklam çıkar (15 dakika). */
     public static final long AD_INTERVAL_MS = 15L * 60L * 1000L;
     /** Odullu reklam karsiligi reklamsiz sure (uygulama geneli, kanal bazli değil). */
