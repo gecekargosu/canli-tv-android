@@ -9,6 +9,12 @@ Hepsi GitHub Releases sayfasında:
 - İndirme sayfası: https://umay-multi-tv-gq3zer.freebuff.site/indir
 - Sürüm notları: `releases/vX.YY/SURUM-NOTLARI.md`
 
+**Dağıtım durumu (2026-11-25):** GitHub `v9.88` release'i yayınlandı (APK + AAB).
+Site production güncellendi: gizlilik/kullanım metinleri yeni abonelik bölümüyle,
+`/indir` artık **9.88**'i indiriyor. APK telefona kuruldu (97 / 9.88).
+Kaynak yedeği: `YEDEK/UMAY-MULTI-TV-9.88-2026-11-25/` ve aynı adlı `.tar.gz`
+(imza anahtarı `upload-keystore.jks` + `keystore.properties` dahil).
+
 ## v9.88 — Play kontrol listesi kapatıldı, R8, 120 kanal
 
 - **Abonelik beyanı:** mağaza metni, gizlilik politikası ve kullanım koşulları artık
