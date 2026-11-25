@@ -16,9 +16,19 @@ yok. Play Developer API menüsü, uygulama oluşturulduktan sonra açılır.
 `01-ADIM-ADIM-YUKLE.md` → Bölüm 1. (Bu yapılmadan Play tarafı boş görünür.)
 
 ### B) Google Cloud'da servis hesabı (anahtar burada iner)
-1. https://console.cloud.google.com → üstte **proje seçici → Yeni proje**
-   - Ad: `umay-play-verify` → **Oluştur** (1 dk)
-2. Sol menü → **API ve Hizmetler → Kitaplık** → ara:
+1. **Doğrudan yeni proje linki** (menüde aramana gerek yok):
+   https://console.cloud.google.com/projectcreate
+   - Proje adı: `umay-play-verify` → **Oluştur** (1 dk)
+
+   > Menüde "yeni proje" görünmüyorsa sebebi: seçici, sol üstte "Google Cloud"
+   > yazısının yanındaki **proje kutusu**dur, sayfa yüklenene kadar boş görünür.
+   > Yukarıdaki link bunu atlar.
+   >
+   > Alternatif: elindeki `JobHunter` projesini de kullanabilirsin
+   > (proje no **878769405259**). Play API için yeterlidir; ayrı proje açmak
+   > yalnızca düzen için daha temiz.
+2. Sağ üstte projenin `umay-play-verify` olduğunu doğrula. Sol menü →
+   **API ve Hizmetler → Kitaplık** → ara:
    **"Google Play Android Developer API"** → **Etkinleştir**
    (Bu, aradığın "API"dir; anahtar değil, erişim iznidir.)
 3. Sol menü → **IAM ve Yönetici → Hizmet Hesapları → Hizmet hesabı oluştur**
