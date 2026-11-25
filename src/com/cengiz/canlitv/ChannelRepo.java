@@ -130,7 +130,7 @@ public class ChannelRepo {
             // #102: kullanicinin kendi ekledigi kanallar listenin en basinda durur
             List<Channel> mine = new ArrayList<Channel>();
             for (String[] r : Prefs.customTv(ctx)) {
-                Channel c = new Channel(0, r[0], "⭐ Kendi kanallarım", cc, "", r[1]);
+                Channel c = new Channel(0, r[0], "⭐ Eklediğim yayınlar", cc, "", r[1]);
                 if (!hasUrl(CHANNELS, c.url)) mine.add(c);
             }
             if (!mine.isEmpty()) CHANNELS.addAll(0, mine);

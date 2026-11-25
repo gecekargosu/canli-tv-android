@@ -88,95 +88,89 @@ public class MainActivity extends android.app.Activity {
         // fitSystemWindows ek payı ikinci kez ekliyordu; tek pay yeter.
         root.setFitsSystemWindows(false);
 
-        // --- baslik ---
+        // --- baslik: 3 sabit satir, hepsi ayni 12dp kenardan baslar/biter ---
         LinearLayout head = new LinearLayout(this);
         head.setOrientation(LinearLayout.VERTICAL);
-        // 9.76: üst kısım ekranın ~1/3'ünü kaplıyordu. Başlık + düğmeler tek satıra
-        // alındı, arama/sekme/satır araçları sıkıştırıldı; liste daha erken başlıyor.
         head.setPadding(dp(12), dp(8), dp(12), dp(0));
 
-        // 9.79: 1. satır = logo + tek satır başlık. Altındaki "no ile aç, 3'lü izle,
-        // kayıt" yazısı kaldırıldı (alakasız duruyordu, satırı da şişiriyordu).
-        LinearLayout topRow = new LinearLayout(this);
-        topRow.setOrientation(LinearLayout.HORIZONTAL);
-        topRow.setGravity(Gravity.CENTER_VERTICAL);
-        topRow.setLayoutParams(new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, dp(52)));
+        // 1. satir: marka TEK kutunun icinde. Logo 40dp ve hep tam parlak; solmuyor.
+        // Arkasindaki turuncu isik nabiz gibi atiyor, parlayan logo gibi duruyor.
+        LinearLayout brandCard = new LinearLayout(this);
+        brandCard.setOrientation(LinearLayout.HORIZONTAL);
+        brandCard.setGravity(Gravity.CENTER_VERTICAL);
+        brandCard.setPadding(dp(8), dp(6), dp(12), dp(6));
+        brandCard.setBackground(rounded(CARD, 18));
+        brandCard.setLayoutParams(new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, dp(56)));
+        head.addView(brandCard);
 
-        // Logo kutusunun arkasında nabız gibi atan turuncu halka: parlama artık belli oluyor.
+        // Logo kutusu 48dp: turuncu ışık logonun çevresinden 5dp taşar, böylece
+        // "parlıyor" net görünür (önce ışık logonun tam arkasında kalıp kayboluyordu).
         FrameLayout brandBox = new FrameLayout(this);
-        LinearLayout.LayoutParams bbp = new LinearLayout.LayoutParams(dp(44), dp(44));
-        bbp.setMargins(0, 0, dp(8), 0);
-        bbp.gravity = Gravity.CENTER_VERTICAL;
+        LinearLayout.LayoutParams bbp = new LinearLayout.LayoutParams(dp(48), dp(48));
+        bbp.setMargins(0, 0, dp(10), 0);
         brandBox.setLayoutParams(bbp);
 
-        // İkonun arkasında nabız gibi atan turuncu parlama (halka ikonun arkasında
-        // kayboluyordu, dolu yumuşak katman çok daha görünür).
-        View halo = new View(this);
-        halo.setBackground(rounded(ACCENT, 14));
-        halo.setAlpha(0.4f);
-        brandBox.addView(halo, new FrameLayout.LayoutParams(dp(42), dp(42), Gravity.CENTER));
+        final View halo = new View(this);
+        halo.setBackground(rounded(ACCENT, 16));
+        halo.setAlpha(0.65f);
+        brandBox.addView(halo, new FrameLayout.LayoutParams(dp(46), dp(46), Gravity.CENTER));
 
         ImageView brand = new ImageView(this);
-        brand.setLayoutParams(new FrameLayout.LayoutParams(dp(34), dp(34), Gravity.CENTER));
+        brand.setLayoutParams(new FrameLayout.LayoutParams(dp(38), dp(38), Gravity.CENTER));
         brand.setScaleType(ImageView.ScaleType.FIT_CENTER);
         try { brand.setImageDrawable(getPackageManager().getApplicationIcon(getPackageName())); }
         catch (Exception ignored) { }
         brandBox.addView(brand);
+        brandCard.addView(brandBox);
 
+        // Sadece isik nabiz atiyor: alfa 0,50 ↔ 0,14 ve hafif buyuyup kuculuyor.
+        // Logonun kendisi hep tam parlak (eskiden soluyordu, gri gorunuyordu).
         try {
-            android.animation.ObjectAnimator ring = android.animation.ObjectAnimator
-                    .ofFloat(halo, "alpha", 0.42f, 0.05f);
-            ring.setDuration(1100);
-            ring.setRepeatMode(android.animation.ValueAnimator.REVERSE);
-            ring.setRepeatCount(android.animation.ValueAnimator.INFINITE);
-            ring.start();
-            android.animation.ObjectAnimator ringSx = android.animation.ObjectAnimator
-                    .ofFloat(halo, "scaleX", 1.04f, 0.94f);
-            ringSx.setDuration(1100);
-            ringSx.setRepeatMode(android.animation.ValueAnimator.REVERSE);
-            ringSx.setRepeatCount(android.animation.ValueAnimator.INFINITE);
-            ringSx.start();
-            android.animation.ObjectAnimator ringSy = android.animation.ObjectAnimator
-                    .ofFloat(halo, "scaleY", 1.04f, 0.94f);
-            ringSy.setDuration(1100);
-            ringSy.setRepeatMode(android.animation.ValueAnimator.REVERSE);
-            ringSy.setRepeatCount(android.animation.ValueAnimator.INFINITE);
-            ringSy.start();
-            android.animation.ObjectAnimator logoPulse = android.animation.ObjectAnimator
-                    .ofFloat(brand, "alpha", 1f, 0.65f);
-            logoPulse.setDuration(1100);
-            logoPulse.setRepeatMode(android.animation.ValueAnimator.REVERSE);
-            logoPulse.setRepeatCount(android.animation.ValueAnimator.INFINITE);
-            logoPulse.start();
+            android.animation.ObjectAnimator glow = android.animation.ObjectAnimator
+                    .ofFloat(halo, "alpha", 0.75f, 0.28f);
+            glow.setDuration(1300);
+            glow.setRepeatMode(android.animation.ValueAnimator.REVERSE);
+            glow.setRepeatCount(android.animation.ValueAnimator.INFINITE);
+            glow.start();
+            android.animation.ObjectAnimator gx = android.animation.ObjectAnimator
+                    .ofFloat(halo, "scaleX", 1.02f, 0.96f);
+            gx.setDuration(1400);
+            gx.setRepeatMode(android.animation.ValueAnimator.REVERSE);
+            gx.setRepeatCount(android.animation.ValueAnimator.INFINITE);
+            gx.start();
+            android.animation.ObjectAnimator gy = android.animation.ObjectAnimator
+                    .ofFloat(halo, "scaleY", 1.02f, 0.96f);
+            gy.setDuration(1400);
+            gy.setRepeatMode(android.animation.ValueAnimator.REVERSE);
+            gy.setRepeatCount(android.animation.ValueAnimator.INFINITE);
+            gy.start();
         } catch (Throwable ignored) { }
-        topRow.addView(brandBox);
 
-        // 9.79: tek satır — logo yüksekliğinde (46dp). Ad; TV, radyo ve çoklu izlemeyi söylüyor.
         TextView title = new TextView(this);
         title.setText("Umay Multi: Canlı TV & Radyo");
         title.setTextColor(TEXT);
-        title.setTextSize(17);
+        title.setTextSize(18);
         title.setSingleLine(true);
         title.setEllipsize(android.text.TextUtils.TruncateAt.END);
         title.setGravity(Gravity.CENTER_VERTICAL);
         title.setTypeface(title.getTypeface(), android.graphics.Typeface.BOLD);
-        topRow.addView(title, new LinearLayout.LayoutParams(0, dp(46), 1f));
+        brandCard.addView(title, new LinearLayout.LayoutParams(0,
+                ViewGroup.LayoutParams.MATCH_PARENT, 1f));
 
-        // 9.76: düğmeler başlığın sağına, tek satıra alındı (ayrı satır ~55 dp yiyordu
-        // ve altında boş alan bırakıyordu). Başlık kalan genişliği alır.
-        // 9.78: ikonlar büyüyünce tek satırda başlık kırpılıyordu ("UMAY…").
-        // Başlık kendi satırında tam görünür, büyük ikonlar altında sağa yaslı durur.
-        head.addView(topRow);
+        // 2. satir: 5 ikon kutusu, 44dp. 3. satirla ayni kenarlardan baslar/biter.
         LinearLayout actionRow = new LinearLayout(this);
         actionRow.setOrientation(LinearLayout.HORIZONTAL);
-        actionRow.setGravity(Gravity.END | Gravity.CENTER_VERTICAL);
-        actionRow.setPadding(dp(12), dp(2), dp(12), dp(2));
-        actionRow.setLayoutParams(new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, dp(48)));
+        actionRow.setGravity(Gravity.CENTER_VERTICAL);
+        LinearLayout.LayoutParams arlp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, dp(44));
+        arlp.topMargin = dp(6);
+        actionRow.setLayoutParams(arlp);
         head.addView(actionRow);
 
-        TextView multi = pill("▦ 3'lü", ACCENT);
+        // 9.80: yazı yerine ikon — kutular 44dp, ikon 28sp (istedigi gibi).
+        TextView multi = pill("▦", ACCENT);
+        multi.setContentDescription("3'lü izle");
         multi.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View v) {
                 startActivity(new Intent(MainActivity.this, MultiActivity.class));
@@ -188,55 +182,45 @@ public class MainActivity extends android.app.Activity {
                 return true;
             }
         });
-        LinearLayout.LayoutParams mlp = new LinearLayout.LayoutParams(0, dp(44), 1f);
-        mlp.setMargins(0, 0, dp(6), 0);
-        multi.setLayoutParams(mlp);
-        actionRow.addView(multi);
+        actionRow.addView(multi, slot(0));
 
         TextView radio = pill("📻", SOFT);
+        radio.setContentDescription("Radyo");
         radio.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View v) {
                 startActivity(new Intent(MainActivity.this, RadioActivity.class));
             }
         });
-        LinearLayout.LayoutParams rlp = new LinearLayout.LayoutParams(0, dp(44), 1f);
-        rlp.setMargins(0, 0, dp(6), 0);
-        radio.setLayoutParams(rlp);
-        actionRow.addView(radio);
+        actionRow.addView(radio, slot(1));
 
         // --- ulke secimi: secilen ulkenin kanallari listeye gelir ---
         TextView countryBtn = pill(Countries.flag(shownCountry), SOFT);
+        countryBtn.setContentDescription("Ülke seç");
         countryBtn.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View v) {
                 startActivity(new Intent(MainActivity.this, CountryActivity.class));
             }
         });
-        LinearLayout.LayoutParams cblp = new LinearLayout.LayoutParams(0, dp(44), 1f);
-        cblp.setMargins(0, 0, dp(6), 0);
-        countryBtn.setLayoutParams(cblp);
-        actionRow.addView(countryBtn);
+        actionRow.addView(countryBtn, slot(2));
 
         // 9.78: kayıt düğmesi eksikti (alt başlıkta "kayıt" yazıyor ama giriş yoktu).
         TextView recordings = pill("⏺", SOFT);
+        recordings.setContentDescription("Kayıtlarım");
         recordings.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View v) {
                 startActivity(new Intent(MainActivity.this, RecordingsActivity.class));
             }
         });
-        LinearLayout.LayoutParams reclp = new LinearLayout.LayoutParams(0, dp(44), 1f);
-        reclp.setMargins(0, 0, dp(6), 0);
-        recordings.setLayoutParams(reclp);
-        actionRow.addView(recordings);
+        actionRow.addView(recordings, slot(3));
 
         TextView settings = pill("⚙", SOFT);
+        settings.setContentDescription("Ayarlar");
         settings.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View v) {
                 startActivity(new Intent(MainActivity.this, SettingsActivity.class));
             }
         });
-        LinearLayout.LayoutParams slp = new LinearLayout.LayoutParams(0, dp(44), 1f);
-        settings.setLayoutParams(slp);
-        actionRow.addView(settings);
+        actionRow.addView(settings, slot(4));
 
         root.addView(head);
 
@@ -347,9 +331,15 @@ public class MainActivity extends android.app.Activity {
         // Arama kanalla ilgili olduğu için kanal listesinin hemen üstünde duruyor.
 
         // --- cipler: 4 sekme, ekran genişliğine eşit dağılır (sağa kaymaz) ---
+        // 3. satir: 6 kutu, 2. satirla ayni 12dp kenarlar ve ayni 44dp yukseklik.
         chipsRow = new LinearLayout(this);
         chipsRow.setOrientation(LinearLayout.HORIZONTAL);
-        chipsRow.setPadding(dp(12), dp(2), dp(12), dp(2));
+        chipsRow.setGravity(Gravity.CENTER_VERTICAL);
+        chipsRow.setPadding(dp(12), 0, dp(12), 0);
+        LinearLayout.LayoutParams crlp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, dp(44));
+        crlp.topMargin = dp(6);
+        chipsRow.setLayoutParams(crlp);
         root.addView(chipsRow);
         buildChips();
         root.addView(searchRow);
@@ -531,10 +521,11 @@ public class MainActivity extends android.app.Activity {
             if ("🗑 Gizlenenler".equals(c)) chip.setText("🗑 Gizli");
             // 9.79: "Favoriler" sekme genişliğine sığmıyordu.
             if ("★ Favoriler".equals(c)) chip.setText("★ Favori");
-            chip.setTextSize(12);
+            chip.setTextSize(11.5f);
             chip.setGravity(Gravity.CENTER);
             chip.setSingleLine(true);
             chip.setEllipsize(android.text.TextUtils.TruncateAt.END);
+            chip.setIncludeFontPadding(false);
             chip.setPadding(dp(2), 0, dp(2), 0);
             chip.setMinHeight(0);
             chip.setTag(c);
@@ -547,19 +538,18 @@ public class MainActivity extends android.app.Activity {
                     refresh();
                 }
             });
-            LinearLayout.LayoutParams clp = new LinearLayout.LayoutParams(0, dp(44), 1f);
-            if (i > 0) clp.setMargins(dp(5), 0, 0, 0);
-            chip.setLayoutParams(clp);
+            chip.setLayoutParams(slot(i));
             chipsRow.addView(chip);
         }
         // Kalite seçimi: yeni satır açmadan bu satıra sığdırıldı.
         qualityBtn = new TextView(this);
         qualityBtn.setText("🎚 " + shortQuality());
-        qualityBtn.setTextSize(12);
+        qualityBtn.setTextSize(11.5f);
         qualityBtn.setTextColor(MUTED);
         qualityBtn.setGravity(Gravity.CENTER);
         qualityBtn.setSingleLine(true);
-        qualityBtn.setPadding(dp(8), 0, dp(8), 0);
+        qualityBtn.setIncludeFontPadding(false);
+        qualityBtn.setPadding(dp(2), 0, dp(2), 0);
         qualityBtn.setBackground(rounded(CARD, 18));
         qualityBtn.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View v) {
@@ -572,26 +562,21 @@ public class MainActivity extends android.app.Activity {
                 });
             }
         });
-        LinearLayout.LayoutParams qlp = new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.WRAP_CONTENT, dp(44));
-        qlp.setMargins(dp(5), 0, 0, 0);
-        qualityBtn.setLayoutParams(qlp);
+        qualityBtn.setLayoutParams(slot(4));
         chipsRow.addView(qualityBtn);
 
         // Düzenleme düğmesi: sekme satırının sonunda, ikon olarak.
         editBtn = new TextView(this);
         editBtn.setText(editMode ? "✓" : "✏️");
-        editBtn.setTextSize(17);
+        editBtn.setTextSize(19);
         editBtn.setGravity(Gravity.CENTER);
-        editBtn.setPadding(dp(10), 0, dp(10), 0);
+        editBtn.setIncludeFontPadding(false);
+        editBtn.setPadding(0, 0, 0, 0);
         editBtn.setBackground(rounded(editMode ? ACCENT : CARD, 18));
         editBtn.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View v) { setEditMode(!editMode); }
         });
-        LinearLayout.LayoutParams elp = new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.WRAP_CONTENT, dp(44));
-        elp.setMargins(dp(5), 0, 0, 0);
-        editBtn.setLayoutParams(elp);
+        editBtn.setLayoutParams(slot(5));
         chipsRow.addView(editBtn);
         styleChips();
     }
@@ -1129,15 +1114,23 @@ public class MainActivity extends android.app.Activity {
         return d;
     }
 
+    /** Satır içinde eşit genişlikte kutu: ilk kutu kenara yapışık, aralarında 4dp boşluk. */
+    private LinearLayout.LayoutParams slot(int index) {
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0,
+                ViewGroup.LayoutParams.MATCH_PARENT, 1f);
+        if (index > 0) lp.setMargins(dp(4), 0, 0, 0);
+        return lp;
+    }
+
     private TextView pill(String s, int color) {
         TextView t = new TextView(this);
         t.setText(s);
         t.setTextColor(Color.WHITE);
-        // 9.79: kutular 56dp'den 44dp'ye indi; asıl istenen buydu — içindeki ikon büyüdü.
-        // Tek karakterli (ikon) düğmeler 21sp, yazılı düğmeler 14sp.
-        t.setTextSize(s.codePointCount(0, s.length()) <= 1 ? 21 : 14);
+        // 9.80: kutu 44dp sabit, içindeki ikon 28sp (28dp). Yazı yok — sadece ikon.
+        t.setTextSize(s.codePointCount(0, s.length()) <= 1 ? 28 : 13);
         t.setGravity(Gravity.CENTER);
-        t.setPadding(dp(4), 0, dp(4), 0);
+        t.setIncludeFontPadding(false);
+        t.setPadding(0, 0, 0, 0);
         t.setBackground(rounded(color, 16));
         t.setMinHeight(dp(44));
         t.setMinWidth(0);

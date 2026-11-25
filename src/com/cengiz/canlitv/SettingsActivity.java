@@ -303,7 +303,7 @@ public class SettingsActivity extends Activity {
         }
 
         // #102: kullanıcının kendi kanalları (M3U adresi veya dosyadan)
-        row("➕", "Kendi kanalımı ekle",
+        row("➕", "Kendi yayın adresimi ekle",
                 "M3U adresi veya kanal linki · listenin en başına gelir",
                 "Ekle ›", new View.OnClickListener() {
                     @Override public void onClick(View v) { addCustomChannel(); }
@@ -313,7 +313,7 @@ public class SettingsActivity extends Activity {
                 "İçe aktar ›", new View.OnClickListener() {
                     @Override public void onClick(View v) { importM3u(); }
                 });
-        row("🗂", "Kendi kanallarım",
+        row("🗂", "Eklediğim yayınlar",
                 "Eklediğin kanalları gör, listeden kaldır",
                 "Yönet ›", new View.OnClickListener() {
                     @Override public void onClick(View v) { manageCustom(); }
@@ -619,14 +619,14 @@ public class SettingsActivity extends Activity {
         TextView note = new TextView(this);
         note.setText("Adres .m3u/.m3u8 listesi veya tek bir yayın linki olabilir. "
                 + "Eklediğin kanal listenin en başında görünür. Kaldırmak için:\n"
-                + "Ayarlar → Kendi kanallarım.");
+                + "Ayarlar → Eklediğim yayınlar.");
         note.setTextColor(MUTED);
         note.setTextSize(10);
         note.setPadding(0, dp(6), 0, 0);
         box.addView(note);
 
         new AlertDialog.Builder(this)
-                .setTitle("Kendi kanalımı ekle")
+                .setTitle("Kendi yayın adresimi ekle")
                 .setView(box)
                 .setPositiveButton("Ekle", new DialogInterface.OnClickListener() {
                     @Override public void onClick(DialogInterface d, int w) {
@@ -649,13 +649,13 @@ public class SettingsActivity extends Activity {
     private void manageCustom() {
         final java.util.List<String[]> mine = Prefs.customTv(this);
         if (mine.isEmpty()) {
-            toast("Henüz kendi kanalın yok. \"Kendi kanalımı ekle\" ile başla.");
+            toast("Henüz kendi kanalın yok. \"Kendi yayın adresimi ekle\" ile başla.");
             return;
         }
         final String[] names = new String[mine.size()];
         for (int i = 0; i < mine.size(); i++) names[i] = mine.get(i)[0] + "\n" + mine.get(i)[1];
         new AlertDialog.Builder(this)
-                .setTitle("Kendi kanallarım (" + mine.size() + ")")
+                .setTitle("Eklediğim yayınlar (" + mine.size() + ")")
                 .setItems(names, new DialogInterface.OnClickListener() {
                     @Override public void onClick(DialogInterface d, final int which) {
                         new AlertDialog.Builder(SettingsActivity.this)

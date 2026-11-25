@@ -228,3 +228,24 @@ Marka adı artık TV + radyo + çoklu izlemeyi tek satırda söylüyor; ikonun y
 
 Sonraki iş: **MP-57** kaynak sağlık taraması + **MP-58** yedek adresler (kullanıcı onayı:
 "bu işler bitince geç, gerekirse sonraki oturumda").
+
+---
+
+## 13. 9.80 oturumu — üst bar hizası ve reklam kontrolü
+
+| ID | İş | Durum | Kanıt |
+|----|----|-------|-------|
+| MP-68 | 2. satır 5 kutu **44dp**, ikonlar **28sp**, yazı yerine ikon (▦ 📻 bayrak ⏺ ⚙) | ✅ 9.80 | Ekran |
+| MP-69 | 3. satır 6 kutu **44dp**; 2. satırla aynı yükseklik ve aynı 12dp kenarlar | ✅ 9.80 | Piksel ölçümü: iki satır 143px (44dp), sol 39px, sağ 1240px |
+| MP-70 | Marka logosu + yazısı tek kutuda (56dp kart); logo 38dp, **hep parlak**, çevresinde nabız atan turuncu ışık | ✅ 9.80 | Ekran: logonun çevresinde turuncu halka |
+| MP-71 | "Kendi kanalımı ekle" → **"Kendi yayın adresimi ekle"**, "Kendi kanallarım" → **"Eklediğim yayınlar"** | ✅ 9.80 | Ayarlar |
+| MP-72 | Reklam yuvası 4 ekranda doğrulandı (ana, tekil, çoklu, radyo) | ✅ 9.80 | Ekran görüntüleri: altta turuncu şerit |
+| MP-73 | Sol kenardaki gri dikey çizgi: uygulama değil, **MIUI kenar çubuğu tutamacı** (Chrome'da da aynı yerde) | ✅ teşhis | Chrome ekran görüntüsü |
+
+### Reklam durumu (25 Kasım, cihaz)
+
+- AdMob: hesap onaylandı, 578 gösterim / ₺5,04 tahmini kazanç görünüyor.
+- Cihazda banner isteği gidiyor, yanıt **NO_FILL** ("Google şu an bu birime reklam vermiyor").
+  app-ads.txt yayında ve doğru (`pub-7629051535337276`). Kodda eksik yok; dolmama
+  uygulama/hesap düzeyinde (uygulama mağazada değil → sınırlı reklam sunumu).
+- Yuva boş kalmıyor: dolmadığında turuncu "Reklam izle · 15 dk reklamsız" şeridi görünüyor.
