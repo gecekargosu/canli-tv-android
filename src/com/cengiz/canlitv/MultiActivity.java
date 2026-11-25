@@ -783,7 +783,7 @@ public class MultiActivity extends android.app.Activity {
                             && !c.name.toLowerCase().contains(q)
                             && !c.group.toLowerCase().contains(q)
                             && !String.valueOf(c.no).equals(q)) continue;
-                    rows.add("№" + c.no + "  " + c.flag() + "  " + c.name + "   ·  " + c.group);
+                    rows.add("№" + c.no + "  " + c.name + "   ·  " + c.group);
                     idxx.add(i);
                 }
                 ad.notifyDataSetChanged();

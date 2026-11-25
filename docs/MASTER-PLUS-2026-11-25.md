@@ -249,3 +249,21 @@ Sonraki iş: **MP-57** kaynak sağlık taraması + **MP-58** yedek adresler (kul
   app-ads.txt yayında ve doğru (`pub-7629051535337276`). Kodda eksik yok; dolmama
   uygulama/hesap düzeyinde (uygulama mağazada değil → sınırlı reklam sunumu).
 - Yuva boş kalmıyor: dolmadığında turuncu "Reklam izle · 15 dk reklamsız" şeridi görünüyor.
+
+---
+
+## 14. 9.81 oturumu — başlık, bayrak, reklamın ekranda kanıtı
+
+| ID | İş | Durum | Kanıt |
+|----|----|-------|-------|
+| MP-74 | Başlık **"UMAY CANLI MULTI TV VE RADYO"** (iki nokta kaldırıldı), 18sp büyük harf, kırpma yok | ✅ 9.81 | Ekran: tek satır tam |
+| MP-75 | Üst bardaki ülke bayrağı **40sp** — radyo ikonuyla aynı boy | ✅ 9.81 | Ekran |
+| MP-76 | Kanal satırlarındaki bayrak **kaldırıldı** (liste, oynatıcı başlığı, çoklu liste, kanal menüsü) | ✅ 9.81 | Ekran: bayrak yalnız ülke düğmesinde |
+| MP-77 | Banner'ın gerçekten ekranda olduğu **test reklamıyla** kanıtlandı: ana sayfa, tekil, 3'lü, radyo | ✅ 9.81 | 4 ekran görüntüsü; test reklamı görünür (468x60 / 320x50), yuva gezinme çubuğunun üstünde |
+
+### Reklam yuvası neden "görünmüyor" gibi duruyor?
+
+Yuva her ekranda ekranın en altında, veri şeridinin hemen altında duruyor. AdMob gerçek
+reklamı **NO_FILL** döndürdüğü için içinde turuncu "Reklam izle · 15 dk reklamsız" şeridi
+görünüyor. Test reklamı açıldığında aynı yerde gerçek banner çıktı (kanıt: `_build/testad-*.png`).
+Yani kod/yerleşim doğru; eksik olan tek şey Google'ın reklamı doldurması.

@@ -924,7 +924,7 @@ public class PlayerActivity extends android.app.Activity {
 
     private void show() {
         Channel c = list.get(index);
-        nameView.setText("№" + c.no + "  " + c.flag() + "  " + c.name);
+        nameView.setText("№" + c.no + "  " + c.name);
         counter.setText((index + 1) + "/" + list.size());
         favButton.setTextColor(Prefs.favs(this).contains(c.url) ? Color.parseColor("#FFC107") : MUTED);
         updateQualityLabel();

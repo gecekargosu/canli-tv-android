@@ -154,8 +154,11 @@ public class MainActivity extends android.app.Activity {
         } catch (Throwable ignored) { }
 
         TextView title = new TextView(this);
-        title.setText("Umay Multi: Canlı TV & Radyo");
+        // 9.81: iki nokta kaldırıldı; başlık "UMAY CANLI MULTI TV VE RADYO".
+        // Yazı, kutuya sığan en büyük puntoya kendisi büyür (12–22sp).
+        title.setText("UMAY CANLI MULTI TV VE RADYO");
         title.setTextColor(TEXT);
+        // 18sp büyük harf: kart genişliğine tam sığıyor (autosize bu cihazda küçültmüyordu).
         title.setTextSize(18);
         title.setSingleLine(true);
         title.setEllipsize(android.text.TextUtils.TruncateAt.END);
@@ -202,7 +205,7 @@ public class MainActivity extends android.app.Activity {
         // --- ulke secimi: secilen ulkenin kanallari listeye gelir ---
         TextView countryBtn = pill(Countries.flag(shownCountry), SOFT);
         // Bayrak emojisi aynı punto ile daha küçük çiziliyor; diğer ikonlarla eşitlensin.
-        countryBtn.setTextSize(34);
+        countryBtn.setTextSize(40);
         countryBtn.setContentDescription("Ülke seç");
         countryBtn.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View v) {
@@ -608,7 +611,7 @@ public class MainActivity extends android.app.Activity {
         }
         new AlertDialog.Builder(this)
                 .setTitle("Kanal " + no)
-                .setMessage(c.flag() + "  " + c.name + "\n" + c.group + "\n\nAçılsın mı?")
+                .setMessage(c.name + "\n" + c.group + "\n\nAçılsın mı?")
                 .setPositiveButton("Aç", new DialogInterface.OnClickListener() {
                     @Override public void onClick(DialogInterface d, int w) {
                         open(c);
@@ -901,7 +904,7 @@ public class MainActivity extends android.app.Activity {
         items.add("☑  Seçim / sıralama modu");
         items.add(hidden ? "➕  Listeye geri ekle" : "🗑  Listeden sil");
         new AlertDialog.Builder(this)
-                .setTitle("№" + c.no + "  " + c.flag() + "  " + c.name)
+                .setTitle("№" + c.no + "  " + c.name)
                 .setItems(items.toArray(new String[0]), new DialogInterface.OnClickListener() {
                     @Override public void onClick(DialogInterface d, int which) {
                         if (which == 0) { open(c); return; }
@@ -1231,7 +1234,7 @@ public class MainActivity extends android.app.Activity {
                     ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
 
             TextView name = new TextView(MainActivity.this);
-            name.setText(c.flag() + "  " + c.name);
+            name.setText(c.name);
             name.setTextColor(TEXT);
             name.setTextSize(14);
             name.setTypeface(name.getTypeface(), android.graphics.Typeface.BOLD);

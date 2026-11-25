@@ -106,7 +106,7 @@ async function listLogs(env, url) {
 
 // ---------------------------------------------------------------- indirme sayfasi
 const APK_URL =
-  "https://github.com/gecekargosu/canli-tv-android/releases/download/v9.80/CanliTV-9.80.apk";
+  "https://github.com/gecekargosu/canli-tv-android/releases/download/v9.81/CanliTV-9.81.apk";
 
 function downloadPage() {
   return html(`<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
