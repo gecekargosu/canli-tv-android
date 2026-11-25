@@ -151,3 +151,30 @@ Proje numaran: **114803444551** (`My First Project`)
 > Rename** ile `umay-play-verify` yapabilirsin, zorunlu değil.
 > Konsolu Türkçeye çevirmek istersen Google Hesabı → Kişisel bilgiler → Dil
 > (tüm Google ürünlerini etkiler).
+
+---
+
+## Anahtar hazır — test sonucu (26 Kasım 2026, 01:35)
+
+`site/.secrets/play-service-account.json` yerinde (git'e gitmiyor, `.gitignore`'da).
+Servis hesabı: `umay-play-verify@smooth-aura-477020-m7.iam.gserviceaccount.com`
+
+Test: `python _build/play_check.py`
+
+| Adım | Sonuç |
+|---|---|
+| JWT imzalama + token alma | ✅ 200 — anahtar geçerli |
+| `androidpublisher` API çağrısı | ⚠️ **404** `Package not found: com.cengiz.canlitv` |
+
+**404'ün anlamı:** anahtar ve API sorunsuz; Play Developer API'yi yetkilendirdiğin
+hesapta bu paket adıyla **uygulama yok**. Yani ya uygulama henüz oluşturulmadı,
+ya da başka bir geliştirici hesabında oluşturuldu.
+
+**Kontrol listesi:**
+1. Play Console → **Home** → uygulama listesinde `UMAY Multi TV` görünüyor mu?
+2. Görünmüyorsa → **Create app** (paket adı AAB'den gelir: `com.cengiz.canlitv`)
+3. **Setup → API access** → projeyi **Link** et
+4. Servis hesabına **Grant access** → ✅ *View financial data* +
+   ✅ *Manage orders and subscriptions* → **Save**
+5. 5-10 dakika sonra `python _build/play_check.py` tekrar çalıştır;
+   bu kez **200** ve bir `edit id` dönmeli.

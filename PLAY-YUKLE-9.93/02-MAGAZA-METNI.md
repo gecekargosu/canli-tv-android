@@ -90,12 +90,13 @@ Geri bildirim: cengizkilic1980@gmail.com
 |---|---|---|---|
 | Uygulama ikonu | 512×512 | `docs/play/ikon-512.png` | ✅ |
 | Öne çıkan görsel | 1024×500 | `docs/play/one-cikan-1024x500.png` | ✅ 9.74'te yenilendi |
-| Telefon ekran görüntüsü 1 | 1280×2300 | `docs/play/ekran-9.77-1-ana.png` | ✅ 9.76 (kompakt üst bar) |
-| Telefon ekran görüntüsü 2 | 1280×2632 | `docs/play/ekran-9.77-2-oynatici.png` | ✅ |
-| Telefon ekran görüntüsü 3 | 1280×2342 | `docs/play/ekran-9.74-3-radyo.png` | ✅ |
+| Telefon ekran görüntüsü 1 | 1280×2300 | `magaza-gorselleri/ekran-9.93-1-ana.png` | ✅ 9.93, cihazdan |
+| Telefon ekran görüntüsü 2 | 1280×2300 | `magaza-gorselleri/ekran-9.93-2-oynatici.png` | ✅ 9.93, ATV 720p canlı |
+| Telefon ekran görüntüsü 3 | 1280×2300 | `magaza-gorselleri/ekran-9.93-3-radyo.png` | ✅ 9.93, 24 istasyon |
 
-Not: ekran görüntülerinde reklam şeridi kırpıldı; uygulama arayüzü ve gerçek
-kanal/istasyon listesi görünüyor. Play en az 2, en çok 8 telefon görüntüsü kabul eder.
+Not: 9.93 görüntüleri gerçek cihazdan (1280×2772) alındı ve Play kuralı gereği
+uzun kenar kısa kenarın 2 katını geçmesin diye **1280×2300** olarak kırpıldı.
+Play en az 2, en çok 8 telefon görüntüsü kabul eder.
 
 ## 5. Mağaza formu cevapları
 
@@ -127,6 +128,17 @@ kanal/istasyon listesi görünüyor. Play en az 2, en çok 8 telefon görüntüs
 1. Play Console → Uygulama oluştur (ad, dil, ücretsiz).
 2. Mağaza kaydı: metinler + ikon + öne çıkan görsel + 3 ekran görüntüsü.
 3. Uygulama içeriği: reklamlar, hedef kitle, içerik derecelendirme, veri güvenliği.
-4. Kapalı test → `releases/v9.90/UMAY-MULTI-TV-9.90.aab` (versionCode 99).
+4. Kapalı test → `releases/v9.93/UMAY-MULTI-TV-9.93.aab` (versionCode **102**).
 5. En az 12 tester, 14 gün kesintisiz → üretim erişimi başvurusu.
 6. Onay sonrası üretim → aynı AAB → inceleme.
+
+## 7. Abonelik ürünü (uygulama kodunda var, konsolda tanımlanmalı)
+
+`Billing.java` içindeki ürün kimliği: **`umay_reklamsiz_aylik`** (20 ₺/ay).
+Konsolda tanımlanmazsa “Reklamsız abonelik” satın alma akışı hata verir.
+
+1. Play Console → **Monetize with Play → Products → Subscriptions** → **Create subscription**
+2. **Product ID:** `umay_reklamsiz_aylik` (aynen, değiştirme)
+3. **Name:** `Reklamsız abonelik` · **Base plan:** monthly · **Price:** ₺20,00
+4. **Save → Activate** (base plan “Active” olmalı)
+5. Ülke listesinde Türkiye işaretli olsun
