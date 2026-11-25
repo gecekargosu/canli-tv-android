@@ -20,7 +20,7 @@ Durum: ✅ hazır · 🟡 kısmen · 👤 senin yapman gereken (Play Console / h
 | İzin gerekçeleri | ✅ | POST_NOTIFICATIONS, INTERNET, ACCESS_NETWORK_STATE; hassas izin yok |
 | Cleartext | ✅ | Varsayılan HTTPS, yalnız beyaz listedeki eski HTTP radyo alan adları |
 | Reklam kimliği | ✅ | `com.google.android.gms.permission.AD_ID` yalnız AdMob için |
-| Veri toplama | ✅ | Hesap yok, analitik yok, sunucuda profil yok |
+| Veri toplama | ✅ | Hesap/analitik yok; hata günlüğü cihazda, gönderim isteğe bağlı ve kapalı |
 
 ## B. Mağaza kaydı (Play Console)
 
@@ -56,13 +56,13 @@ Durum: ✅ hazır · 🟡 kısmen · 👤 senin yapman gereken (Play Console / h
 | Veri türü | Toplanıyor mu? | Paylaşılıyor mu? | Amaç | Not |
 |---|---|---|---|---|
 | Reklam kimliği (AD_ID) | Evet (Google AdMob SDK) | Evet (Google) | Reklam/ölçüm | Uygulama kendi sunucusuna göndermez |
-| Cihaz veya diğer kimlikler | Hayır | — | — | — |
+| Cihaz veya diğer kimlikler | Evet (isteğe bağlı) | Hayır | Uygulama işlevi | Yalnız "günlük gönderimi" açılırsa; rastgele Android ID (16 karakter) |
 | Yaklaşık konum | Hayır | — | — | Ülke yalnız SIM/ağ kodu + dil, sunucuya gitmez |
 | Hassas konum | Hayır | — | — | — |
 | Kişisel bilgiler (ad/e-posta) | Hayır | — | — | Hesap yok |
 | Uygulama etkinliği (izleme geçmişi) | Hayır (yalnız cihazda) | — | — | Favoriler/geçmiş cihazda |
 | Uygulama içi aramalar | Hayır | — | — | — |
-| Çökme günlükleri | Hayır (otomatik gönderim yok) | — | — | Kullanıcı isterse e-posta ile gönderir |
+| Çökme günlükleri | Evet (isteğe bağlı) | Hayır | Hata ayıklama | Varsayılan KAPALI; kullanıcı açarsa günde en fazla 1 kez |
 | Finansal bilgi | Hayır | — | — | — |
 | Sağlık | Hayır | — | — | — |
 | Mesajlar | Hayır | — | — | — |

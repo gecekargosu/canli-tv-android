@@ -75,6 +75,42 @@ public class Prefs {
         sp(c).edit().putString("adTestHashed", v).apply();
     }
 
+    // --- geliştirici (sahip) modu: yayınlanan APK'da kullanıcıya görünmez ---
+    /** Gizli sahip modu (Ayarlar → Sürüm satırına 7 kez dokun). */
+    public static boolean ownerMode(Context c) {
+        return sp(c).getBoolean("ownerMode", false);
+    }
+
+    public static void setOwnerMode(Context c, boolean v) {
+        sp(c).edit().putBoolean("ownerMode", v).apply();
+    }
+
+    /** Sahip modunda "reklamları kapat": bu telefonda hiç reklam gösterilmez. */
+    public static boolean adsOff(Context c) {
+        return sp(c).getBoolean("adsOff", false);
+    }
+
+    public static void setAdsOff(Context c, boolean v) {
+        sp(c).edit().putBoolean("adsOff", v).apply();
+    }
+
+    /** Hata günlüğünü günde bir kez sunucuya gönder (varsayılan KAPALI, kullanıcı açar). */
+    public static boolean autoLogSend(Context c) {
+        return sp(c).getBoolean("autoLogSend", false);
+    }
+
+    public static void setAutoLogSend(Context c, boolean v) {
+        sp(c).edit().putBoolean("autoLogSend", v).apply();
+    }
+
+    public static long lastLogUpload(Context c) {
+        return sp(c).getLong("lastLogUpload", 0L);
+    }
+
+    public static void setLastLogUpload(Context c, long v) {
+        sp(c).edit().putLong("lastLogUpload", v).apply();
+    }
+
     public static boolean hideDead(Context c) {
         return sp(c).getBoolean("hideDead", true);
     }

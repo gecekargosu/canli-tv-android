@@ -61,8 +61,8 @@ Yayını sesiyle birlikte telefona kaydet (Movies/TV-Kayitlari), uygulama içind
 🌐 4 DİL
 Türkçe, English, Русский, العربية. Menüler seçtiğin dilde.
 
-👤 HESAP (İSTEĞE BAĞLI)
-İstersen e-posta veya Google ile üye ol; olmasan da her şey açık (misafir modu).
+👤 HESAP GEREKMEZ
+Ne e-posta ne Google hesabı istenir; bütün özellikler açıktır.
 
 NEDEN ÜCRETSİZ?
 Uygulama reklamla ayakta kalır: liste altında küçük bir banner ve seyrek geçiş reklamı.

@@ -1,116 +1,100 @@
 # UMAY Multi TV (Android)
 
-Reklamsız, hesapsız, **ücretsiz** canlı TV + radyo uygulaması. 300+ kanal ve 49 radyo tek listede;
-yayınlar uygulamanın içine gömülü olduğu için hiçbir siteye yönlendirme yapmaz, tarayıcı açılmaz.
+Ücretsiz, reklam destekli **canlı TV + radyo** uygulaması. Türkiye için 126 kanal ve 32 radyo
+uygulamanın içinde hazır gelir; 50 ülkenin listesi istenirse sunucudan indirilir.
+**Hesap, üyelik, kredi kartı yoktur**; hiçbir özellik için giriş istenmez.
 
-Tek dosya APK: [`CanliTV.apk`](CanliTV.apk) (Android 8.0+, imzalı)
+- Android 8.0+ (minSdk 26), hedef SDK 36
+- Son APK/AAB: **GitHub Releases → v9.73** (`CanliTV-9.73.apk`, `UMAY-MULTI-TV-9.73.aab`)
+- Sürüm geçmişi: [`RELEASES.md`](RELEASES.md)
 
 ## Özellikler
 
-- **Numaralı kanallar** – kumanda gibi: üstteki *No* kutusuna numarayı yaz → **Git** → onay → açılır.
-- **📻 Radyo** – 49 internet radyosu (TRT, Kral, Power, Süper, Metro, Joy, Radyo 7, Karadeniz FM, TRT Trabzon…); üstteki radyo düğmesinden açılır, **ekran kilitliyken de çalar** (ön plan servisi + wake/Wi-Fi lock).
-- **Liste yönetimi** – bir kanala/radyoya uzun bas → *Listeden gizle*; "🗑 Gizlenenler" sekmesinden geri ekle. Böylece 300 kanalı kendi zevkine göre 50'ye indirebilirsin.
-- **Liste düzenleme** – *✏️ Düzenle*: çoklu seçim, satırdaki ▲▼ ile taşıma, seçilenleri en üste/en alta alma, numara değiştirme (dolu numarada karşılıklı yer değiştirir) ve silme. Her sekmede (Tümü, Favoriler, Türkçe, Yabancı, gruplar) ayrı ve kalıcı.
-- **Sıralama** – *⇅ Sırala*: çok izlediklerim üstte, hiç izlemediklerim üstte, A→Z, numaraya göre, varsayılana dön.
-- **Kalite / veri kontrolü** – 360p, 480p, 720p, 1080p, en düşük ve otomatik; her seçenekte saatlik tahmini GB yazar. Seçim oynatıcı, çoklu ekran ve "sadece ses" için geçerlidir.
-- **Ayarlar sayfası** – açılır pencere yerine tam ekran; her satırda ikon, açıklama ve güncel değer.
-- **Oynatıcı düğmeleri** – ikon + yazı ile büyütüldü; 🏠 Ana sayfa ve ✕ Kapat. Çoklu ekranda 🏠 ana sayfa, ⏹ TV'yi kapat.
-- **Kanal sırası** – büyük Türk kanalları en üstte (TRT 1, TRT 2, TV8, ATV, Star TV, Kanal D, Haber Global, NTV, A Haber, Halk TV, Kanal 7, TRT Spor…) sonra diğer TR kanalları, en sonda yabancılar.
-- **Ülke bayrağı** ve **🇹🇷 Türkçe / 🌐 Yabancı / 🕘 Son izlenenler / ★ Favoriler** filtreleri.
-- **🌍 Ülke seçimi (50 ülke)** – üstteki bayrak düğmesi → *Ülke seç*. Seçilen ülkenin kanalları
-  [iptv-org](https://github.com/iptv-org/iptv) ülke listesinden indirilir, `files/country_<cc>.m3u`
-  olarak önbelleğe alınır ve liste o ülkeye göre yeniden kurulur. Türkiye gömülüdür (internet gerekmez);
-  diğer ülkeler bir kez indirilir, sonra çevrimdışı açılır. Uzun bas → yeniden indir.
-- **👤 Hesap (isteğe bağlı)** – Ayarlar → Hesap: e-posta + şifre ile üye ol, 6 haneli kod ile doğrula,
-  Google ile gir. Şifre cihazda PBKDF2 ile özetlenir. Üye olmayan "misafir" olarak her şeyi kullanır.
-- **📢 Reklamlar (AdMob)** – liste altında banner; her 4. kanal açılışında bir, en az 10 dakika
-  arayla geçiş reklamı. Video oynarken ekranda reklam yok. Reklam yüklenmezse uygulama normal çalışır.
-  Debug derlemede Google'ın **test reklamları** kullanılır (kendi reklamına tıklama riski yok).
-- **📧 Üyelik sunucusu** – `site/worker.js` (Cloudflare Worker + D1): `/api/register`, `/api/verify`,
-  `/api/resend`, `/api/login`, `/api/health`, `/api/google/*`. Hoş geldin maili + doğrulama kodu.
-  Kurulum: [`docs/play/uyelik-kurulum.md`](docs/play/uyelik-kurulum.md).
-- **Çoklu dil** – 🇹🇷 Türkçe, 🇬🇧 English, 🇷🇺 Русский, 🇸🇦 العربية (Ayarlar → Genel → Dil).
-  Menü/sekme/başlık metinleri seçilen dilde; kanal adları yayıncıdan geldiği gibi kalır.
-- **Arama** – kanal adı, grup veya numara.
-- **Tek ekran oynatıcı** – saydam saat, ses çubuğu, önceki/sonraki, favori, HD, kayıt, PiP.
-- **Uyku zamanlayıcısı** – 15/30/45/60/90/120 dk veya saat gir (23:30 gibi); süre dolunca uygulama kapanır, kalan süre saatte canlı sayar.
-- **3'lü / 4'lü izleme (2×2)** – her pencerenin sesi ayrı açılıp kapanır, pencereye dokununca o pencere solo olur.
-  - Pencerelere uzun bas → **aranabilir** kanal seçici (numara veya ad yazarak).
-  - Kontrol paneli: **1□ 2□ 3□ ⊞4**, **no kutusu + ⏺ kayıt** (istediğin ekranı kaydeder), **★ set** (seti favori olarak kaydet).
-  - Son kullanılan set otomatik hatırlanır; ana ekranda "▦ 3'lü" düğmesine uzun basınca kayıtlı setler açılır.
-- **Kayıt** – ses dahil `.ts` olarak `Movies/TV-Kayitlari` klasörüne yazılır; uygulama içi **Kayıtlarım** ekranından izlenir.
-- **Mobil veri uyarısı** – Wi-Fi yokken onay ister; *Sadece ses* seçeneğiyle görüntü indirmeden dinlenebilir.
-- **Veri sayacı + günlük limit** – ana ekranda "📶 Bugün: 143 MB / 500 MB"; kanal satırında o kanalın harcadığı veri ve süre.
-- **Sağlık taraması** – tüm kanalları test edip açılmayanları işaretler/gizler (⚙ menüsü).
-- **Arka planda ses** – ekran kapalıyken dinleme (ön plan servisi + bildirim).
+- **Numaralı kanallar** – kumanda gibi: üstteki *No* kutusuna numarayı yaz → **Git** → açılır.
+- **📻 Radyo** – 32 Türk internet radyosu; ekran kilitliyken de çalar (ön plan servisi + wake/Wi-Fi lock).
+- **Liste yönetimi** – uzun bas → *Listeden gizle*; "🗑 Gizlenenler" sekmesinden geri ekle.
+- **Liste düzenleme** – çoklu seçim, ▲▼ ile taşıma, numara değiştirme, silme; her sekmede ayrı ve kalıcı.
+- **Sıralama** – çok izlenenler, hiç izlenmeyenler, A→Z, numaraya göre, varsayılana dön.
+- **Kalite / veri kontrolü** – 360p, 480p, 720p, 1080p, en düşük ve otomatik; saatlik tahmini GB.
+- **Ekonomi modu** – en düşük kalite + ekran kapanınca yalnız ses.
+- **Tek ekran oynatıcı** – media3/ExoPlayer, saydam saat, ses çubuğu, önceki/sonraki, favori, kayıt, PiP.
+- **Çoklu ekran** – 1–4 pencere; her pencerenin sesi ayrı, kayıtlı setler, aranabilir kanal seçici.
+- **Kayıt** – yalnız kamu yayıncılarında (TRT, TBMM, Diyanet); `.ts` olarak `Movies/TV-Kayitlari`.
+- **Uyku zamanlayıcısı**, **mobil veri uyarısı**, **veri sayacı + günlük limit**, **kanal sağlık taraması**.
+- **🌍 Ülke seçimi (50 ülke)** – iptv-org ülke listesi indirilir, `files/country_<cc>.m3u` olarak saklanır.
+- **Arayüz dilleri** – Türkçe, English, Русский, العربية.
+- **🐞 Hata günlüğü** – açılmayan kanal, oynatıcı hata kodu, bağlantı kopması, reklam dolmama nedeni
+  zaman damgasıyla cihazda tutulur; Ayarlar → *Hata günlüğü*'nden okunur, e-postayla gönderilir veya
+  istenirse günde bir kez sunucuya gönderilir (varsayılan **kapalı**).
 
-## Mimari
+## Reklamlar (AdMob) ve gelir
 
-Gradle ile derlenir (AdMob SDK'sı AAR olduğu için gerekiyor):
+- Liste/oynatıcı altında **banner**; video oynarken ekranın üstüne reklam binmez.
+- **Geçiş reklamı**: her 3. kanal değişiminde, en az **180 saniye** arayla; izlerken **15 dakikada bir**.
+- **Ödüllü reklam**: kullanıcı isterse izler, **15 dakika** reklamsız (banner kalır).
+- AB/İngiltere/İsviçre'de **UMP rıza ekranı**; rıza yoksa reklam isteği gönderilmez.
+- Reklam yüklenemezse uygulama normal çalışır; yerine kendi "Reklam izle · 15 dk reklamsız" şeridi gelir.
+- `app-ads.txt` yayında: <https://umay-multi-tv-gq3zer.freebuff.site/app-ads.txt>
+- Gelir, AdMob konsolunda hesap genelinde 1–2 gün gecikmeyle kesinleşir; uygulama ayrıca bir
+  "gelir bildirimi" yapmaz — gösterimi Google Ads SDK'sı kendisi raporlar.
 
-```
-app srcDirs → aapt2/manifest merge → javac → d8 → APK / AAB (AGP 8.13, Gradle 8.14)
-```
+## Gizlilik
 
-Uygulama kodu saf Android framework (AndroidX/Media3 yok); AndroidX yalnızca reklam SDK'sının
-kendi bağımlılığı olarak gelir. Oynatma `VideoView` (tek ekran) ve
-`SurfaceView + MediaPlayer` (çoklu ekran, pencere başına ses).
-
-```
-src/com/cengiz/canlitv/
-  MainActivity.java      liste, numara, filtreler, veri çubuğu, ayarlar, sağlık taraması
-  PlayerActivity.java    oynatıcı, saat, uyku zamanlayıcısı, kalite, kayıt, PiP
-  MultiActivity.java     1-4 pencere, pencere sesi, kayıt paneli, setler
-  RecordingsActivity.java kayıt kütüphanesi (MediaStore)
-  HlsRecorder.java       HLS segmentlerini .ts olarak Movies/TV-Kayitlari'na yazar
-  Quality.java           master m3u8 varyantlarını (HD/SD) çözer
-  Channel.java / ChannelRepo.java / Prefs.java / Net.java / AudioService.java / LogoLoader.java
-  Countries.java         50 ülke (kod, TR/EN ad, bayrak)
-  CountryActivity.java   ülke seçme ekranı (indir / seç / yeniden indir)
-  CountryRepo.java       ülke m3u indirme, önbellek (files/country_<cc>.m3u), ayrıştırma
-  Lang.java              tr/en/ru/ar sözlüğü (görünen metinler)
-  Account.java           hesap durumu + PBKDF2 şifre özeti (düz şifre saklanmaz)
-  AccountActivity.java   giriş / üye ol / kod doğrulama / Google / misafir
-  Api.java               üyelik sunucusu istemcisi (HttpURLConnection, ek kütüphane yok)
-  Ads.java               AdMob kimlikleri, test/gerçek birimler, reklam kuralları
-  AdManager.java         banner + geçiş reklamı yönetimi (frekans sınırlı)
-assets/channels.m3u      302 kanal (iptv-org, tek tek test edilmiş)
-```
+- Hesap açılmaz; ad/e-posta/konum istenmez, izleme geçmişi sunucuya gönderilmez.
+- Favoriler, ayarlar ve sayaçlar yalnız cihazda tutulur.
+- Teknik hata günlüğü cihazda tutulur; **günlük gönderimi** yalnız kullanıcı açarsa günde bir kez
+  çalışır ve yalnızca teknik kayıtları gönderir.
+- Ayrıntı: <https://umay-multi-tv-gq3zer.freebuff.site/gizlilik-politikasi.html>
 
 ## Derleme
 
+Gereken: Android SDK (platform 36, build-tools 36), JDK 21, Gradle 8.14 (araçlar `_build/tools` içinde).
+
 ```bash
-# Gereken: Android SDK (platform 36, build-tools 36), JDK 21 ve Gradle 8.14
-# Araclar proje icinde: _build/tools/gradle-8.14.3, _build/tools/jdk-21*
-bash build.sh          # → CanliTV.apk  (debug anahtari, uzerine guncellenebilir)
-bash make-aab.sh       # → CanliTV.aab  (Play icin upload anahtari)
-bash gradle-build.sh assembleDebug   # test reklamlariyla hizli deneme
+bash build.sh        # → CanliTV.apk  (üretim imzası, üzerine kurulabilir)
+bash make-aab.sh     # → CanliTV.aab  (Play için upload anahtarı)
+bash gradle-build.sh assembleDebug   # test reklamlarıyla hızlı deneme
 adb install -r CanliTV.apk
 ```
 
-`gradle-build.sh` JDK 21'i ve Gradle'i `_build/tools` icinden kullanir; `local.properties`
-ve Gradle icin `package` satiri silinmis manifest kopyasi (`_build/gradle/`) otomatik uretilir.
+Her sürümde yayın öncesi zorunlu denetim:
 
-## Sürüm arşivi
+```bash
+python tools/verify-apk.py CanliTV.apk --prev releases/v<önceki>/CanliTV-<önceki>.apk --expect-version <yeni>
+```
 
-Her revizyon kendi klasöründe durur: `releases/v6.0/`, `releases/v7.0/`, `releases/v8.0/`, `releases/v9.0/`
-(APK + AAB + `SURUM-NOTLARI.md` + ekran görüntüsü). Kökteki `CanliTV.apk` her zaman en son derlemedir.
+## Proje düzeni
+
+```
+src/com/cengiz/canlitv/
+  MainActivity.java       liste, numara, filtreler, veri çubuğu, ayarlar, sağlık taraması
+  PlayerActivity.java     media3 oynatıcı, saat, uyku, kalite, kayıt, PiP, yeniden bağlanma
+  MultiActivity.java      1-4 pencere, pencere sesi, kayıt paneli, setler
+  RadioActivity.java      radyo listesi
+  RadioPlayerActivity.java / AudioService.java   radyo oynatıcı + arka plan servisi
+  RecordingsActivity.java kayıt kütüphanesi (MediaStore)
+  HlsRecorder.java        HLS segmentlerini .ts olarak Movies/TV-Kayitlari'na yazar
+  Quality.java            master m3u8 varyantlarını (HD/SD) çözer
+  Channel.java / ChannelRepo.java / Prefs.java / Net.java / LogoLoader.java
+  Countries.java / CountryActivity.java / CountryRepo.java
+  SettingsActivity.java   ayarlar; hata günlüğü; gizli geliştirici modu
+  CrashLog.java           olay/çökme günlüğü + isteğe bağlı günlük gönderimi
+  Ads.java / AdManager.java / AdStats.java / AdsTest.java
+  AboutActivity.java / StatusActivity.java / Repair.java / Good.java / Popular.java
+assets/channels.m3u       126 TR kanalı (tek tek test edilmiş)
+assets/radios.m3u         32 TR radyosu
+assets/good_tr.json       "bilinen iyi" TR sırası (çevrimdışı yedek)
+site/                     Cloudflare Worker + statik site (gizlilik, indir, app-ads.txt)
+```
 
 ## Kanal listesi
 
 `assets/channels.m3u` içeriği [iptv-org](https://github.com/iptv-org/iptv) açık kaynaklı halka açık
-yayın listesinden üretilir; her URL tek tek test edilir (HTTP 200 + `#EXTM3U`) ve sadece çalışanlar
-eklenir. Sıralama `_build/sirala.py` ile yapılır.
+listesinden üretilir; her URL test edilir (HTTP 200 + `#EXTM3U`). Kanal listesi dört dosyada birlikte
+güncellenir: `assets/channels.m3u`, `assets/good_tr.json`, `site/public/good/tr.json`,
+`site/public/kanallar.json`.
 
-## Notlar
+## Yasal
 
-- Yayınlar üçüncü tarafların halka açık akışlarıdır; kanallar zaman zaman yayını kaldırabilir
-  (⚙ → *Tüm kanalları test et* ile güncel durumu görürsün).
-- Canlı altyazıyı Türkçeye çevirme, EPG (program rehberi) ve Chromecast bu sürümde yok:
-  ek kütüphane/veri kaynağı gerektiriyor.
-
-## Ekran görüntüleri
-
-| Ana ekran | Oynatıcı | Çoklu ekran |
-|---|---|---|
-| ![](docs/ana-ekran.png) | ![](docs/oynatici.png) | ![](docs/coklu-ekran.png) |
+Yayınlar üçüncü tarafların halka açık akışlarıdır; uygulama yayın barındırmaz. Kaldırma talebi:
+`cengizkilic1980@gmail.com` (24–48 saat içinde değerlendirilir).

@@ -19,12 +19,14 @@ public class ChannelRepo {
      */
     private static final Map<String, String[]> FALLBACK = new HashMap<String, String[]>();
     static {
+        // ATV: cihazda açıldığı doğrulanan 720p adres birincil; master ve 480p yedek.
+        // (Master varyant listesi bazı cihazlarda hazırlanmıyor — bu yüzden ana adres 720p.)
         String atv720 = "https://rnttwmjcin.turknet.ercdn.net/lcpmvefbyo/atv/atv_720p.m3u8";
         String atvMain = "https://rnttwmjcin.turknet.ercdn.net/lcpmvefbyo/atv/atv.m3u8";
-        String atv1080 = "https://rnttwmjcin.turknet.ercdn.net/lcpmvefbyo/atv/atv_1080p.m3u8";
-        FALLBACK.put(atv720, new String[]{atvMain, atv1080});
-        FALLBACK.put(atvMain, new String[]{atv720, atv1080});
-        FALLBACK.put(atv1080, new String[]{atv720, atvMain});
+        String atv480 = "https://rnttwmjcin.turknet.ercdn.net/lcpmvefbyo/atv/atv_480p.m3u8";
+        FALLBACK.put(atv720, new String[]{atv480, atvMain});
+        FALLBACK.put(atv480, new String[]{atv720, atvMain});
+        FALLBACK.put(atvMain, new String[]{atv720, atv480});
 
         // TV8: daioncdn adresi başka bir uygulamanın `app=` anahtarını taşıyordu; listeden de
         // yedeklerden de kaldırıldı. Yayın TürkNet/ERC yansısından, yedek olarak 480p yansısı.

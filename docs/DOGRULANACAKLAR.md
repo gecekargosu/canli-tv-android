@@ -245,3 +245,16 @@ dokunma + `uiautomator dump` + `logcat` + ekran görüntüsü. "Kanıt" sütunu 
 | D-58 | Reklam test modu yayında görünmüyor mu | **✅** Ayarlar tarandı: "Reklam test modu" yok, "Reklam sayacım" var (175 reklam · ~₺1,78). |
 | D-59 | Reklam sıklığı (3 zap / 180 sn) | **⏳** Cihazda reklam doluluğu olmadığı için gözle doğrulanamadı; kod yolu denetlendi. |
 | D-60 | 9.71 kapasite/sürüm denetimi | **✅** `verify-apk --prev v9.70 --expect-version 9.71` temiz: sınıf +0, dosya +0, imza aynı. |
+
+### 23. yarı — 9.73 doğrulamaları
+
+| # | Konu | Sonuç / kanıt |
+|---|------|----------------|
+| D-61 | Reklam gerçekten gösteriliyor ve sayılıyor mu | **✅** Cihazda gerçek banner (Calvin Klein / hepsiburada) ve tam ekran geçiş reklamı (YDS) gösterildi; teşhis ekranı "rıza EVET, geçiş var, ödüllü var, bu cihazda 206 gösterim" yazdı. |
+| D-62 | Banner hatası günlüğü | **✅** Teşhis ekranı `3 NO_FILL — Google şu an bu birime reklam vermiyor · No fill.` gösterdi; günlük artık "banner yüklenemedi" etiketiyle ve 30 dk'da bir yazılıyor. |
+| D-63 | Reklamları kapat (sahip) | **✅** Açıkken ana ekranda banner/şerit yok, SDK isteği gitmiyor; kapatınca reklamlar geri geliyor (ana ekranda Calvin Klein banner'ı). |
+| D-64 | Reklam sayacı kullanıcıya görünmüyor mu | **✅** Yayın APK'sında satır yok; yalnız Ayarlar başlığına 5 dokunuşla açılan gizli modda görünüyor. |
+| D-65 | Günlük otomatik gönderim uçtan uca | **✅** Telefonda açıldı; `POST /api/log` 200, D1'de kayıt: `2026-11-25 18:03:39 9.73 Xiaomi 2506BPN68G · Android 16 (SDK 36) 6119 bayt`. |
+| D-66 | ATV oynatma | **✅** 720p adresle açıldı (5 dk, 31,6 MB); master adres cihazda hazırlanmadığı için 720p birincil yapıldı. |
+| D-67 | Hata günlüğü penceresi | **✅** Uzun adresler sarılıyor, pencere en yeni olaya kayıyor; "Gönder / Temizle / Kapat" ve "Günlük gönderimi" satırı göründü. |
+| D-68 | 9.73 kapasite denetimi | **✅** `verify-apk --prev v9.72 --expect-version 9.73`: sınıf +10, dosya +0, imza `f3996c67…b8d5`, 9.73 (82). |

@@ -123,7 +123,6 @@ public class AboutActivity extends Activity {
         bullet(body, "Arama, ülke ve tür filtreleri (Genel, Haber, Spor, Müzik, Çocuk, Belgesel…).");
         bullet(body, "Veri sayacı: bugün ne kadar internet harcadığını gösterir, günlük limit koyabilirsin.");
         bullet(body, "Ekonomi modu: en düşük kalite + ekran kapanınca yalnız ses → en az veri.");
-        bullet(body, "Reklam sayacı: kaç reklam gördüğünü ve tahmini kazancı gösterir (bu cihazda).");
         bullet(body, "Türkçe, İngilizce, Rusça, Arapça arayüz.");
 
         h(body, "Sorun olursa ne yapmalı?");
@@ -158,11 +157,17 @@ public class AboutActivity extends Activity {
                 + "Ekonomi modu (en düşük kalite + kapakta ses) veya \"Mobil veride sadece ses\" seçeneğini aç.", TEXT, 13);
 
         h(body, "Gizlilik ve reklamlar");
-        p(body, "Uygulama hesap açmaz, kişisel veri toplamaz, yayın izleme geçmişini sunucuya göndermez. "
+        p(body, "Uygulama hesap açmaz, ad/e-posta istemez, yayın izleme geçmişini sunucuya göndermez. "
                 + "Tercihlerin (favoriler, kalite, sayaçlar) yalnız telefonunda saklanır. Reklamlar Google "
                 + "AdMob üzerinden gösterilir; AdMob kendi politikasına göre cihaz reklam kimliğini "
                 + "kullanabilir. AB/İngiltere/İsviçre'de ilk açılışta rıza ekranı çıkar; kabul etmezsen "
                 + "kişiselleştirilmiş reklam gösterilmez. Uygulama 13 yaş altına yönelik değildir.", TEXT, 13);
+        p(body, "Hata günlüğü: uygulama hangi kanalın açılmadığını, bağlantının ne zaman koptuğunu "
+                + "kendi telefonunda tutar. İstersen Ayarlar → Hata günlüğü ekranından bu kaydı bana "
+                + "e-postayla gönderebilir ya da \"günlük gönderimi\" seçeneğini AÇABİLİRSİN. Bu seçenek "
+                + "varsayılan olarak KAPALIDIR; açtığında günde en fazla bir kez, yalnızca teknik hata "
+                + "kayıtları (kanal adı, hata kodu, telefon modeli) sunucuya gönderilir. Ad, e-posta, "
+                + "konum veya izleme geçmişi gönderilmez; istediğin an kapatabilirsin.", TEXT, 13);
 
         h(body, "Telif ve yayın kaynakları");
         p(body, "Kanal yayınları ilgili yayıncı kuruluşlara aittir. Uygulama yayınları yeniden yayınlamaz; "

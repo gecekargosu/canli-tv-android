@@ -66,6 +66,7 @@ public class MainActivity extends android.app.Activity {
         getWindow().setSoftInputMode(
                 android.view.WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING);
         CrashLog.install(this);   // cokme olursa cihaza log yaz (Ayarlar -> Hata günlüğü)
+        CrashLog.uploadIfDue(this);   // kullanıcı izin verdiyse günde bir kez sunucuya gönder
         // Hata günlüğü: hangi sürüm, hangi ülke, hangi mod ile açıldı.
         CrashLog.event(this, "app", "açılış " + BuildConfig.VERSION_NAME
                 + " · ülke=" + Prefs.country(this)

@@ -45,13 +45,15 @@ public final class AdManager {
     // --- M-03: tek reklam izin kapısı -------------------------------------------------
     /** Reklam istenebilir mi? Başlangıçta HAYIR (fail-closed). */
     private static volatile boolean adsAllowed = false;
+    /** Sahip modunda "reklamları kapat" açık mı? (yalnız bu cihaz) */
+    private static volatile boolean adsOffFlag = false;
     /** Rıza gelmeden oluşturulan banner'lar; izin gelince yüklenir. */
     private static final java.util.List<Runnable> pendingBanners =
             new java.util.ArrayList<Runnable>();
 
     /** Reklam istenebilir mi? Diğer sınıflar da bunu kullanır. */
     public static boolean adsAllowed() {
-        return adsAllowed;
+        return adsAllowed && !adsOffFlag;
     }
 
     private static boolean inited = false;
@@ -62,6 +64,18 @@ public final class AdManager {
     private static long lastInterstitial = 0L;
     private static int opens = 0;
     private static boolean showingAd = false;   // ayni anda iki tam ekran reklam acilmasin
+    // Yükleme denemeleri arasında en az bekleme: eskiden saniyede bir istek gidiyordu
+    // (zamanlayıcı her saniye maybeTimerAd çağırıyor, reklam yoksa yeniden yüklüyordu).
+    private static long nextInterstitialTry = 0L;
+    private static long nextRewardedTry = 0L;
+    private static long interstitialBackoff = 30000L;
+    private static long rewardedBackoff = 30000L;
+    private static String lastInterstitialError = "";
+    private static String lastRewardedError = "";
+    private static String lastBannerError = "";
+    /** Ekranda duran banner'lar: "reklamları kapat" açılınca hemen kaldırılır. */
+    private static final java.util.List<java.lang.ref.WeakReference<View>> liveBanners =
+            new java.util.ArrayList<java.lang.ref.WeakReference<View>>();
 
     /** Tam ekran reklam (geçiş/zamanlayıcı) açık mı? Oynatıcı bu sırada beklemede kalır. */
     public static boolean isShowingFullScreen() { return showingAd; }
@@ -92,7 +106,16 @@ public final class AdManager {
     public static void resetForTestMode() { inited = false; }
 
     public static void init(final Activity activity) {
-        if (!Ads.SDK_READY || inited) return;
+        if (!Ads.SDK_READY) return;
+        // Sahip modunda reklamlar kapatıldıysa SDK'ya hiç istek gitmez.
+        adsOffFlag = Prefs.adsOff(activity);
+        if (adsOffFlag) {
+            adsAllowed = false;
+            inited = true;
+            Log.i(TAG, "reklamlar kapalı (sahip modu) — istek gönderilmeyecek");
+            return;
+        }
+        if (inited) return;
         inited = true;
         try {
             // Aile dostu: yetiskin/erotik icerik istenmez. PG secildi cunku G
@@ -314,6 +337,8 @@ public final class AdManager {
     public static View banner(final Activity activity) {
         // Banner her zaman gosterilir: 20 dk reklamsiz sure yalnizca video (gecis) reklamini kaldirir.
         if (!Ads.SDK_READY) return null;
+        adsOffFlag = Prefs.adsOff(activity);
+        if (adsOffFlag) return null;
         try {
             final android.widget.FrameLayout holder = new android.widget.FrameLayout(activity);
             holder.setLayoutParams(new LinearLayout.LayoutParams(
@@ -321,6 +346,7 @@ public final class AdManager {
             // Yükseklik her zaman dursun: reklam yüklenirken/yüklenemezken bar kaybolmasın.
             holder.setMinimumHeight(dp(activity, 56));
             holder.setBackgroundColor(Color.parseColor("#0B1220"));
+            liveBanners.add(new java.lang.ref.WeakReference<View>(holder));
 
             final TextView house = houseBar(activity);
             // M-43: şerit banner alanına yapışıktı; banner yüklenirken/başarısızken
@@ -362,7 +388,11 @@ public final class AdManager {
                             }
 
                             @Override public void onAdFailedToLoad(LoadAdError error) {
-                                CrashLog.event(activity, "ad", "geçiş reklamı yüklenemedi: " + error.getCode() + " " + error.getMessage());
+                                // Etiket yanlıştı: banner hatası "geçiş reklamı" diye yazılıyordu.
+                                lastBannerError = reason(error);
+                                // Aynı hata her ekranda tekrar yazılmasın: 30 dakikada bir kaydet.
+                                CrashLog.eventThrottled(activity, "ad", "banner",
+                                        "banner yüklenemedi: " + reason(error), 30L * 60L * 1000L);
                                 Log.w(TAG, "banner dolmadi, kendi barimiz: " + error.getMessage());
                                 view.setVisibility(View.GONE);
                                 house.setVisibility(View.VISIBLE);
@@ -593,8 +623,42 @@ public final class AdManager {
         }
     }
 
+    /** AdMob hata kodunu kullanıcıya/dosyaya anlaşılır biçimde yazar. */
+    private static String reason(LoadAdError e) {
+        if (e == null) return "bilinmeyen hata";
+        int code = e.getCode();
+        String what;
+        switch (code) {
+            case 1: what = "geçersiz istek (birim kimliği/ayar)"; break;
+            case 2: what = "ağ hatası (internet yok veya zayıf)"; break;
+            case 3: what = "NO_FILL — Google şu an bu birime reklam vermiyor"; break;
+            case 0: what = "SDK iç hatası"; break;
+            case 4: what = "reklam henüz hazır değil"; break;
+            default: what = "hata"; break;
+        }
+        String msg = e.getMessage();
+        if (msg != null && msg.length() > 160) msg = msg.substring(0, 160);
+        return code + " " + what + (msg == null || msg.length() == 0 ? "" : " · " + msg);
+    }
+
+    private static void retryLater(final Activity a, final boolean rewardedType, long delay) {
+        try {
+            new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
+                @Override public void run() {
+                    try {
+                        if (a == null || a.isFinishing()) return;
+                        if (rewardedType) loadRewarded(a); else loadInterstitial(a);
+                    } catch (Throwable ignored) { }
+                }
+            }, delay);
+        } catch (Throwable ignored) { }
+    }
+
     private static void loadInterstitial(final Activity activity) {
-        if (!Ads.SDK_READY || !adsAllowed || interstitial != null || loadingInterstitial) return;
+        if (!Ads.SDK_READY || !adsAllowed() || interstitial != null || loadingInterstitial) return;
+        long now = System.currentTimeMillis();
+        if (now < nextInterstitialTry) return;   // istek fırtınasını engelle
+        nextInterstitialTry = now + interstitialBackoff;
         loadingInterstitial = true;
         try {
             InterstitialAd.load(activity, Ads.INTERSTITIAL, new AdRequest.Builder().build(),
@@ -602,22 +666,35 @@ public final class AdManager {
                         @Override public void onAdLoaded(InterstitialAd ad) {
                             loadingInterstitial = false;
                             interstitial = ad;
+                            interstitialBackoff = 30000L;
+                            lastInterstitialError = "";
                             Log.i(TAG, "gecis reklami hazir");
                         }
 
                         @Override public void onAdFailedToLoad(LoadAdError error) {
                             loadingInterstitial = false;
-                            Log.w(TAG, "gecis reklami yuklenemedi: " + error.getMessage());
+                            lastInterstitialError = reason(error);
+                            // Doluluk yoksa sık sık denemek boşa istek; geri çekilerek bekle.
+                            interstitialBackoff = Math.min(interstitialBackoff * 2, 300000L);
+                            nextInterstitialTry = System.currentTimeMillis() + interstitialBackoff;
+                            CrashLog.eventThrottled(activity, "ad", "gecis",
+                                    "geçiş reklamı yüklenemedi: " + lastInterstitialError,
+                                    30L * 60L * 1000L);
+                            Log.w(TAG, "gecis reklami yuklenemedi: " + lastInterstitialError);
                         }
                     });
         } catch (Throwable t) {
             loadingInterstitial = false;
             Log.w(TAG, "gecis yukleme hatasi: " + t);
+            nextInterstitialTry = System.currentTimeMillis() + 60000L;
         }
     }
 
     private static void loadRewarded(final Activity activity) {
-        if (!Ads.SDK_READY || !adsAllowed || rewarded != null || loadingRewarded) return;
+        if (!Ads.SDK_READY || !adsAllowed() || rewarded != null || loadingRewarded) return;
+        long now = System.currentTimeMillis();
+        if (now < nextRewardedTry) return;
+        nextRewardedTry = now + rewardedBackoff;
         loadingRewarded = true;
         try {
             RewardedAd.load(activity, Ads.REWARDED, new AdRequest.Builder().build(),
@@ -625,17 +702,82 @@ public final class AdManager {
                         @Override public void onAdLoaded(RewardedAd ad) {
                             loadingRewarded = false;
                             rewarded = ad;
+                            rewardedBackoff = 30000L;
+                            lastRewardedError = "";
                             Log.i(TAG, "odullu reklam hazir");
                         }
 
                         @Override public void onAdFailedToLoad(LoadAdError error) {
                             loadingRewarded = false;
-                            Log.w(TAG, "odullu reklam yuklenemedi: " + error.getMessage());
+                            lastRewardedError = reason(error);
+                            rewardedBackoff = Math.min(rewardedBackoff * 2, 300000L);
+                            nextRewardedTry = System.currentTimeMillis() + rewardedBackoff;
+                            CrashLog.eventThrottled(activity, "ad", "odullu",
+                                    "ödüllü reklam yüklenemedi: " + lastRewardedError,
+                                    30L * 60L * 1000L);
+                            Log.w(TAG, "odullu reklam yuklenemedi: " + lastRewardedError);
+                            // Kendiliğinden tekrar dene (kullanıcı "hazır değil" görmesin).
+                            retryLater(activity, true, rewardedBackoff);
                         }
                     });
         } catch (Throwable t) {
             loadingRewarded = false;
             Log.w(TAG, "odullu yukleme hatasi: " + t);
+            nextRewardedTry = System.currentTimeMillis() + 60000L;
         }
+    }
+
+    /** Sahip modu: reklamları bu cihazda tamamen kapat/aç. */
+    public static void setAdsOff(Activity a, boolean off) {
+        adsOffFlag = off;
+        if (a != null) Prefs.setAdsOff(a, off);
+        inited = false;          // yeniden açılınca init baştan çalışsın
+        if (off) {
+            adsAllowed = false;
+            interstitial = null;
+            rewarded = null;
+            // Ekranda kalan banner'ı hemen kaldır (ana ekran arkada açık kalıyor).
+            try {
+                new Handler(Looper.getMainLooper()).post(new Runnable() {
+                    @Override public void run() {
+                        for (java.lang.ref.WeakReference<View> r : liveBanners) {
+                            View v = r == null ? null : r.get();
+                            if (v == null) continue;
+                            ViewGroup p = (ViewGroup) v.getParent();
+                            if (p != null) p.removeView(v);
+                        }
+                        liveBanners.clear();
+                    }
+                });
+            } catch (Throwable ignored) { }
+        }
+        Log.i(TAG, off ? "reklamlar kapatildi" : "reklamlar acildi");
+    }
+
+    /**
+     * Sahip modu teşhisi: "reklam gerçekten para yazacak şekilde mi çalışıyor?"
+     * SDK, rıza, birim kimlikleri, sayaç ve son hata tek ekranda.
+     */
+    public static String diagnostics(Activity a) {
+        StringBuilder b = new StringBuilder();
+        b.append("SDK: ").append(Ads.SDK_READY ? "bağlı" : "YOK").append("\n");
+        b.append("Reklam istenebilir (rıza): ").append(adsAllowed() ? "EVET" : "HAYIR").append("\n");
+        b.append("Reklamlar kapalı (sahip): ").append(adsOffFlag ? "EVET" : "hayır").append("\n");
+        b.append("Test modu (para yazmaz): ").append(Ads.TEST_MODE ? "AÇIK" : "kapalı").append("\n");
+        b.append("İçerik sınıfı: PG (aile dostu)\n\n");
+        b.append("Banner birimi: ").append(Ads.BANNER).append("\n");
+        b.append("Geçiş birimi: ").append(Ads.INTERSTITIAL).append("\n");
+        b.append("Ödüllü birimi: ").append(Ads.REWARDED).append("\n\n");
+        b.append("Hazır reklam: geçiş ").append(interstitial != null ? "var" : "yok")
+                .append(" · ödüllü ").append(rewarded != null ? "var" : "yok").append("\n");
+        b.append("Son hatalar:\n");
+        b.append("· banner: ").append(lastBannerError.length() == 0 ? "—" : lastBannerError).append("\n");
+        b.append("· geçiş: ").append(lastInterstitialError.length() == 0 ? "—" : lastInterstitialError).append("\n");
+        b.append("· ödüllü: ").append(lastRewardedError.length() == 0 ? "—" : lastRewardedError).append("\n\n");
+        b.append("Bu cihazda sayılan gösterim: ").append(AdStats.total(a)).append("\n");
+        b.append("Gelir AdMob konsolunda (hesap geneli) 1-2 gün gecikmeyle kesinleşir;\n");
+        b.append("uygulama Google'a ayrıca bir şey bildirmez — gösterimi SDK kendisi raporlar.\n");
+        b.append("NO_FILL, o an reklamveren talebi olmadığı anlamına gelir; uygulama hatası değildir.");
+        return b.toString();
     }
 }

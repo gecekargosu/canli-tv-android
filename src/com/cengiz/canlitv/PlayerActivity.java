@@ -537,6 +537,14 @@ public class PlayerActivity extends android.app.Activity {
     /** Son oynatıcı hatası (hata günlüğüne yazılır). */
     private String lastError = "";
 
+    /** Hata adres çözümleme (DNS) kaynaklı mı? O zaman kanal değil bağlantı sorunludur. */
+    private boolean isDnsError() {
+        String e = lastError == null ? "" : lastError.toLowerCase(java.util.Locale.ROOT);
+        return e.contains("unable to resolve host") || e.contains("unknownhost")
+                || e.contains("no address associated") || e.contains("nodename nor servname")
+                || e.contains("name or service not known");
+    }
+
     /** Aynı yayına kaç kez yeniden bağlanıldı (zayıf internet). */
     private int sameRetries = 0;
     /** Ağ olayı yüzünden kaç kez yeniden bağlanıldı (oynak bağlantı koruması). */
@@ -633,6 +641,13 @@ public class PlayerActivity extends android.app.Activity {
                 return;
             } catch (Throwable ignored) { }
         }
+        // İnternet/DNS sorunu kanalın suçu değil: ölü işaretleme, kullanıcıya doğru mesajı ver.
+        if (!Net.online(this) || isDnsError()) {
+            errorView.setText("İnternet bağlantısı kurulamadı.\n\nWi-Fi / mobil veriyi kontrol et,\n"
+                    + "sonra dokun → tekrar dene");
+            errorView.setVisibility(View.VISIBLE);
+            return;
+        }
         Prefs.addFail(this, cur);
         errorView.setText("Bu kanal şu an açılamadı.\n\nDokun → tekrar dene\nveya ⏭ ile sonraki kanal");
         errorView.setVisibility(View.VISIBLE);
@@ -650,6 +665,16 @@ public class PlayerActivity extends android.app.Activity {
         CrashLog.event(this, "tv", "ölü: " + nm + " · " + neden
                 + (lastError.length() > 0 ? " · son hata=" + lastError : "")
                 + " · " + u);
+        // Bağlantı yokken "kanal ölü" demek yanlış: kullanıcı internetini düzeltince kanal açılır.
+        if (!Net.online(this) || isDnsError()) {
+            try {
+                progress.setVisibility(View.GONE);
+                errorView.setText("İnternet bağlantısı kurulamadı.\n\n" + neden
+                        + " · Wi-Fi / mobil veriyi kontrol edip dokun → tekrar dene");
+                errorView.setVisibility(View.VISIBLE);
+            } catch (Exception ignored) { }
+            return;
+        }
         try { Prefs.addFail(this, list.get(index).url); } catch (Exception ignored) { }
         try {
             progress.setVisibility(View.GONE);

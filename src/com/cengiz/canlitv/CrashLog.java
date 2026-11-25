@@ -91,6 +91,25 @@ public final class CrashLog {
         }
     }
 
+    private static final java.util.HashMap<String, Long> lastThrottle =
+            new java.util.HashMap<String, Long>();
+
+    /**
+     * Aynı olayın günlüğü doldurmasını engeller: anahtar başına en sık {@code minGapMs}.
+     * (Örn. reklam dolmama hatası her ekranda tekrar yazılmasın.)
+     */
+    public static void eventThrottled(Context c, String tag, String key, String msg, long minGapMs) {
+        try {
+            long now = System.currentTimeMillis();
+            synchronized (lastThrottle) {
+                Long last = lastThrottle.get(tag + ":" + key);
+                if (last != null && now - last.longValue() < minGapMs) return;
+                lastThrottle.put(tag + ":" + key, Long.valueOf(now));
+            }
+            event(c, tag, msg);
+        } catch (Throwable ignored) { }
+    }
+
     /** Log + cihaz bilgisi: e-posta/WhatsApp ile gönderilecek tam metin. */
     public static String report(Context c) {
         String crash = last(c);
@@ -111,6 +130,79 @@ public final class CrashLog {
 
     public static void clearEvents(Context c) {
         new File(c.getApplicationContext().getFilesDir(), EVENTS).delete();
+    }
+
+    /** Hata günlüğü sunucusu (site/worker.js → POST /api/log). */
+    public static final String ENDPOINT =
+            "https://umay-multi-tv-gq3zer.freebuff.site/api/log";
+
+    /**
+     * Günlüğü günde bir kez sunucuya gönderir — yalnız kullanıcı Ayarlar → Hata günlüğü
+     * ekranından açtıysa (varsayılan KAPALI). Gönderim arka planda, uygulama akışını durdurmaz.
+     */
+    public static void uploadIfDue(final Context c) {
+        try {
+            if (c == null || !Prefs.autoLogSend(c)) return;
+            long now = System.currentTimeMillis();
+            if (now - Prefs.lastLogUpload(c) < 20L * 60L * 60L * 1000L) return;
+            final String ev = events(c);
+            final String crash = last(c);
+            if (ev.length() == 0 && crash.length() == 0) return;
+            // Aynı anda iki gönderim olmasın: zaman damgasını hemen işaretle.
+            Prefs.setLastLogUpload(c, now);
+            final Context app = c.getApplicationContext();
+            new Thread(new Runnable() {
+                @Override public void run() {
+                    try {
+                        org.json.JSONObject o = new org.json.JSONObject();
+                        o.put("id", deviceId(app));
+                        o.put("ts", new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US)
+                                .format(new Date()));
+                        o.put("ver", BuildConfig.VERSION_NAME);
+                        o.put("code", BuildConfig.VERSION_CODE);
+                        o.put("device", Build.MANUFACTURER + " " + Build.MODEL
+                                + " · Android " + Build.VERSION.RELEASE
+                                + " (SDK " + Build.VERSION.SDK_INT + ")");
+                        o.put("events", ev.length() > 6000 ? ev.substring(ev.length() - 6000) : ev);
+                        o.put("crash", crash.length() > 4000 ? crash.substring(0, 4000) : crash);
+                        java.net.HttpURLConnection h = (java.net.HttpURLConnection)
+                                new java.net.URL(ENDPOINT).openConnection();
+                        h.setConnectTimeout(12000);
+                        h.setReadTimeout(12000);
+                        h.setRequestMethod("POST");
+                        h.setDoOutput(true);
+                        h.setRequestProperty("Content-Type", "application/json; charset=utf-8");
+                        byte[] body = o.toString().getBytes("UTF-8");
+                        h.setFixedLengthStreamingMode(body.length);
+                        h.getOutputStream().write(body);
+                        h.getOutputStream().close();
+                        int code = h.getResponseCode();
+                        h.disconnect();
+                        if (code >= 200 && code < 300) {
+                            event(app, "log", "günlük sunucuya gönderildi");
+                        } else {
+                            Prefs.setLastLogUpload(app, 0L);   // yarın tekrar dene
+                            event(app, "log", "günlük gönderilemedi: HTTP " + code);
+                        }
+                    } catch (Throwable t) {
+                        Prefs.setLastLogUpload(app, 0L);
+                        event(app, "log", "günlük gönderilemedi: " + t.getClass().getSimpleName());
+                    }
+                }
+            }, "log-upload").start();
+        } catch (Throwable ignored) { }
+    }
+
+    /** Cihaz başına sabit, kişisel bilgi içermeyen kimlik (günlükleri ayırmak için). */
+    public static String deviceId(Context c) {
+        try {
+            String s = android.provider.Settings.Secure.getString(
+                    c.getContentResolver(), android.provider.Settings.Secure.ANDROID_ID);
+            if (s == null || s.length() == 0) s = "unknown";
+            return s.length() > 16 ? s.substring(0, 16) : s;
+        } catch (Throwable t) {
+            return "unknown";
+        }
     }
 
     /** Son hata metni (yoksa bos string). */

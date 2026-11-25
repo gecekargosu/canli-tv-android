@@ -73,6 +73,24 @@ public class SettingsActivity extends Activity {
         sub.setTextSize(10);
         titles.addView(t);
         titles.addView(sub);
+        // Gizli geliştirici modu: "Ayarlar" başlığına 5 kez dokun (kullanıcı bilmez).
+        t.setOnClickListener(new View.OnClickListener() {
+            private int n = 0;
+            private long last = 0L;
+            @Override public void onClick(View v) {
+                long now = System.currentTimeMillis();
+                if (now - last > 3000L) n = 0;
+                last = now;
+                if (++n < 5) return;
+                n = 0;
+                if (Prefs.ownerMode(SettingsActivity.this)) return;   // zaten açık
+                Prefs.setOwnerMode(SettingsActivity.this, true);
+                render();
+                Toast.makeText(SettingsActivity.this,
+                        "Geliştirici modu açıldı · reklam sayacı ve teşhis göründü",
+                        Toast.LENGTH_LONG).show();
+            }
+        });
         head.addView(titles, new LinearLayout.LayoutParams(0,
                 ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
         root.addView(head);
@@ -232,11 +250,45 @@ public class SettingsActivity extends Activity {
                 "Başlat ›", new View.OnClickListener() {
                     @Override public void onClick(View v) { healthScan(); }
                 });
-        row("💰", "Reklam sayacım",
-                "Kaç reklam gördün · tahmini kazanç (bu cihaz)",
-                AdStats.shortText(this), new View.OnClickListener() {
-                    @Override public void onClick(View v) { adStatsDialog(); }
-                });
+        // --- geliştirici (sahip) modu: kullanıcıya GÖSTERİLMEZ ---
+        // Reklam sayacı, test modu ve "reklamları kapat" yalnız bu telefonda, gizli
+        // mod açıkken görünür. Play'den indiren kullanıcı bu satırları görmez.
+        if (Prefs.ownerMode(this)) {
+            section("Geliştirici");
+            row("💰", "Reklam sayacım",
+                    "Kaç reklam gördün · tahmini kazanç (bu cihaz)",
+                    AdStats.shortText(this), new View.OnClickListener() {
+                        @Override public void onClick(View v) { adStatsDialog(); }
+                    });
+            row("🚫", "Reklamları kapat",
+                    "Bu telefonda hiç reklam gösterilmez (yalnız geliştirici cihazı)",
+                    Prefs.adsOff(this) ? "Kapalı" : "Açık", new View.OnClickListener() {
+                        @Override public void onClick(View v) {
+                            boolean yeni = !Prefs.adsOff(SettingsActivity.this);
+                            AdManager.setAdsOff(SettingsActivity.this, yeni);
+                            Toast.makeText(SettingsActivity.this,
+                                    yeni ? "Reklamlar kapatıldı · bu cihazda hiç reklam çıkmaz"
+                                            : "Reklamlar açıldı",
+                                    Toast.LENGTH_LONG).show();
+                            recreate();
+                        }
+                    });
+            row("🩺", "Reklam teşhisi",
+                    "SDK, rıza, birim kimlikleri, son hata · para yazıyor mu?",
+                    "Aç ›", new View.OnClickListener() {
+                        @Override public void onClick(View v) { adDiagnosticsDialog(); }
+                    });
+            row("🔒", "Geliştirici modu",
+                    "Kapatınca bu satırlar gizlenir (reklamlar açılır)",
+                    "Açık", new View.OnClickListener() {
+                        @Override public void onClick(View v) {
+                            Prefs.setOwnerMode(SettingsActivity.this, false);
+                            AdManager.setAdsOff(SettingsActivity.this, false);
+                            render();
+                            toast("Geliştirici modu kapatıldı · reklamlar açık");
+                        }
+                    });
+        }
         // PDF-06: test modu yayinlanan APK'da gorunmez (yalniz debug derlemede).
         // Metot uzerinden bakiliyor ki derleyici blogu tamamen atmasin (surum denetimi
         // sinif sayisini karsilastiriyor; atilan blok "kod kaybi" gibi gorunuyordu).
@@ -315,13 +367,16 @@ public class SettingsActivity extends Activity {
                 "Bildir ›", new View.OnClickListener() {
                     @Override public void onClick(View v) { copyrightDialog(); }
                 });
-        row("📱", "Sürüm " + version(), "UMAY Multi TV", "Ayrıntı ›",
+        TextView verRow = row("📱", "Sürüm " + version(), "UMAY Multi TV", "Ayrıntı ›",
                 new View.OnClickListener() {
             @Override public void onClick(View v) {
                 new AlertDialog.Builder(SettingsActivity.this)
                         .setTitle("UMAY Multi TV")
                         .setMessage("Sürüm " + version() + "\n\nCanlı TV + radyo.\n"
-                                + "Yayınlar halka açık kaynaklardan gelir; kanallar zaman zaman yayınını kaldırabilir.")
+                                + "Yayınlar halka açık kaynaklardan gelir; kanallar zaman zaman yayınını kaldırabilir."
+                                + (Prefs.ownerMode(SettingsActivity.this)
+                                        ? "\n\nGeliştirici modu: AÇIK (kapatmak için bu satıra uzun bas)"
+                                        : ""))
                         .setPositiveButton("Tamam", null).show();
             }
         });
@@ -356,31 +411,76 @@ public class SettingsActivity extends Activity {
      * oynatıcı hata kodu, reklam yükleme hatası) zaman damgasıyla okunur.
      */
     private void errorLogDialog() {
-        String log = CrashLog.report(this);
+        final String log = CrashLog.report(this);
+        LinearLayout box = new LinearLayout(this);
+        box.setOrientation(LinearLayout.VERTICAL);
+        box.setPadding(dp(14), dp(8), dp(14), 0);
+
         android.widget.TextView tv = new android.widget.TextView(this);
-        tv.setText(log);
-        tv.setTextSize(11);
+        tv.setText(wrapLog(log));
+        tv.setTextSize(10);
         tv.setTypeface(android.graphics.Typeface.MONOSPACE);
         tv.setTextIsSelectable(true);
-        int pad = (int) (14 * getResources().getDisplayMetrics().density);
-        tv.setPadding(pad, pad, pad, pad);
-        android.widget.ScrollView sv = new android.widget.ScrollView(this);
+        tv.setHorizontallyScrolling(false);
+        tv.setPadding(dp(8), dp(8), dp(8), dp(8));
+        final android.widget.ScrollView sv = new android.widget.ScrollView(this);
         sv.addView(tv);
-        new AlertDialog.Builder(this)
+        box.addView(sv, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, dp(300)));
+        // En yeni olay en altta: pencere açılınca sona kaydır.
+        sv.post(new Runnable() {
+            @Override public void run() { sv.fullScroll(android.view.View.FOCUS_DOWN); }
+        });
+
+        final android.widget.TextView auto = new android.widget.TextView(this);
+        auto.setTextSize(11);
+        auto.setTextColor(ACCENT);
+        auto.setPadding(0, dp(10), 0, dp(6));
+        auto.setText(autoLogLabel());
+
+        final AlertDialog dlg = new AlertDialog.Builder(this)
                 .setTitle("Hata günlüğü")
-                .setView(sv)
-                .setPositiveButton("📧 Gönder", new DialogInterface.OnClickListener() {
-                    @Override public void onClick(DialogInterface d, int w) { mailCrash(CrashLog.report(SettingsActivity.this)); }
-                })
-                .setNeutralButton("Temizle", new DialogInterface.OnClickListener() {
-                    @Override public void onClick(DialogInterface d, int w) {
-                        CrashLog.clear(SettingsActivity.this);
-                        CrashLog.clearEvents(SettingsActivity.this);
-                        Toast.makeText(SettingsActivity.this, "Hata günlüğü temizlendi", Toast.LENGTH_SHORT).show();
-                    }
-                })
+                .setView(box)
                 .setNegativeButton("Kapat", null)
-                .show();
+                .create();
+        auto.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) {
+                boolean yeni = !Prefs.autoLogSend(SettingsActivity.this);
+                Prefs.setAutoLogSend(SettingsActivity.this, yeni);
+                auto.setText(autoLogLabel());
+                if (yeni) {
+                    Prefs.setLastLogUpload(SettingsActivity.this, 0L);
+                    CrashLog.uploadIfDue(SettingsActivity.this);
+                    toast("Açık · günde bir kez hata günlüğü sunucuya gönderilecek");
+                } else {
+                    toast("Kapalı · günlük yalnız bu telefonda kalır");
+                }
+            }
+        });
+        box.addView(auto);
+
+        LinearLayout btns = new LinearLayout(this);
+        btns.setOrientation(LinearLayout.HORIZONTAL);
+        TextView bSend = chip("📧 Gönder");
+        bSend.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) {
+                mailCrash(CrashLog.report(SettingsActivity.this));
+            }
+        });
+        TextView bClear = chip("Temizle");
+        bClear.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) {
+                CrashLog.clear(SettingsActivity.this);
+                CrashLog.clearEvents(SettingsActivity.this);
+                toast("Hata günlüğü temizlendi");
+                dlg.dismiss();
+            }
+        });
+        btns.addView(bSend);
+        btns.addView(bClear);
+        box.addView(btns);
+
+        dlg.show();
     }
 
     /** Cihazda kayitli hata logunu paylasir (WhatsApp/mail ile gonderilebilir). */
@@ -989,8 +1089,45 @@ public class SettingsActivity extends Activity {
         super.onDestroy();
     }
 
-    /** Yayinlanan APK'da test modu satiri yok; debug derlemede var. */
-    private static boolean adTestUiVisible() {
-        return BuildConfig.DEBUG;
+    /** Test modu satırı: debug derlemede veya gizli geliştirici modunda görünür. */
+    private boolean adTestUiVisible() {
+        return BuildConfig.DEBUG || Prefs.ownerMode(this);
+    }
+
+    /** Uzun adresleri satır sonuyla böler: günlük penceresinde sağa taşmasın. */
+    private String wrapLog(String log) {
+        StringBuilder out = new StringBuilder();
+        for (String line : log.split("\n")) {
+            while (line.length() > 70) {
+                int cut = 70;
+                // adresin ortasından değil, en yakın "/" veya boşluktan böl
+                int slash = line.lastIndexOf('/', cut);
+                int sp = line.lastIndexOf(' ', cut);
+                int at = Math.max(slash, sp);
+                if (at < 30) at = cut;
+                out.append(line.substring(0, at + 1)).append('\n');
+                line = line.substring(at + 1);
+            }
+            out.append(line).append('\n');
+        }
+        return out.toString();
+    }
+
+    /** Sahip modu: reklam teşhisi penceresi. */
+    private void adDiagnosticsDialog() {
+        new AlertDialog.Builder(this)
+                .setTitle("Reklam teşhisi")
+                .setMessage(AdManager.diagnostics(this))
+                .setPositiveButton("Kapat", null)
+                .setNeutralButton("Sayacı aç", new DialogInterface.OnClickListener() {
+                    @Override public void onClick(DialogInterface d, int w) { adStatsDialog(); }
+                })
+                .show();
+    }
+
+    private String autoLogLabel() {
+        return Prefs.autoLogSend(this)
+                ? "Günlük gönderimi: AÇIK · günde bir, yalnız hata kayıtları (dokun → kapat)"
+                : "Günlük gönderimi: kapalı · dokun → aç (günde bir, yalnız hata kayıtları)";
     }
 }

@@ -122,3 +122,25 @@ Eski listedeki diğer açık maddeler (M-54 in-app review, M-55 analytics, M-57 
 6. **MP-08/09** sende: AAB → kapalı test.
 
 Bu 6 adım bitince "Play'e yüklenebilir" noktasına geliyoruz; P1 maddeleri yayın sonrası ilk haftada.
+
+---
+
+## 9. 9.73 oturumu (25 Kasım 2026, akşam)
+
+| ID | İş | Durum | Kanıt |
+|----|----|-------|-------|
+| MP-35 | Reklam isteği fırtınası (saniyede 1 istek) ve ödüllü otomatik yeniden deneme | ✅ 9.73 | `AdManager` backoff 30 sn → 5 dk |
+| MP-36 | Banner hatası yanlış etiketi + günlük taşması | ✅ 9.73 | "banner yüklenemedi: 3 NO_FILL…", 30 dk throttle |
+| MP-37 | Reklam teşhisi ekranı (rıza, birimler, hazır reklam, son hata, gösterim) | ✅ 9.73 | Cihazda "rıza EVET · geçiş var · ödüllü var · 206 gösterim" |
+| MP-38 | Reklam sayacı/test modu kullanıcıya görünmesin; sahip moduna taşı | ✅ 9.73 | Gizli mod: Ayarlar başlığına 5 dokunuş |
+| MP-39 | "Reklamları kapat" (yalnız sahip cihazı) | ✅ 9.73 | Açıkken banner yok, istek gitmiyor |
+| MP-40 | Hata günlüğü: isteğe bağlı günlük gönderim + gizlilik metni | ✅ 9.73 | `/api/log` + D1, varsayılan kapalı; cihazdan 6119 bayt kayıt |
+| MP-41 | Hata günlüğü penceresi: sarma + en yeniye kaydırma | ✅ 9.73 | Cihazda görüldü |
+| MP-42 | ATV kaynağı | ✅ 9.73 | 720p birincil, 480p/master yedek; cihazda açıldı |
+| MP-43 | İnternet/DNS yokken kanalı ölü işaretlememe | ✅ 9.73 | `Net.online` + `isDnsError` |
+| MP-44 | README/mağaza/Play veri beyanı metinleri | ✅ 9.73 | `README.md`, `docs/play/PLAY-UYGUNLUK-2026-11-25.md` |
+| MP-08/09 | AAB yükleme, Data Safety, 12 tester | 👤 sende | AAB: `releases/v9.73/UMAY-MULTI-TV-9.73.aab` |
+
+Kalan açık işler değişmedi: MP-10/11 (çoklu ekran + radyo media3), MP-13 (çoklu ekran geri tuşu),
+MP-14/15 (kalite↔tasarruf, varyantsız kanalda düşüş), MP-19 (R8), MP-20 (48dp), MP-23 (yatay tablet),
+MP-24 (uzaktan reklam kuralı), MP-25 (günlük sağlık taraması), MP-28/29/30.

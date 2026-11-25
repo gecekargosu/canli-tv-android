@@ -24,6 +24,10 @@ export default {
     const url = new URL(request.url);
     const path = url.pathname;
 
+    // Hata gunlugu (uygulama Ayarlar -> Hata gunlugu -> "gunluk gonderimi" acikken).
+    if (path === "/api/log" && request.method === "POST") return await saveLog(request, env);
+    if (path === "/api/logs" && request.method === "GET") return await listLogs(env, url);
+
     // P0-4 (v9.21): uyelik/hesap uclari kaldirildi. Yalnizca statik site + good/*.json.
     if (path.startsWith("/api/")) {
       return json({ ok: false, error: "account system removed" }, 410);
@@ -51,9 +55,58 @@ export default {
   },
 };
 
+// ---------------------------------------------------------------- hata gunlugu
+const LOG_MAX_BODY = 64000;
+
+async function saveLog(request, env) {
+  try {
+    if (!env.DB) return json({ ok: false, error: "veritabani yok" }, 503);
+    const text = await request.text();
+    if (!text || text.length > LOG_MAX_BODY) return json({ ok: false, error: "boyut" }, 413);
+    let b;
+    try { b = JSON.parse(text); } catch (e) { return json({ ok: false, error: "json" }, 400); }
+    const id = String(b.id || "").slice(0, 32) || "unknown";
+    const ts = String(b.ts || "").slice(0, 40);
+    const day = ts.slice(0, 10) || new Date().toISOString().slice(0, 10);
+    const ver = String(b.ver || "").slice(0, 20);
+    const code = Number(b.code) || 0;
+    const dev = String(b.device || "").slice(0, 120);
+    const ev = String(b.events || "").slice(0, 6000);
+    const crash = String(b.crash || "").slice(0, 4000);
+    if (!ev && !crash) return json({ ok: true, skipped: true });
+    await env.DB.batch([
+      env.DB.prepare(
+        "CREATE TABLE IF NOT EXISTS app_logs (id TEXT, day TEXT, ts TEXT, ver TEXT, code INTEGER, dev TEXT, events TEXT, crash TEXT, PRIMARY KEY (id, day))"
+      ),
+      env.DB.prepare(
+        "INSERT OR REPLACE INTO app_logs (id, day, ts, ver, code, dev, events, crash) VALUES (?1,?2,?3,?4,?5,?6,?7,?8)"
+      ).bind(id, day, ts, ver, code, dev, ev, crash),
+    ]);
+    return json({ ok: true });
+  } catch (e) {
+    return json({ ok: false, error: "kayit hatasi" }, 500);
+  }
+}
+
+/** Sahibin günlükleri okuması: /api/logs?key=... (LOG_KEY yoksa kapalı). */
+async function listLogs(env, url) {
+  try {
+    if (!env.LOG_KEY) return json({ ok: false, error: "kapali" }, 404);
+    if (url.searchParams.get("key") !== env.LOG_KEY) return json({ ok: false, error: "yetki" }, 401);
+    if (!env.DB) return json({ ok: false, error: "veritabani yok" }, 503);
+    const rows = await env.DB.prepare(
+      "SELECT day, ts, ver, code, dev, events, crash FROM app_logs ORDER BY ts DESC LIMIT 30"
+    ).all();
+    const logs = rows.results || [];
+    return json({ ok: true, count: logs.length, logs });
+  } catch (e) {
+    return json({ ok: false, error: "okuma hatasi" }, 500);
+  }
+}
+
 // ---------------------------------------------------------------- indirme sayfasi
 const APK_URL =
-  "https://github.com/gecekargosu/canli-tv-android/releases/download/v9.72/CanliTV-9.72.apk";
+  "https://github.com/gecekargosu/canli-tv-android/releases/download/v9.73/CanliTV-9.73.apk";
 
 function downloadPage() {
   return html(`<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
@@ -63,7 +116,7 @@ function downloadPage() {
 <a href="${APK_URL}" style="display:block;text-align:center;background:#ff7a18;color:#111;padding:18px;border-radius:16px;text-decoration:none;font-weight:bold;font-size:18px">⬇ APK indir (Android 8+)</a>
 <h2 style="font-size:16px;margin:26px 0 8px">Nasil kurulur?</h2>
 <ol style="color:#c7d0dc;line-height:1.6;padding-left:20px;font-size:14px">
-<li>Yukaridaki dugmeye bas, dosya insin (yaklasik 5 MB).</li>
+<li>Yukaridaki dugmeye bas, dosya insin (yaklasik 7 MB).</li>
 <li>Inen dosyaya dokun. \"Bilinmeyen kaynaklara izin ver\" derse, ayarlardan bu tarayici icin izin ver.</li>
 <li>Kur → Ac. Baska izin gerekmez.</li>
 </ol>
