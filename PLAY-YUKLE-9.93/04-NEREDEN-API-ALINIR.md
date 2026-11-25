@@ -108,3 +108,46 @@ ID'leri bana verirsen SDK'yı eklerim.
 | Play servis hesabı | Google Cloud → Hizmet hesabı → Anahtarlar → JSON | `site/.secrets/play-service-account.json` |
 | Firebase | Firebase konsolu → Android uygulaması | `google-services.json` |
 | AdMob native ID | AdMob → Reklam birimleri → Native | sohbete sadece ID |
+
+---
+
+## İngilizce arayüz karşılıkları (Cloud Console)
+
+Konsol İngilizce geliyor; aradığın menülerin İngilizcesi bunlar:
+
+| Türkçe dediğim | Ekranda yazan |
+|---|---|
+| Yeni proje | **New Project** (proje kutusu → **New project**) |
+| API ve Hizmetler | **APIs & Services** (sol üstteki ☰ menüde) |
+| Kitaplık | **Library** |
+| Etkinleştir | **Enable** |
+| IAM ve Yönetici | **IAM & Admin** |
+| Hizmet Hesapları | **Service Accounts** |
+| Hizmet hesabı oluştur | **Create service account** |
+| Oluştur ve devam et | **Create and continue** |
+| Rol seçme / Atla | **Continue** → **Done** |
+| Anahtarlar | **Keys** sekmesi |
+| Anahtar ekle | **Add key → Create new key** |
+| JSON | **JSON** → **Create** (dosya iner) |
+| Proje ayarları (yeniden adlandırma) | **Project settings** → **Rename** |
+
+### Doğrudan linkler (menü aramadan)
+Proje numaran: **114803444551** (`My First Project`)
+
+1. **API'yi etkinleştir:**
+   https://console.cloud.google.com/apis/library/androidpublisher.googleapis.com?project=114803444551
+   → mavi **ENABLE** düğmesi
+2. **Servis hesabı oluştur:**
+   https://console.cloud.google.com/iam-admin/serviceaccounts/create?project=114803444551
+   → Service account name: `umay-play-verify` → **CREATE AND CONTINUE** → **CONTINUE** → **DONE**
+3. **Anahtar (JSON) indir:**
+   https://console.cloud.google.com/iam-admin/serviceaccounts?project=114803444551
+   → `umay-play-verify` satırına tıkla → **KEYS** → **ADD KEY → Create new key** → **JSON** → **CREATE**
+4. **Play Console tarafı (uygulama oluşturulduktan sonra):**
+   Play Console → **Setup → API access** → **Link** → projeyi seç →
+   servis hesabına **Grant access**: *View financial data*, *Manage orders and subscriptions*
+
+> Projenin adı `My First Project` kaldıysa sorun değil; **Project settings →
+> Rename** ile `umay-play-verify` yapabilirsin, zorunlu değil.
+> Konsolu Türkçeye çevirmek istersen Google Hesabı → Kişisel bilgiler → Dil
+> (tüm Google ürünlerini etkiler).
