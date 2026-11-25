@@ -83,8 +83,8 @@ public class RadioActivity extends Activity {
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
         root.setBackgroundColor(BG);
-        // durum cubugunun altindan basla (edge-to-edge bosluk duzeltmesi)
-        root.setFitsSystemWindows(true);
+        // 9.78: setFitsSystemWindows(true) bu kökün 12dp sağ/sol iç boşluğunu SIFIRLIYORDU;
+        // içerik sola kaymış görünüyordu ("kayma"). Üst/alt inset zaten AdManager.wrap ekliyor.
         root.setPadding(dp(12), dp(12), dp(12), dp(6));
 
         LinearLayout head = new LinearLayout(this);

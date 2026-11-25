@@ -159,3 +159,47 @@ kullanıcı "ATV'de sorun var" dedi; ayrı oturumda ele alınacak (bkz. D-70).
 | MP-27 | Grup adları | ✅ 9.74 | Cihazda "Eğlence"; "Eglence" kalmadı |
 | MP-20 | 48dp dokunma alanı | ✅ 9.74 | Üst bar düğmeleri `minHeight/minWidth 48dp` |
 | MP-28 | Ayarlar satır taşması | ✅ 9.74 | Başlık tek satır, açıklama 2 satır, değer 120dp ile kesiliyor |
+
+---
+
+## 11. 9.77–9.78 oturumu (25 Kasım 2026, gece) — neredeyiz?
+
+### Biten işler (cihazda doğrulandı)
+
+| ID | İş | Durum | Kanıt |
+|----|----|-------|-------|
+| MP-10 | **Çoklu ekranı ExoPlayer'a taşı** (MediaPlayer → media3) | ✅ 9.77 | 3 pencere oynuyor; veri sayacı 318,3 → 324,0 MB canlı artıyor |
+| MP-45 | Çoklu ekranda veri **iki kez** sayılıyordu (watchdog + oturum) | ✅ 9.77 | Tek kaynak: `CountingDataSource`; çıkışta kayıp/çift yazma yok |
+| MP-46 | Çoklu ekranda veri **hiç artmıyordu** (UID/TrafficStats 0 dönüyor) | ✅ 9.77 | Kanalların satırları da güncelleniyor (ATV 61,7 MB…) |
+| MP-47 | **Show TV açılmıyordu**: TürkNet yansısının varyant listesi boş dönüyor | ✅ 9.78 | Kaynak showtv.com.tr'nin kendi Daion adresine alındı; cihazda oynadı (360p) |
+| MP-48 | Üst bar: ikonlar 44→56dp, tam genişlik; başlık 15→19sp; logo 34→46dp | ✅ 9.78 | Ekran: 5 ikon eşit, "UMAY Multi TV" tam |
+| MP-49 | Alt başlıkta "kayıt" yazıyordu ama **giriş yoktu** → ⏺ düğmesi | ✅ 9.78 | Kayıtlarım ekranı açılıyor |
+| MP-50 | Sekmeler/arama/No/Git/✏️ yazıları büyütüldü; "Gizlenenler" → "Gizli" | ✅ 9.78 | Hepsi tek satırda, kırpma yok |
+| MP-51 | **Kalite seçimi ana ekrana** (yeni satır açmadan, sekme satırına) | ✅ 9.78 | "🎚 Oto/360p/720p" düğmesi; seçim veri şeridine yansıyor |
+| MP-52 | Sıra: sekmeler üstte, **arama satırı listenin hemen üstünde** | ✅ 9.78 | Ekran |
+| MP-53 | **Radyo ekranı sola kaymıştı**: `setFitsSystemWindows(true)` 12dp yan boşluğu sıfırlıyordu | ✅ 9.78 | Radyo artık 12dp içeride; veri şeridi 318,3 MB |
+| MP-54 | "Sırala" kaldırıldı (sırayı değiştirmiyordu); Düzenle sekme satırına | ✅ 9.77 | — |
+| MP-55 | "Reklam izle" şeridi sarıydı → uygulama turuncusu | ✅ 9.77 | — |
+
+### Doğrulanan sayaçlar (9.78, cihaz)
+
+- Tek kanal (Show TV 360p, ~18 sn): 313,4 → 316,9 MB
+- Radyo ekranı: 318,3 MB (aynı gün toplamı, tutarlı)
+- 3'lü ekran: 318,3 → 324,0 MB (canlı), çıkışta korunuyor
+
+### Bu plana EKLENEN yeni maddeler
+
+| ID | İş | Neden | Durum |
+|----|----|-------|-------|
+| MP-56 | **Her ekranda sabit reklam yuvası** (ana sayfa, tekil, çoklu, radyo) — yuva her zaman ayrılır, dolmazsa kendi tanıtım şeridimiz durur | Reklam geliri sürekliliği | ✅ yuva var (9.73'ten beri); AdMob dolmuyor → **mağaza linki açılınca dolacak** |
+| MP-57 | **Kaynak sağlık taraması** (MP-25'in acil hâli): kanal URL'lerini günlük dene, master+varyant+ilk segment 200 mü? Bozuksa listeden çıkar/uyarı ver | Show TV örneği: yayın sessizce öldü, kullanıcı gördü | 🔧 sıradaki |
+| MP-58 | **Yedek kaynak zorunluluğu**: pinli 5 kanal + ilk 20 kanal için en az 1 doğrulanmış yedek URL | Show TV/ATV tek kaynakla kalıyor | 🔧 kısmi (Show TV, ATV, TV8, KanalD yedekli) |
+| MP-59 | Ödüllü reklam sıklığı: dokümanla son hâli (3. zap / 180 sn / 15 dk) **raporla** ve Play metniyle eşleştir | Reklam politikası | ✅ kodda; doküman güncel |
+| MP-60 | Logoya hafif parlama animasyonu (1,7 sn alpha 1→0,72) | Dikkat çekme | ✅ 9.78 — abartılıysa tek satırla kapatılır |
+
+### Kalan gerçek işler (öncelik sırası)
+
+1. **MP-57** kaynak sağlık taraması + **MP-58** yedekler → "kanal açmıyor" şikâyetini kökten keser.
+2. **MP-11** radyo/servisi media3'e taşı (AudioService hâlâ MediaPlayer).
+3. **MP-19** R8/minify, **MP-23** yatay tablet, **MP-29** RecyclerView.
+4. **MP-08/09** (sende): AAB → kapalı test → 12 tester / 14 gün.

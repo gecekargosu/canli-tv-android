@@ -32,9 +32,16 @@ public class ChannelRepo {
         // yedeklerden de kaldırıldı. Yayın TürkNet/ERC yansısından, yedek olarak 480p yansısı.
         mirror("https://rkhubpaomb.turknet.ercdn.net/fwjkgpasof/tv8/tv8_720p.m3u8",
                 "https://rkhubpaomb.turknet.ercdn.net/fwjkgpasof/tv8/tv8_480p.m3u8");
+        // 9.78: Show TV. TürkNet yansısının varyant listesi sık sık BOŞ dönüyor; oynatıcı
+        // sonsuz "yükleniyor" çemberinde kalıyordu (kullanıcı bildirdi). Artık birincil kaynak
+        // showtv.com.tr'nin kendi sitesinde gömülü olan Daion adresi; TürkNet yansısı yedek.
+        String showOld = "https://rmtftbjlne.turknet.ercdn.net/bpeytmnqyp/showtv/showtv.m3u8";
+        String showNew = "https://ciner.daioncdn.net/showtv/showtv.m3u8?ce=3&app=4bc856ef-4c68-4a94-bc87-37dfaaa66558";
+        String show720 = "https://rmtftbjlne.turknet.ercdn.net/bpeytmnqyp/showtv/showtv_720p.m3u8";
+        FALLBACK.put(showNew, new String[]{show720, showOld});
+        FALLBACK.put(showOld, new String[]{showNew, show720});
+
         // Büyük ulusal kanallar için TürkNet/ERC yansıları (#103).
-        mirror("https://rmtftbjlne.turknet.ercdn.net/bpeytmnqyp/showtv/showtv.m3u8",
-                "https://rmtftbjlne.turknet.ercdn.net/bpeytmnqyp/showtv/showtv_720p.m3u8");
         mirror("https://ackaxsqacw.turknet.ercdn.net/ozfkfbbjba/kanald/kanald.m3u8",
                 "https://ackaxsqacw.turknet.ercdn.net/ozfkfbbjba/kanald/kanald_720p.m3u8");
         mirror("https://uycyyuuzyh.turknet.ercdn.net/nphindgytw/nowtv/nowtv.m3u8",

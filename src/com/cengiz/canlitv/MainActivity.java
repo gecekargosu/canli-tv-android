@@ -57,7 +57,7 @@ public class MainActivity extends android.app.Activity {
     private boolean editMode = false;
     private final java.util.LinkedHashSet<String> selected = new java.util.LinkedHashSet<String>();
     private LinearLayout editBar;
-    private TextView editBtn, selCount;
+    private TextView editBtn, selCount, qualityBtn;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -99,12 +99,24 @@ public class MainActivity extends android.app.Activity {
         topRow.setGravity(Gravity.CENTER_VERTICAL);
 
         ImageView brand = new ImageView(this);
-        LinearLayout.LayoutParams blp = new LinearLayout.LayoutParams(dp(34), dp(34));
-        blp.setMargins(0, 0, dp(8), 0);
+        // 9.78: logo + başlık büyütüldü;yükseklik artık sağdaki ikon çerçeveleriyle aynı (56dp).
+        LinearLayout.LayoutParams blp = new LinearLayout.LayoutParams(dp(46), dp(46));
+        blp.setMargins(0, 0, dp(9), 0);
+        blp.gravity = Gravity.CENTER_VERTICAL;
         brand.setLayoutParams(blp);
         brand.setScaleType(ImageView.ScaleType.FIT_CENTER);
         try { brand.setImageDrawable(getPackageManager().getApplicationIcon(getPackageName())); }
         catch (Exception ignored) { }
+        // Logonun hafifçe parlayıp sönmesi: dikkat çeker ama göz yormaz.
+        try {
+            android.animation.ObjectAnimator glow = android.animation.ObjectAnimator
+                    .ofFloat(brand, "alpha", 1f, 0.72f);
+            glow.setDuration(1700);
+            glow.setStartDelay(800);
+            glow.setRepeatMode(android.animation.ValueAnimator.REVERSE);
+            glow.setRepeatCount(android.animation.ValueAnimator.INFINITE);
+            glow.start();
+        } catch (Throwable ignored) { }
         topRow.addView(brand);
 
         LinearLayout titleCol = new LinearLayout(this);
@@ -112,14 +124,14 @@ public class MainActivity extends android.app.Activity {
         TextView title = new TextView(this);
         title.setText("UMAY Multi TV");
         title.setTextColor(TEXT);
-        title.setTextSize(15);
+        title.setTextSize(19);
         title.setSingleLine(true);
         title.setEllipsize(android.text.TextUtils.TruncateAt.END);
         title.setTypeface(title.getTypeface(), android.graphics.Typeface.BOLD);
         TextView sub = new TextView(this);
         sub.setText(Lang.subtitle(this, all.size()));
         sub.setTextColor(MUTED);
-        sub.setTextSize(9);
+        sub.setTextSize(10.5f);
         sub.setSingleLine(true);
         sub.setEllipsize(android.text.TextUtils.TruncateAt.END);
         titleCol.addView(title);
@@ -129,7 +141,14 @@ public class MainActivity extends android.app.Activity {
 
         // 9.76: düğmeler başlığın sağına, tek satıra alındı (ayrı satır ~55 dp yiyordu
         // ve altında boş alan bırakıyordu). Başlık kalan genişliği alır.
-        final LinearLayout actionRow = topRow;
+        // 9.78: ikonlar büyüyünce tek satırda başlık kırpılıyordu ("UMAY…").
+        // Başlık kendi satırında tam görünür, büyük ikonlar altında sağa yaslı durur.
+        head.addView(topRow);
+        LinearLayout actionRow = new LinearLayout(this);
+        actionRow.setOrientation(LinearLayout.HORIZONTAL);
+        actionRow.setGravity(Gravity.END | Gravity.CENTER_VERTICAL);
+        actionRow.setPadding(dp(14), dp(4), dp(12), dp(2));
+        head.addView(actionRow);
 
         TextView multi = pill("▦ 3'lü", ACCENT);
         multi.setOnClickListener(new View.OnClickListener() {
@@ -143,9 +162,9 @@ public class MainActivity extends android.app.Activity {
                 return true;
             }
         });
-        LinearLayout.LayoutParams mlp = new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        mlp.setMargins(dp(6), 0, 0, 0);
+        LinearLayout.LayoutParams mlp = new LinearLayout.LayoutParams(0,
+                ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
+        mlp.setMargins(0, 0, dp(6), 0);
         multi.setLayoutParams(mlp);
         actionRow.addView(multi);
 
@@ -155,9 +174,9 @@ public class MainActivity extends android.app.Activity {
                 startActivity(new Intent(MainActivity.this, RadioActivity.class));
             }
         });
-        LinearLayout.LayoutParams rlp = new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        rlp.setMargins(dp(6), 0, 0, 0);
+        LinearLayout.LayoutParams rlp = new LinearLayout.LayoutParams(0,
+                ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
+        rlp.setMargins(0, 0, dp(6), 0);
         radio.setLayoutParams(rlp);
         actionRow.addView(radio);
 
@@ -168,11 +187,24 @@ public class MainActivity extends android.app.Activity {
                 startActivity(new Intent(MainActivity.this, CountryActivity.class));
             }
         });
-        LinearLayout.LayoutParams cblp = new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        cblp.setMargins(dp(6), 0, 0, 0);
+        LinearLayout.LayoutParams cblp = new LinearLayout.LayoutParams(0,
+                ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
+        cblp.setMargins(0, 0, dp(6), 0);
         countryBtn.setLayoutParams(cblp);
         actionRow.addView(countryBtn);
+
+        // 9.78: kayıt düğmesi eksikti (alt başlıkta "kayıt" yazıyor ama giriş yoktu).
+        TextView recordings = pill("⏺", SOFT);
+        recordings.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) {
+                startActivity(new Intent(MainActivity.this, RecordingsActivity.class));
+            }
+        });
+        LinearLayout.LayoutParams reclp = new LinearLayout.LayoutParams(0,
+                ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
+        reclp.setMargins(0, 0, dp(6), 0);
+        recordings.setLayoutParams(reclp);
+        actionRow.addView(recordings);
 
         TextView settings = pill("⚙", SOFT);
         settings.setOnClickListener(new View.OnClickListener() {
@@ -180,13 +212,10 @@ public class MainActivity extends android.app.Activity {
                 startActivity(new Intent(MainActivity.this, SettingsActivity.class));
             }
         });
-        LinearLayout.LayoutParams slp = new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        slp.setMargins(dp(6), 0, 0, 0);
+        LinearLayout.LayoutParams slp = new LinearLayout.LayoutParams(0,
+                ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
         settings.setLayoutParams(slp);
         actionRow.addView(settings);
-
-        head.addView(topRow);
 
         root.addView(head);
 
@@ -245,11 +274,11 @@ public class MainActivity extends android.app.Activity {
         search.setHint(Lang.t(this, "search"));
         search.setHintTextColor(MUTED);
         search.setTextColor(TEXT);
-        search.setTextSize(13);
+        search.setTextSize(15);
         search.setSingleLine(true);
         GradientDrawable sbg = rounded(CARD, 14);
         search.setBackground(sbg);
-        search.setPadding(dp(11), dp(7), dp(11), dp(7));
+        search.setPadding(dp(12), dp(10), dp(12), dp(10));
         searchRow.addView(search, new LinearLayout.LayoutParams(0,
                 ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
         search.addTextChangedListener(new TextWatcher() {
@@ -265,12 +294,12 @@ public class MainActivity extends android.app.Activity {
         noInput.setHint("No");
         noInput.setHintTextColor(MUTED);
         noInput.setTextColor(TEXT);
-        noInput.setTextSize(13);
+        noInput.setTextSize(15);
         noInput.setSingleLine(true);
         noInput.setInputType(InputType.TYPE_CLASS_NUMBER);
         noInput.setGravity(Gravity.CENTER);
         noInput.setBackground(rounded(CARD, 14));
-        LinearLayout.LayoutParams nlp = new LinearLayout.LayoutParams(dp(52),
+        LinearLayout.LayoutParams nlp = new LinearLayout.LayoutParams(dp(58),
                 ViewGroup.LayoutParams.WRAP_CONTENT);
         nlp.setMargins(dp(6), 0, 6, 0);
         noInput.setLayoutParams(nlp);
@@ -288,7 +317,9 @@ public class MainActivity extends android.app.Activity {
             }
         });
         searchRow.addView(go);
-        root.addView(searchRow);
+
+        // 9.78: sıra değişti — sekmeler üstte, arama satırı listeye bitişik altta.
+        // Arama kanalla ilgili olduğu için kanal listesinin hemen üstünde duruyor.
 
         // --- cipler: 4 sekme, ekran genişliğine eşit dağılır (sağa kaymaz) ---
         chipsRow = new LinearLayout(this);
@@ -296,6 +327,7 @@ public class MainActivity extends android.app.Activity {
         chipsRow.setPadding(dp(12), dp(2), dp(12), dp(2));
         root.addView(chipsRow);
         buildChips();
+        root.addView(searchRow);
 
         // 9.77: Düzenle/Sırala satırı kaldırıldı. Sırala işe yaramıyordu; Düzenle
         // sekme satırının sonuna taşındı. Kanal sayısı alt veri şeridinde.
@@ -449,6 +481,14 @@ public class MainActivity extends android.app.Activity {
                 .show();
     }
 
+    /** Sekme satırına sığsın diye kalite etiketini kısaltır (Otomatik → Oto). */
+    private String shortQuality() {
+        String l = QualityDialog.label(this);
+        if (l == null) return "Oto";
+        if (l.length() > 6) return "Oto";
+        return l;
+    }
+
     private void buildChips() {
         chipsRow.removeAllViews();
         // 9.76: grup sekmeleri (Haber/Spor/Belgesel…) kaldırıldı; dört sekme ekran
@@ -462,11 +502,14 @@ public class MainActivity extends android.app.Activity {
             final String c = cats.get(i);
             TextView chip = new TextView(this);
             chip.setText(Lang.tab(this, c));
-            chip.setTextSize(11);
+            // 9.78: "Gizlenenler" sığmıyordu; kısaltıldı (anlam aynı).
+            if ("🗑 Gizlenenler".equals(c)) chip.setText("🗑 Gizli");
+            chip.setTextSize(11.5f);
             chip.setGravity(Gravity.CENTER);
             chip.setSingleLine(true);
             chip.setEllipsize(android.text.TextUtils.TruncateAt.END);
-            chip.setPadding(dp(3), dp(6), dp(3), dp(6));
+            chip.setPadding(dp(2), dp(10), dp(2), dp(10));
+            chip.setMinHeight(dp(40));
             chip.setTag(c);
             chip.setOnClickListener(new View.OnClickListener() {
                 @Override public void onClick(View v) {
@@ -483,19 +526,45 @@ public class MainActivity extends android.app.Activity {
             chip.setLayoutParams(clp);
             chipsRow.addView(chip);
         }
+        // Kalite seçimi: yeni satır açmadan bu satıra sığdırıldı.
+        qualityBtn = new TextView(this);
+        qualityBtn.setText("🎚 " + shortQuality());
+        qualityBtn.setTextSize(10.5f);
+        qualityBtn.setTextColor(MUTED);
+        qualityBtn.setGravity(Gravity.CENTER);
+        qualityBtn.setSingleLine(true);
+        qualityBtn.setPadding(dp(6), dp(10), dp(6), dp(10));
+        qualityBtn.setBackground(rounded(CARD, 18));
+        qualityBtn.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) {
+                QualityDialog.show(MainActivity.this, new Runnable() {
+                    @Override public void run() {
+                        if (qualityBtn != null)
+                            qualityBtn.setText("🎚 " + shortQuality());
+                        updateDataBar();
+                    }
+                });
+            }
+        });
+        LinearLayout.LayoutParams qlp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        qlp.setMargins(dp(5), 0, 0, 0);
+        qualityBtn.setLayoutParams(qlp);
+        chipsRow.addView(qualityBtn);
+
         // Düzenleme düğmesi: sekme satırının sonunda, ikon olarak.
         editBtn = new TextView(this);
         editBtn.setText(editMode ? "✓" : "✏️");
-        editBtn.setTextSize(13);
+        editBtn.setTextSize(15);
         editBtn.setGravity(Gravity.CENTER);
-        editBtn.setPadding(dp(8), dp(6), dp(8), dp(6));
+        editBtn.setPadding(dp(9), dp(10), dp(9), dp(10));
         editBtn.setBackground(rounded(editMode ? ACCENT : CARD, 18));
         editBtn.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View v) { setEditMode(!editMode); }
         });
         LinearLayout.LayoutParams elp = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        elp.setMargins(dp(6), 0, 0, 0);
+        elp.setMargins(dp(5), 0, 0, 0);
         editBtn.setLayoutParams(elp);
         chipsRow.addView(editBtn);
         styleChips();
@@ -504,7 +573,7 @@ public class MainActivity extends android.app.Activity {
     private void styleChips() {
         for (int i = 0; i < chipsRow.getChildCount(); i++) {
             TextView chip = (TextView) chipsRow.getChildAt(i);
-            if (chip.getTag() == null) continue;   // düzenleme düğmesi
+            if (chip.getTag() == null) continue;   // kalite / düzenleme düğmesi
             boolean sel = chip.getTag().toString().equals(group);
             chip.setBackground(rounded(sel ? ACCENT : CARD, 18));
             chip.setTextColor(sel ? Color.WHITE : MUTED);
@@ -1038,14 +1107,13 @@ public class MainActivity extends android.app.Activity {
         TextView t = new TextView(this);
         t.setText(s);
         t.setTextColor(Color.WHITE);
-        t.setTextSize(11);
+        // 9.78: 44dp düğmeler parmakla denk gelmiyordu; 56dp ve daha büyük yazı.
+        t.setTextSize(15);
         t.setGravity(Gravity.CENTER);
-        // 9.76: 48dp düğmeler + ayrı satır üst kısmı şişiriyordu; 44dp (hâlâ rahat
-        // dokunulur) ve tek satır. Başlık kısalmadan sığıyor.
-        t.setPadding(dp(7), dp(6), dp(7), dp(6));
+        t.setPadding(dp(9), dp(6), dp(9), dp(6));
         t.setBackground(rounded(color, 16));
-        t.setMinHeight(dp(44));
-        t.setMinWidth(dp(44));
+        t.setMinHeight(dp(56));
+        t.setMinWidth(dp(56));
         return t;
     }
 
