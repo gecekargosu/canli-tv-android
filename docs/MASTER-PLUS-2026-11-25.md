@@ -267,3 +267,17 @@ Yuva her ekranda ekranın en altında, veri şeridinin hemen altında duruyor. A
 reklamı **NO_FILL** döndürdüğü için içinde turuncu "Reklam izle · 15 dk reklamsız" şeridi
 görünüyor. Test reklamı açıldığında aynı yerde gerçek banner çıktı (kanıt: `_build/testad-*.png`).
 Yani kod/yerleşim doğru; eksik olan tek şey Google'ın reklamı doldurması.
+
+---
+
+## 15. 9.82 oturumu — logolar, reklamsız abonelik, 3. satır ikon+yazı
+
+| ID | İş | Durum | Kanıt |
+|----|----|-------|-------|
+| MP-78 | **Eksik kanal logoları**: Wikimedia aynı IP'den art arda isteği 429 ile reddediyordu (TV8 dahil 11 logo). Yükleyici: 2 eşzamanlı indirme, 3 deneme (600/1400 ms), **disk önbelleği**, tanımlayıcı User-Agent | ✅ 9.82 | TV8 logosu listede; 34–40 arası satırlar dolu |
+| MP-79 | Logo hiç gelmezse boş kutu yerine **kanalın baş harfi** | ✅ 9.82 | Dost TV satırında "D" kutusu |
+| MP-80 | **Reklamsız abonelik** (Google Play Billing): Ayarlar → Reklamsız abonelik · 20 ₺/ay; abonede banner/geçiş/ödüllü reklam istenmez | ✅ 9.82 kod | Satın alma akışı Play'e bağlanıyor; ürün tanımlı olmadığı için "satışta değil" uyarısı |
+| MP-81 | 3. satır: kutu 44dp korunarak **ikon + altında küçük yazı** (Tümü/Favori/Son/Gizli/Oto/Düzen) | ✅ 9.82 | Ekran |
+| MP-82 | 2. satırdaki ızgara (3'lü) turuncudan griye alındı — seçili gibi duruyordu | ✅ 9.82 | Ekran |
+
+Abonelik kurulumu: `docs/PLAY-ABONELIK.md` (ürün kimliği `umay_reklamsiz_aylik`, aylık 20 ₺, Play Konsol'da tanımlanacak).

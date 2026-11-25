@@ -26,6 +26,8 @@ public class SettingsActivity extends Activity {
 
     /** Ülke satırının değeri: CountryActivity'den dönünce tazelenir. */
     private TextView countryValue;
+    /** Ekranda gösterilen abonelik durumu (Play'den okununca değişirse yeniden çizilir). */
+    private boolean subUiActive;
 
     private static final int BG = Color.parseColor("#11151C");
     private static final int CARD = Color.parseColor("#1B2230");
@@ -252,6 +254,16 @@ public class SettingsActivity extends Activity {
                 "Başlat ›", new View.OnClickListener() {
                     @Override public void onClick(View v) { healthScan(); }
                 });
+        // --- reklamsız abonelik (herkese görünür) ---
+        subUiActive = Prefs.subActive(this);
+        section("Reklamsız izleme");
+        row("🚫", "Reklamsız abonelik",
+                "Aylık 20 ₺ · reklam videosu ve banner gösterilmez",
+                subUiActive ? "Etkin ✓" : "20 ₺ / ay",
+                new View.OnClickListener() {
+                    @Override public void onClick(View v) { subscriptionDialog(); }
+                });
+
         // --- geliştirici (sahip) modu: kullanıcıya GÖSTERİLMEZ ---
         // Reklam sayacı, test modu ve "reklamları kapat" yalnız bu telefonda, gizli
         // mod açıkken görünür. Play'den indiren kullanıcı bu satırları görmez.
@@ -860,6 +872,33 @@ public class SettingsActivity extends Activity {
                 }).show();
     }
 
+    /** Reklamsız abonelik: durum + satın alma / yönetme. */
+    private void subscriptionDialog() {
+        final boolean active = Prefs.subActive(this);
+        String msg = active
+                ? "Reklamsız aboneliğin etkin görünüyor. Bu cihazda reklam gösterilmiyor.\n\n"
+                        + "İptal etmek için: Play Store → Profil → Ödemeler ve abonelikler."
+                : "Reklamları kaldır, aylık 20 ₺ öde.\n\n"
+                        + "• Video (geçiş/ödüllü) reklam yok\n"
+                        + "• Banner yok\n"
+                        + "• İstediğin zaman iptal edebilirsin\n\n"
+                        + "Ödeme Google Play üzerinden yapılır; kart bilgisi uygulamaya girilmez.";
+        new AlertDialog.Builder(this)
+                .setTitle(active ? "Reklamsız abonelik" : "Reklamsız abonelik · 20 ₺/ay")
+                .setMessage(msg)
+                .setPositiveButton(active ? "Aboneliği yönet" : "Abone ol",
+                        new DialogInterface.OnClickListener() {
+                            @Override public void onClick(DialogInterface d, int w) {
+                                if (Prefs.subActive(SettingsActivity.this))
+                                    Billing.manage(SettingsActivity.this);
+                                else
+                                    Billing.purchase(SettingsActivity.this);
+                            }
+                        })
+                .setNegativeButton("Kapat", null)
+                .show();
+    }
+
     /**
      * AdMob test cihazı: reklam kimliğini gösterir, tek dokunuşla test modunu açar.
      * Test modunda reklamlar açılır ve ödüller tetiklenir; gelir yazmaz, geçersiz trafik riski olmaz.
@@ -1046,6 +1085,12 @@ public class SettingsActivity extends Activity {
 
     @Override protected void onResume() {
         super.onResume();
+        // Abonelik durumu Play'den tazelenir (satın alma sonrası ekran güncellensin).
+        Billing.refresh(this, new Runnable() {
+            @Override public void run() {
+                if (Prefs.subActive(SettingsActivity.this) != subUiActive) render();
+            }
+        });
         // HATA: ülke ekranından dönünce satır hâlâ eski ülkeyi gösteriyordu
         // (değer yalnız onCreate'de yazılıyordu).
         if (countryValue != null) {

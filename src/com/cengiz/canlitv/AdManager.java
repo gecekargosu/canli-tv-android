@@ -348,6 +348,8 @@ public final class AdManager {
         if (!Ads.SDK_READY) return null;
         adsOffFlag = Prefs.adsOff(activity);
         if (adsOffFlag) return null;
+        // 9.82: reklamsız abone ise hiçbir banner/şerit gösterilmez.
+        if (Prefs.subActive(activity)) return null;
         try {
             final android.widget.FrameLayout holder = new android.widget.FrameLayout(activity);
             holder.setLayoutParams(new LinearLayout.LayoutParams(
@@ -472,7 +474,8 @@ public final class AdManager {
     /** Kanal bazli: key (URL) icin 20 dk reklamsiz sure varsa gecis reklami gosterilmez. */
     public static void maybeInterstitial(final Activity activity, final String key,
                                          final Runnable then) {
-        if (!Ads.SDK_READY || !adsAllowed || isAdFree(activity) || showingAd) {
+        if (!Ads.SDK_READY || !adsAllowed || isAdFree(activity) || showingAd
+                || Prefs.subActive(activity)) {
             then.run();
             return;
         }
@@ -599,6 +602,10 @@ public final class AdManager {
     /** key = hangi kanal/istasyon icin reklamsiz sure verilecek. */
     public static void showRewarded(final Activity activity, final String key,
                                     final Runnable onReward, final Runnable onFail) {
+        if (Prefs.subActive(activity)) {   // abone zaten reklamsız
+            onFail.run();
+            return;
+        }
         final RewardedAd ad = rewarded;
         if (!Ads.SDK_READY || !adsAllowed || ad == null) {
             loadRewarded(activity);

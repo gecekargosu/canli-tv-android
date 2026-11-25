@@ -51,6 +51,8 @@ public class MainActivity extends android.app.Activity {
     private TextView emptyView;
     private ListView listView;
     private boolean onlyHidden = false;
+    /** En son bilinen abonelik durumu (değişince ekran yeniden kurulur). */
+    private boolean subState;
     private String shownCountry = "";
     private String shownLang = "";
 
@@ -58,7 +60,8 @@ public class MainActivity extends android.app.Activity {
     private boolean editMode = false;
     private final java.util.LinkedHashSet<String> selected = new java.util.LinkedHashSet<String>();
     private LinearLayout editBar;
-    private TextView editBtn, selCount, qualityBtn;
+    private TextView editBtn, selCount, qualityBtn, editIcon;
+    private LinearLayout editBox, qualityBox;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -76,6 +79,8 @@ public class MainActivity extends android.app.Activity {
         Prefs.migrateNumbers(this);   // 9.75: eski numara/sıra kayıtları bir kez temizlenir
         Good.refreshIfNeeded(this);   // #101: doğrulanmış kanal listesi günde 1 kez tazelenir
         all = ChannelRepo.all(this);
+        subState = Prefs.subActive(this);
+        Billing.refresh(this);   // abonelik durumu Play'den tazelenir
         shownCountry = Prefs.country(this);
         maybeSuggestCountry();
         shownLang = Prefs.uiLang(this);
@@ -178,7 +183,8 @@ public class MainActivity extends android.app.Activity {
         head.addView(actionRow);
 
         // 9.80: yazı yerine ikon — kutular 44dp, ikon 28sp (istedigi gibi).
-        TextView multi = pill("▦", ACCENT);
+        // 9.82: buton seçili değil — turuncu "seçili" gibi duruyordu, diğerleriyle aynı renk.
+        TextView multi = pill("▦", SOFT);
         multi.setContentDescription("3'lü izle");
         multi.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View v) {
@@ -524,23 +530,14 @@ public class MainActivity extends android.app.Activity {
         cats.add("★ Favoriler");
         cats.add("🕘 Son");
         cats.add("🗑 Gizlenenler");
+        // 9.82: her sekme ikon + altında küçük yazı (kutu yüksekliği 44dp kalıyor).
+        String[] tabIcons = { "🗂", "★", "🕘", "🗑" };
+        String[] tabLabels = { "Tümü", "Favori", "Son", "Gizli" };
         for (int i = 0; i < cats.size(); i++) {
             final String c = cats.get(i);
-            TextView chip = new TextView(this);
-            chip.setText(Lang.tab(this, c));
-            // 9.78: "Gizlenenler" sığmıyordu; kısaltıldı (anlam aynı).
-            if ("🗑 Gizlenenler".equals(c)) chip.setText("🗑 Gizli");
-            // 9.79: "Favoriler" sekme genişliğine sığmıyordu.
-            if ("★ Favoriler".equals(c)) chip.setText("★ Favori");
-            chip.setTextSize(11.5f);
-            chip.setGravity(Gravity.CENTER);
-            chip.setSingleLine(true);
-            chip.setEllipsize(android.text.TextUtils.TruncateAt.END);
-            chip.setIncludeFontPadding(false);
-            chip.setPadding(dp(2), 0, dp(2), 0);
-            chip.setMinHeight(0);
-            chip.setTag(c);
-            chip.setOnClickListener(new View.OnClickListener() {
+            LinearLayout box = tabBox(tabIcons[i], tabLabels[i], null);
+            box.setTag(c);
+            box.setOnClickListener(new View.OnClickListener() {
                 @Override public void onClick(View v) {
                     group = c;
                     onlyHidden = "🗑 Gizlenenler".equals(c);
@@ -549,56 +546,80 @@ public class MainActivity extends android.app.Activity {
                     refresh();
                 }
             });
-            chip.setLayoutParams(slot(i));
-            chipsRow.addView(chip);
+            box.setLayoutParams(slot(i));
+            chipsRow.addView(box);
         }
-        // Kalite seçimi: yeni satır açmadan bu satıra sığdırıldı.
-        qualityBtn = new TextView(this);
-        qualityBtn.setText("🎚 " + shortQuality());
-        qualityBtn.setTextSize(11.5f);
-        qualityBtn.setTextColor(MUTED);
-        qualityBtn.setGravity(Gravity.CENTER);
-        qualityBtn.setSingleLine(true);
-        qualityBtn.setIncludeFontPadding(false);
-        qualityBtn.setPadding(dp(2), 0, dp(2), 0);
-        qualityBtn.setBackground(rounded(CARD, 18));
-        qualityBtn.setOnClickListener(new View.OnClickListener() {
+        // Kalite seçimi: ikon + altında kısa etiket.
+        TextView[] qLab = new TextView[1];
+        qualityBox = tabBox("🎚", shortQuality(), qLab);
+        qualityBtn = qLab[0];
+        qualityBox.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View v) {
                 QualityDialog.show(MainActivity.this, new Runnable() {
                     @Override public void run() {
-                        if (qualityBtn != null)
-                            qualityBtn.setText("🎚 " + shortQuality());
+                        if (qualityBtn != null) qualityBtn.setText(shortQuality());
                         updateDataBar();
                     }
                 });
             }
         });
-        qualityBtn.setLayoutParams(slot(4));
-        chipsRow.addView(qualityBtn);
+        qualityBox.setBackground(rounded(CARD, 16));
+        qualityBox.setLayoutParams(slot(4));
+        chipsRow.addView(qualityBox);
 
-        // Düzenleme düğmesi: sekme satırının sonunda, ikon olarak.
-        editBtn = new TextView(this);
-        editBtn.setText(editMode ? "✓" : "✏️");
-        editBtn.setTextSize(19);
-        editBtn.setGravity(Gravity.CENTER);
-        editBtn.setIncludeFontPadding(false);
-        editBtn.setPadding(0, 0, 0, 0);
-        editBtn.setBackground(rounded(editMode ? ACCENT : CARD, 18));
-        editBtn.setOnClickListener(new View.OnClickListener() {
+        // Düzenleme düğmesi: kalem + "Düzen" yazısı.
+        TextView[] eLab = new TextView[1];
+        editBox = tabBox("✏️", editMode ? "Bitti" : "Düzen", eLab);
+        editBtn = eLab[0];
+        editIcon = (TextView) editBox.getChildAt(0);
+        editBox.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View v) { setEditMode(!editMode); }
         });
-        editBtn.setLayoutParams(slot(5));
-        chipsRow.addView(editBtn);
+        editBox.setBackground(rounded(editMode ? ACCENT : CARD, 16));
+        editBox.setLayoutParams(slot(5));
+        chipsRow.addView(editBox);
         styleChips();
+    }
+
+    /** Sekme kutusu: üstte ikon, altında küçük yazı. Kutu 44dp (satır yüksekliği). */
+    private LinearLayout tabBox(String icon, String label, TextView[] labelOut) {
+        LinearLayout box = new LinearLayout(this);
+        box.setOrientation(LinearLayout.VERTICAL);
+        box.setGravity(Gravity.CENTER);
+        box.setPadding(0, dp(1), 0, dp(1));
+        TextView ic = new TextView(this);
+        ic.setText(icon);
+        ic.setTextSize(15);
+        ic.setTextColor(MUTED);
+        ic.setGravity(Gravity.CENTER);
+        ic.setIncludeFontPadding(false);
+        ic.setSingleLine(true);
+        TextView lb = new TextView(this);
+        lb.setText(label);
+        lb.setTextSize(8.5f);
+        lb.setTextColor(MUTED);
+        lb.setGravity(Gravity.CENTER);
+        lb.setSingleLine(true);
+        lb.setEllipsize(android.text.TextUtils.TruncateAt.END);
+        lb.setIncludeFontPadding(false);
+        box.addView(ic);
+        box.addView(lb);
+        if (labelOut != null) labelOut[0] = lb;
+        return box;
     }
 
     private void styleChips() {
         for (int i = 0; i < chipsRow.getChildCount(); i++) {
-            TextView chip = (TextView) chipsRow.getChildAt(i);
+            View chip = chipsRow.getChildAt(i);
             if (chip.getTag() == null) continue;   // kalite / düzenleme düğmesi
             boolean sel = chip.getTag().toString().equals(group);
-            chip.setBackground(rounded(sel ? ACCENT : CARD, 18));
-            chip.setTextColor(sel ? Color.WHITE : MUTED);
+            chip.setBackground(rounded(sel ? ACCENT : CARD, 16));
+            if (chip instanceof LinearLayout) {
+                LinearLayout box = (LinearLayout) chip;
+                for (int k = 0; k < box.getChildCount(); k++) {
+                    ((TextView) box.getChildAt(k)).setTextColor(sel ? Color.WHITE : MUTED);
+                }
+            }
         }
     }
 
@@ -672,9 +693,16 @@ public class MainActivity extends android.app.Activity {
         editMode = on;
         if (!on) selected.clear();
         if (editBar != null) editBar.setVisibility(on ? View.VISIBLE : View.GONE);
-        if (editBtn != null) {
-            editBtn.setText(on ? "✓" : "✏️");
-            editBtn.setBackground(rounded(on ? ACCENT : CARD, 18));
+        if (editBox != null) {
+            if (editIcon != null) {
+                editIcon.setText(on ? "✓" : "✏️");
+                editIcon.setTextColor(on ? Color.WHITE : MUTED);
+            }
+            if (editBtn != null) {
+                editBtn.setText(on ? "Bitti" : "Düzen");
+                editBtn.setTextColor(on ? Color.WHITE : MUTED);
+            }
+            editBox.setBackground(rounded(on ? ACCENT : CARD, 16));
         }
         updateSelCount();
         if (adapter != null) adapter.notifyDataSetChanged();
@@ -1101,6 +1129,15 @@ public class MainActivity extends android.app.Activity {
     @Override
     protected void onResume() {
         super.onResume();
+        // Abonelik Play'de değiştiyse (satın alma/iptal) reklam alanı yeniden kurulsun.
+        Billing.refresh(this, new Runnable() {
+            @Override public void run() {
+                if (Prefs.subActive(MainActivity.this) != subState) {
+                    subState = Prefs.subActive(MainActivity.this);
+                    recreate();
+                }
+            }
+        });
         // ulke veya arayuz dili degistiyse ekrani bastan kur
         if (!shownCountry.equals(Prefs.country(this)) || !shownLang.equals(Prefs.uiLang(this))) {
             recreate();
@@ -1180,6 +1217,16 @@ public class MainActivity extends android.app.Activity {
         return (int) (v * getResources().getDisplayMetrics().density);
     }
 
+    /** Logo gelmediğinde gösterilecek baş harf ("Show TV" → "S"). */
+    private String initialOf(String name) {
+        if (name == null) return "?";
+        for (int i = 0; i < name.length(); i++) {
+            char ch = name.charAt(i);
+            if (Character.isLetterOrDigit(ch)) return String.valueOf(Character.toUpperCase(ch));
+        }
+        return "?";
+    }
+
     private class ChannelAdapter extends BaseAdapter {
         @Override public int getCount() { return shown.size(); }
         @Override public Object getItem(int i) { return shown.get(i); }
@@ -1220,13 +1267,30 @@ public class MainActivity extends android.app.Activity {
             no.setLayoutParams(nlp);
             row.addView(no);
 
-            ImageView logo = new ImageView(MainActivity.this);
+            // 9.82: logo gelmezse (ör. Wikimedia 429) boş kutu yerine kanalın baş harfi görünür.
+            FrameLayout logoBox = new FrameLayout(MainActivity.this);
             LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(dp(38), dp(38));
             lp.setMargins(0, 0, dp(10), 0);
-            logo.setLayoutParams(lp);
+            logoBox.setLayoutParams(lp);
+            final TextView initial = new TextView(MainActivity.this);
+            initial.setText(initialOf(c.name));
+            initial.setTextColor(MUTED);
+            initial.setTextSize(15);
+            initial.setGravity(Gravity.CENTER);
+            initial.setBackground(rounded(SOFT, 10));
+            logoBox.addView(initial, new FrameLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+            ImageView logo = new ImageView(MainActivity.this);
+            logo.setLayoutParams(new FrameLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
             logo.setScaleType(ImageView.ScaleType.FIT_CENTER);
-            LogoLoader.load(logo, c.logo);
-            row.addView(logo);
+            LogoLoader.load(logo, c.logo, new LogoLoader.Cb() {
+                @Override public void done(boolean ok) {
+                    initial.setVisibility(ok ? View.GONE : View.VISIBLE);
+                }
+            });
+            logoBox.addView(logo);
+            row.addView(logoBox);
 
             LinearLayout texts = new LinearLayout(MainActivity.this);
             texts.setOrientation(LinearLayout.VERTICAL);

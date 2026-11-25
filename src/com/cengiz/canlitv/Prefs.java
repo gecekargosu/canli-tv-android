@@ -124,6 +124,25 @@ public class Prefs {
         sp(c).edit().putBoolean("adsOff", v).apply();
     }
 
+    // --- reklamsız abonelik (Google Play aboneliği) ---
+    /** Bu cihazda reklamsız abonelik etkin mi? */
+    public static boolean subActive(Context c) {
+        return sp(c).getBoolean("subActive", false);
+    }
+
+    public static void setSubActive(Context c, boolean v) {
+        sp(c).edit().putBoolean("subActive", v).apply();
+    }
+
+    /** Abonelik durumu en son ne zaman Play'den okundu. */
+    public static long subChecked(Context c) {
+        return sp(c).getLong("subChecked", 0L);
+    }
+
+    public static void setSubChecked(Context c, long v) {
+        sp(c).edit().putLong("subChecked", v).apply();
+    }
+
     /** Hata günlüğünü günde bir kez sunucuya gönder (varsayılan KAPALI, kullanıcı açar). */
     public static boolean autoLogSend(Context c) {
         return sp(c).getBoolean("autoLogSend", false);

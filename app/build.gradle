@@ -23,8 +23,8 @@ android {
         applicationId 'com.cengiz.canlitv'
         minSdk 26
         targetSdk 36
-        versionCode 90
-        versionName '9.81'
+        versionCode 91
+        versionName '9.82'
     }
 
     signingConfigs {
@@ -99,4 +99,6 @@ dependencies {
     implementation 'androidx.media3:media3-exoplayer:1.4.1'
     implementation 'androidx.media3:media3-exoplayer-hls:1.4.1'
     implementation 'androidx.media3:media3-ui:1.4.1'
+    // 9.82: reklamsız abonelik (Google Play Faturalandırma)
+    implementation 'com.android.billingclient:billing:6.2.1'
 }
