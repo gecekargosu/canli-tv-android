@@ -5,7 +5,7 @@ Hepsi GitHub Releases sayfasında:
 
 **https://github.com/gecekargosu/canli-tv-android/releases**
 
-- En son sürüm: `v9.92` — `CanliTV-9.92.apk`, `UMAY-MULTI-TV-9.92.aab` (Play).
+- En son sürüm: `v9.93` — `CanliTV-9.93.apk`, `UMAY-MULTI-TV-9.93.aab` (Play).
 - İndirme sayfası: https://umay-multi-tv-gq3zer.freebuff.site/indir
 - Sürüm notları: `releases/vX.YY/SURUM-NOTLARI.md`
 
@@ -14,6 +14,13 @@ Site production güncellendi: gizlilik/kullanım metinleri yeni abonelik bölüm
 `/indir` artık **9.88**'i indiriyor. APK telefona kuruldu (97 / 9.88).
 Kaynak yedeği: `YEDEK/UMAY-MULTI-TV-9.88-2026-11-25/` ve aynı adlı `.tar.gz`
 (imza anahtarı `upload-keystore.jks` + `keystore.properties` dahil).
+
+## v9.93 — ödüllü reklam sunucu doğrulaması + güvenlik denetimi
+
+- Ödüllü reklama `ServerSideVerificationOptions` eklendi (cihaz kimliği `custom_data`).
+- Worker: `GET /api/adssv` — AdMob imzasını ECDSA/P-256 ile doğrular, `ad_rewards`
+  tablosuna yazar; imza geçmezse 403.
+- `docs/play/DENETIM-GUVENLIK-9.93.md`: yayın öncesi güvenlik/politika/lisans denetimi.
 
 ## v9.92 — kopya (klon) koruması
 

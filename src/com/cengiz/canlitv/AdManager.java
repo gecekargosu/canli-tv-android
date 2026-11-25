@@ -682,6 +682,15 @@ public final class AdManager {
                     new RewardedAdLoadCallback() {
                         @Override public void onAdLoaded(RewardedAd ad) {
                             loadingRewarded = false;
+                            // 9.93: odulun sunucuda dogrulanabilmesi icin SSV verisi.
+                            // AdMob bu degeri odul callback'ine ekler; Worker imzayi
+                            // kontrol edip D1'e yazar (sahte odul girisimleri gorunur olur).
+                            try {
+                                ad.setServerSideVerificationOptions(
+                                        new com.google.android.gms.ads.rewarded.ServerSideVerificationOptions.Builder()
+                                                .setCustomData("u=" + CrashLog.deviceId(activity))
+                                                .build());
+                            } catch (Throwable ignored) { }
                             rewarded = ad;
                             rewardedBackoff = 30000L;
                             lastRewardedError = "";

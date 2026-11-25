@@ -372,5 +372,16 @@
   "unpackedBytes": 7678878,
   "dexFiles": 1,
   "classes": 7000
+ },
+ {
+  "versionName": "9.93",
+  "versionCode": "102",
+  "apkBytes": 3860066,
+  "sha256": "8155444e688a8d8a1a2a797ee77862a6b51943799de5b93b44010eb8a692b138",
+  "signSha256": "f3996c67ef0e0e0420f442fe3fcf6303a17caa88dcba8a2b19a10cd95c92b8d5",
+  "zipEntries": 393,
+  "unpackedBytes": 7678988,
+  "dexFiles": 1,
+  "classes": 7000
  }
 ]

@@ -28,6 +28,11 @@ export default {
     if (path === "/api/log" && request.method === "POST") return await saveLog(request, env);
     if (path === "/api/logs" && request.method === "GET") return await listLogs(env, url);
 
+    // 9.93: AdMob ödüllü reklam sunucu taraflı doğrulaması (SSV).
+    // AdMob konsolunda "Server-side verification URL" olarak
+    // https://umay-multi-tv-gq3zer.freebuff.site/api/adssv girilir.
+    if (path === "/api/adssv") return await admobSsv(url, env);
+
     // P0-4 (v9.21): uyelik/hesap uclari kaldirildi. Yalnizca statik site + good/*.json.
     if (path.startsWith("/api/")) {
       return json({ ok: false, error: "account system removed" }, 410);
@@ -106,7 +111,7 @@ async function listLogs(env, url) {
 
 // ---------------------------------------------------------------- indirme sayfasi
 const APK_URL =
-  "https://github.com/gecekargosu/canli-tv-android/releases/download/v9.92/CanliTV-9.92.apk";
+  "https://github.com/gecekargosu/canli-tv-android/releases/download/v9.93/CanliTV-9.93.apk";
 
 function downloadPage() {
   return html(`<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
@@ -432,4 +437,122 @@ function decodeJwt(token) {
 
 function escapeHtml(s) {
   return String(s).replace(/[&<>"']/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch]));
+}
+
+// ------------------------------------------------- AdMob SSV (9.93)
+// AdMob "Server-side verification" callback'i: Google imzali olarak cagirir.
+// Imza, Google'in verifier anahtarlariyla ECDSA/P-256 olarak dogrulanir;
+// gecen kayitlar D1'e yazilir. Amac: odul verilen reklamlarin gercekten
+// gosterildigini sunucuda gormek ve sahte/sik gosterimleri ayirt etmek.
+const SSV_KEYS_URL = "https://www.gstatic.com/admob/reward/verifier-keys.json";
+let ssvKeys = { at: 0, map: {} };
+
+async function admobSsv(url, env) {
+  const raw = url.search.startsWith("?") ? url.search.slice(1) : url.search;
+  const params = new URLSearchParams(raw);
+  const signature = params.get("signature");
+  const keyId = params.get("key_id");
+  if (!signature || !keyId) return new Response("missing", { status: 400 });
+
+  let ok = false;
+  try {
+    ok = await verifySsv(raw, signature, keyId);
+  } catch (e) {
+    ok = false;
+  }
+  if (!ok) return new Response("bad signature", { status: 403 });
+
+  try {
+    if (env.DB) {
+      const tx = String(params.get("transaction_id") || "").slice(0, 64);
+      const adUnit = String(params.get("ad_unit") || "").slice(0, 64);
+      const custom = String(params.get("custom_data") || "").slice(0, 120);
+      const amount = Number(params.get("reward_amount") || 0) || 0;
+      const item = String(params.get("reward_item") || "").slice(0, 40);
+      const ts = String(params.get("timestamp") || "").slice(0, 20);
+      await env.DB.batch([
+        env.DB.prepare(
+          "CREATE TABLE IF NOT EXISTS ad_rewards (tx TEXT PRIMARY KEY, ts TEXT, ad_unit TEXT, custom TEXT, amount INTEGER, item TEXT, day TEXT)"
+        ),
+        env.DB.prepare(
+          "INSERT OR IGNORE INTO ad_rewards (tx, ts, ad_unit, custom, amount, item, day) VALUES (?1,?2,?3,?4,?5,?6,?7)"
+        ).bind(tx, ts, adUnit, custom, amount, item, new Date().toISOString().slice(0, 10)),
+      ]);
+    }
+  } catch (e) {
+    // Kayit hatasi odul callback'ini engellemez; Google'a yine 200 doneriz.
+  }
+  return new Response("ok", { status: 200 });
+}
+
+async function ssvKey(keyId) {
+  const now = Date.now();
+  if (now - ssvKeys.at > 3600e3 || !ssvKeys.map[String(keyId)]) {
+    const r = await fetch(SSV_KEYS_URL, { cf: { cacheTtl: 3600 } });
+    const j = await r.json();
+    const map = {};
+    for (const k of (j.keys || [])) map[String(k.keyId)] = k.pem;
+    ssvKeys = { at: now, map };
+  }
+  return ssvKeys.map[String(keyId)] || null;
+}
+
+async function verifySsv(rawQuery, signature, keyId) {
+  const pem = await ssvKey(keyId);
+  if (!pem) return false;
+  // Imzalanan metin: signature parametresi cikarilmis ham sorgu dizesi.
+  const msg = rawQuery
+    .split("&")
+    .filter((p) => p && !p.startsWith("signature="))
+    .join("&");
+  const key = await crypto.subtle.importKey(
+    "spki", pemToDer(pem), { name: "ECDSA", namedCurve: "P-256" }, false, ["verify"]
+  );
+  const sig = derToRaw(b64urlToBytes(signature));
+  const data = new TextEncoder().encode(msg);
+  return await crypto.subtle.verify({ name: "ECDSA", hash: "SHA-256" }, key, sig, data);
+}
+
+function b64urlToBytes(s) {
+  let t = String(s).replace(/-/g, "+").replace(/_/g, "/");
+  while (t.length % 4) t += "=";
+  const bin = atob(t);
+  const out = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+  return out;
+}
+
+function pemToDer(pem) {
+  return b64urlToBytes(String(pem).replace(/-----[^-]+-----/g, "").replace(/\s+/g, ""));
+}
+
+/** DER (SEQUENCE{r,s}) -> IEEE P1363 (r||s, 32+32 bayt) - WebCrypto bunu bekler. */
+function derToRaw(der) {
+  let i = 0;
+  if (der[i++] !== 0x30) throw new Error("der");
+  let len = der[i++];
+  if (len & 0x80) i += (len & 0x7f);
+  const parts = [];
+  for (let k = 0; k < 2; k++) {
+    if (der[i++] !== 0x02) throw new Error("der-int");
+    let l = der[i++];
+    if (l & 0x80) {
+      const n = l & 0x7f;
+      l = 0;
+      for (let m = 0; m < n; m++) l = (l << 8) | der[i++];
+    }
+    let v = der.slice(i, i + l);
+    i += l;
+    while (v.length > 32 && v[0] === 0) v = v.slice(1);
+    while (v.length < 32) {
+      const z = new Uint8Array(v.length + 1);
+      z.set(v, 1);
+      v = z;
+    }
+    parts.push(v);
+  }
+  const out = new Uint8Array(64);
+  out.set(parts[0], 0);
+  out.set(parts[1], 32);
+  return out;
 }
