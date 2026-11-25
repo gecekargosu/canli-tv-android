@@ -460,6 +460,10 @@ public final class AdManager {
         Prefs.setLastAdAt(activity, now);
         showingAd = true;
         ad.setFullScreenContentCallback(new FullScreenContentCallback() {
+            // Sayaç yalnız gerçekten gösterildiğinde artar: eskiden ad.show() çağrısında
+            // sayılıyordu, doluluk yokken/uygulama öndeyken de "reklam gösterildi" yazıyordu.
+            @Override public void onAdImpression() { AdStats.note(activity, "gecis"); }
+
             @Override public void onAdDismissedFullScreenContent() {
                 showingAd = false;
                 loadInterstitial(activity);
@@ -474,7 +478,6 @@ public final class AdManager {
         });
         try {
             ad.show(activity);
-            AdStats.note(activity, "gecis");
             // Radyo arkada çalıyorsa ses odağı reklama geçer; reklam kapanınca radyo kendiliğinden döner.
             toastRadioHint(activity);
         } catch (Throwable t) {
@@ -514,6 +517,8 @@ public final class AdManager {
         Prefs.setLastAdAt(activity, now);
         showingAd = true;
         ad.setFullScreenContentCallback(new FullScreenContentCallback() {
+            @Override public void onAdImpression() { AdStats.note(activity, "gecis"); }
+
             @Override public void onAdDismissedFullScreenContent() {
                 showingAd = false;
                 loadInterstitial(activity);
@@ -526,7 +531,6 @@ public final class AdManager {
         });
         try {
             ad.show(activity);
-            AdStats.note(activity, "gecis");
         } catch (Throwable t) {
             showingAd = false;
             loadInterstitial(activity);
@@ -567,10 +571,11 @@ public final class AdManager {
         });
         rewarded = null;
         try {
-            AdStats.note(activity, "odullu");
             ad.show(activity, new com.google.android.gms.ads.OnUserEarnedRewardListener() {
                 @Override public void onUserEarnedReward(
                         com.google.android.gms.ads.rewarded.RewardItem item) {
+                    // Ödül gerçekten kazanıldı: erken kapatılan ödüllü reklam gelir yazmaz.
+                    AdStats.note(activity, "odullu");
                     long until = System.currentTimeMillis() + Ads.REWARD_MINUTES * 60000L;
                     Prefs.setAdFreeUntil(activity, until);
                     onReward.run();

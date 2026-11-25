@@ -510,6 +510,7 @@ public class PlayerActivity extends android.app.Activity {
     private void onReady() {
         if (ready) return;
         ready = true;
+        everPlayed = true;   // M-99: ilk kare geldi, bu kanal ölü sayılmayacak
         progress.setVisibility(View.GONE);
         errorView.setVisibility(View.GONE);
         player.setVolume(muted ? 0f : 1f);
@@ -520,6 +521,7 @@ public class PlayerActivity extends android.app.Activity {
         fbTried = 0;
         if (sameRetries > 0) showNotice("✅ Bağlantı iyi · yayın açıldı");
         sameRetries = 0;
+        netReconnects = 0;
         stallCount = 0;
         ui.postDelayed(new Runnable() {
             @Override public void run() { hideNotice(); }
@@ -530,6 +532,12 @@ public class PlayerActivity extends android.app.Activity {
 
     /** Aynı yayına kaç kez yeniden bağlanıldı (zayıf internet). */
     private int sameRetries = 0;
+    /** Ağ olayı yüzünden kaç kez yeniden bağlanıldı (oynak bağlantı koruması). */
+    private int netReconnects = 0;
+    /** Yayın hiç hazır oldu mu (ölü kanal zaman aşımı). */
+    private boolean everPlayed = false;
+    /** Bu kanal için ilk oynatma denemesinin başladığı an. */
+    private long tryStartedAt = 0;
     private android.net.ConnectivityManager.NetworkCallback netCb;
 
     /** M-80: internet geri geldiğinde yayını kendiliğinden yeniden başlat. */
@@ -547,7 +555,12 @@ public class PlayerActivity extends android.app.Activity {
                                         == androidx.media3.common.Player.STATE_READY
                                         && player.isPlaying();
                                 if (ok) return;
-                                sameRetries = 0;
+                                // M-99: ağ her duyurulduğunda retry sayacı sıfırlanıyordu;
+                                // oynak bağlantıda "yeniden bağlanıyorum" sonsuza dönüyordu.
+                                if (++netReconnects > 3) {
+                                    markDead("Bağlantı kurulamadı");
+                                    return;
+                                }
                                 errorView.setVisibility(View.GONE);
                                 progress.setVisibility(View.VISIBLE);
                                 showNotice("📶 İnternet geri geldi · yeniden bağlanıyorum");
@@ -616,8 +629,38 @@ public class PlayerActivity extends android.app.Activity {
         autoNext();
     }
 
+    /**
+     * M-99: kanalı ölü say — hata işaretle, hata ekranını göster, gerekiyorsa sonrakine geç.
+     * Tek yerden yapılıyor ki dört ayrı "yeniden bağlanıyorum" yolu farklı davranmasın.
+     */
+    private void markDead(String neden) {
+        try { Prefs.addFail(this, list.get(index).url); } catch (Exception ignored) { }
+        try {
+            progress.setVisibility(View.GONE);
+            errorView.setText("Bu kanal şu an açılamadı.\n\n" + neden
+                    + " · Dokun → tekrar dene\nveya ⏭ ile sonraki kanal");
+            errorView.setVisibility(View.VISIBLE);
+        } catch (Exception ignored) { }
+        autoNext();
+    }
+
+    /**
+     * M-99: 45 sn içinde hiç hazır olmadıysa kanalı ölü say. Sunucusu tamamen erişilemez
+     * kanallar onPlayerError üretmediği için eskiden sonsuz "yeniden bağlanıyorum"
+     * çemberinde kalıyor, hiç başarısız işaretlenmiyor ve "ölü kanalları onar" hiç
+     * devreye giremiyordu.
+     */
+    private boolean giveUpIfDead() {
+        if (everPlayed || tryStartedAt <= 0) return false;
+        if (System.currentTimeMillis() - tryStartedAt < 45000) return false;
+        markDead("Zaman aşımı");
+        return true;
+    }
+
     private void checkStall() {
         try {
+            // Erken dönüşlerden (oynatıcı IDLE/BUFFERING) önce bakılmalı.
+            if (giveUpIfDead()) return;
             // Reklam açıkken yayın duraklatıldığı için donma saymayalım.
             if (AdManager.isShowingFullScreen() || adPaused) return;
             // M-23: eskiden "isPlaying() false" ise hiç bakmıyordu; tamponlama sırasında
@@ -889,6 +932,10 @@ public class PlayerActivity extends android.app.Activity {
         usageUrl = c.url;
         sessionBytes.set(0);
         sameRetries = 0;
+        // M-99: sayaçlar her denemede sıfırlandığı için "kaç kez denendi" mantığı sonsuz
+        // döngüye açıktı; ölü kanal kararı artık zamana bağlı.
+        tryStartedAt = System.currentTimeMillis();
+        everPlayed = false;
         tracking = true;
         openedAt = System.currentTimeMillis();
         // TV acilinca arkadaki radyo sussun (tek ses kaynagi kalsin)
@@ -949,8 +996,9 @@ public class PlayerActivity extends android.app.Activity {
         @Override public void run() {
             try {
                 if (!player.isPlaying()) {
-                    // Zayıf internet: kanalı "ölü" saymadan önce aynı yayına 3 kez daha bağlan.
-                    if (sameRetries < 3) {
+                    if (giveUpIfDead()) return;
+                    // Zayıf internet: kanalı "ölü" saymadan önce aynı yayına 2 kez daha bağlan.
+                    if (sameRetries < 2) {
                         sameRetries++;
                         final String cur = list.get(index).url;
                         showNotice("📶 Bağlantı sorunu · yeniden bağlanıyorum ("
@@ -970,9 +1018,9 @@ public class PlayerActivity extends android.app.Activity {
                         return;
                     }
                     progress.setVisibility(View.GONE);
-                    errorView.setText("Yayın açılmadı (bağlantı zayıf olabilir).\n\nDokun → tekrar dene\nveya ⏭ ile sonraki kanal");
-                    errorView.setVisibility(View.VISIBLE);
-                    autoNext();
+                    // M-99: buradan vazgeçen kanal hiç "başarısız" işaretlenmiyordu.
+                    markDead("Bağlantı kurulamadı");
+                    return;
                 }
             } catch (Exception ignored) { }
         }
