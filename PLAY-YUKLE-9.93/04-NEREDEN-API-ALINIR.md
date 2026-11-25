@@ -166,9 +166,10 @@ Test: `python _build/play_check.py`
 | JWT imzalama + token alma | ✅ 200 — anahtar geçerli |
 | `androidpublisher` API çağrısı | ⚠️ **404** `Package not found: com.cengiz.canlitv` |
 
-**404'ün anlamı:** anahtar ve API sorunsuz; Play Developer API'yi yetkilendirdiğin
-hesapta bu paket adıyla **uygulama yok**. Yani ya uygulama henüz oluşturulmadı,
-ya da başka bir geliştirici hesabında oluşturuldu.
+**404'ün anlamı:** anahtar ve API sorunsuz. Play, `com.cengiz.canlitv` paketini
+henüz tanımıyor. Bu **normal** bir durumdur: paket adı Play Console'a AAB
+**yüklenince** bağlanır (uygulama oluşturma ekranında paket sorulmaz).
+Yani sıra: **AAB'yi bir kanala yükle** → sonra API testi 200 döner.
 
 **Kontrol listesi:**
 1. Play Console → **Home** → uygulama listesinde `UMAY Multi TV` görünüyor mu?
