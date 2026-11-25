@@ -83,6 +83,8 @@ Bunlar kapanınca Play'e kapalı test için yükleme yapılabilir. (Kapalı test
 | MP-29 | ListView → RecyclerView (300+ öğe) | ANT-12 | 🔧 |
 | MP-30 | Keystore şifresini ortam değişkenine taşı | ANT-13 | 🔧 |
 
+| MP-34 | **Hata günlüğü**: açılış, kanal hazır, oynatıcı hata kodu, yeniden bağlanma, ölü kanal nedeni, ağ kopması, reklam dolmama — zaman damgasıyla, Ayarlar'dan okunur/gönderilir | bu oturum | ✅ 9.72 |
+
 ## 6. P3 — büyük işler (3)
 
 | ID | İş | Kaynak |

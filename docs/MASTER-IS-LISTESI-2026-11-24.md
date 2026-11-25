@@ -785,3 +785,19 @@ Almanya'da RFO 16. sn'de hata ekranı + sonraki kanal; BLK'ta sonsuz döngü bit
 
 **Durum:** 9.71 yayınlandı (versionCode 80). P0 listesinden kod/veri tarafı kapandı;
 kalan P0'lar kullanıcıda (AAB yükleme, mağaza metni, 12 tester) ve P1 maddeleri sırada.
+
+### 23. yarı — hata günlüğü + depo temizliği (v9.72, 25 Kasım 2026)
+
+- **Hata günlüğü (yeni):** uygulama artık `[app] açılış`, `[tv] hazır`, `[tv] oynatıcı hatası:
+  <kod>`, `[tv] hata, tekrar deneniyor n/3`, `[tv] ölü: <kanal> · <neden>`, `[net] bağlantı
+  koptu`, `[ad] geçiş reklamı yüklenemedi: <kod>` satırlarını zaman damgasıyla yazıyor.
+  Ayarlar → **Hata günlüğü** ekranında okunur, seçilir, 📧 Gönder / Temizle yapılabilir.
+  Cihazda doğrulandı: `[app] açılış 9.72 · ülke=tr · ekonomi=1 · dil=tr`,
+  `[ad] geçiş reklamı yüklenemedi: 3 No fill.`, `[tv] hazır: TRT 1`.
+- **"No fill" bulgusu:** reklam sayacı artmıyor çünkü AdMob bu cihaza reklam doldurmuyor
+  (kod hatası değil); Play yayınından sonra doluluk artar.
+- **Depo temizliği:** ajan sohbet dosyaları, `CLAUDE-README.md`, `_build/`, `build/`,
+  ham video ve tüm APK/AAB kopyaları takipten çıktı; izlenen dosya 688 → 353.
+  İkililer yalnız GitHub Releases'te (`RELEASES.md`). Raporlar `docs/raporlar/` altında.
+- **9.72 yayınlandı:** versionCode 81, `verify-apk` temiz, GitHub release + site `/indir` v9.72,
+  asset SHA-256 yerel APK ile aynı.
