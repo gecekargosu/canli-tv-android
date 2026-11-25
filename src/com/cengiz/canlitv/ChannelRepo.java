@@ -65,6 +65,39 @@ public class ChannelRepo {
     private static final List<Channel> CHANNELS = new ArrayList<Channel>();
     private static String loadedCountry = "";
 
+    /**
+     * 9.75: Türkiye'de büyük ulusal kanallar her zaman listenin başında durur.
+     * Doğrulanmış liste (Good) sırası değişse de bu beş kanal 1-5 numaraya alınır;
+     * ayrıca "ölü kanal" sayacı bunları gizleyemez (kullanıcı TV8'i listede bulamıyordu).
+     */
+    private static final String[] PINNED_TR = {
+            "ATV", "TV8", "SHOW TV", "STAR TV", "KANAL D"
+    };
+
+    static boolean pinned(String name) {
+        if (name == null) return false;
+        String n = name.trim().toUpperCase(java.util.Locale.ROOT);
+        for (String p : PINNED_TR) if (n.startsWith(p)) return true;
+        return false;
+    }
+
+    /** Sabit kanalları istenen sırayla listenin başına taşır. */
+    private static void pinTop() {
+        List<Channel> front = new ArrayList<Channel>();
+        for (String p : PINNED_TR) {
+            for (Channel c : CHANNELS) {
+                if (!front.contains(c) && c.name != null
+                        && c.name.trim().toUpperCase(java.util.Locale.ROOT).startsWith(p)) {
+                    front.add(c);
+                    break;
+                }
+            }
+        }
+        if (front.isEmpty()) return;
+        CHANNELS.removeAll(front);
+        CHANNELS.addAll(0, front);
+    }
+
     public static String loadedCountry() {
         return loadedCountry;
     }
@@ -86,6 +119,7 @@ public class ChannelRepo {
             CHANNELS.addAll(CountryRepo.load(ctx, cc));
             // once gercekten acilan kanallar (sunucudan gelen dogrulanmis liste), sonra populerlik sirasi
             if (!Good.apply(ctx, cc, CHANNELS)) Popular.arrange(cc, CHANNELS);
+            if ("tr".equals(cc)) pinTop();
             // #102: kullanicinin kendi ekledigi kanallar listenin en basinda durur
             List<Channel> mine = new ArrayList<Channel>();
             for (String[] r : Prefs.customTv(ctx)) {

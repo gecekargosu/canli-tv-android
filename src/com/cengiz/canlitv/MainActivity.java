@@ -57,7 +57,7 @@ public class MainActivity extends android.app.Activity {
     private boolean editMode = false;
     private final java.util.LinkedHashSet<String> selected = new java.util.LinkedHashSet<String>();
     private LinearLayout editBar;
-    private TextView editBtn, selCount;
+    private TextView editBtn, selCount, countLabel;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -72,6 +72,7 @@ public class MainActivity extends android.app.Activity {
                 + " · ülke=" + Prefs.country(this)
                 + " · ekonomi=" + (Prefs.economy(this) ? "1" : "0")
                 + " · dil=" + Prefs.uiLang(this));
+        Prefs.migrateNumbers(this);   // 9.75: eski numara/sıra kayıtları bir kez temizlenir
         Good.refreshIfNeeded(this);   // #101: doğrulanmış kanal listesi günde 1 kez tazelenir
         all = ChannelRepo.all(this);
         shownCountry = Prefs.country(this);
@@ -81,20 +82,25 @@ public class MainActivity extends android.app.Activity {
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
         root.setBackgroundColor(BG);
-        root.setFitsSystemWindows(true);
+        // 9.75: durum çubuğu payı iki kez uygulanıyordu (başlığın üstünde ~55 dp
+        // boşluk kalıyordu). Pencere zaten güvenli alanın altında başladığı için
+        // fitSystemWindows ek payı ikinci kez ekliyordu; tek pay yeter.
+        root.setFitsSystemWindows(false);
 
         // --- baslik ---
         LinearLayout head = new LinearLayout(this);
         head.setOrientation(LinearLayout.VERTICAL);
-        head.setPadding(dp(16), dp(16), dp(16), dp(4));
+        // 9.76: üst kısım ekranın ~1/3'ünü kaplıyordu. Başlık + düğmeler tek satıra
+        // alındı, arama/sekme/satır araçları sıkıştırıldı; liste daha erken başlıyor.
+        head.setPadding(dp(14), dp(10), dp(12), dp(2));
 
         LinearLayout topRow = new LinearLayout(this);
         topRow.setOrientation(LinearLayout.HORIZONTAL);
         topRow.setGravity(Gravity.CENTER_VERTICAL);
 
         ImageView brand = new ImageView(this);
-        LinearLayout.LayoutParams blp = new LinearLayout.LayoutParams(dp(42), dp(42));
-        blp.setMargins(0, 0, dp(10), 0);
+        LinearLayout.LayoutParams blp = new LinearLayout.LayoutParams(dp(34), dp(34));
+        blp.setMargins(0, 0, dp(8), 0);
         brand.setLayoutParams(blp);
         brand.setScaleType(ImageView.ScaleType.FIT_CENTER);
         try { brand.setImageDrawable(getPackageManager().getApplicationIcon(getPackageName())); }
@@ -106,14 +112,14 @@ public class MainActivity extends android.app.Activity {
         TextView title = new TextView(this);
         title.setText("UMAY Multi TV");
         title.setTextColor(TEXT);
-        title.setTextSize(17);
+        title.setTextSize(15);
         title.setSingleLine(true);
         title.setEllipsize(android.text.TextUtils.TruncateAt.END);
         title.setTypeface(title.getTypeface(), android.graphics.Typeface.BOLD);
         TextView sub = new TextView(this);
         sub.setText(Lang.subtitle(this, all.size()));
         sub.setTextColor(MUTED);
-        sub.setTextSize(10);
+        sub.setTextSize(9);
         sub.setSingleLine(true);
         sub.setEllipsize(android.text.TextUtils.TruncateAt.END);
         titleCol.addView(title);
@@ -121,15 +127,9 @@ public class MainActivity extends android.app.Activity {
         topRow.addView(titleCol, new LinearLayout.LayoutParams(0,
                 ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
 
-        // MP-20: 48dp dokunma alanlı düğmeler başlığı sıkıştırıyordu ("UMAY Mul...").
-        // Düğmeler kendi satırında, sağa yaslı; başlık tam genişlikte kalıyor.
-        LinearLayout actionRow = new LinearLayout(this);
-        actionRow.setOrientation(LinearLayout.HORIZONTAL);
-        actionRow.setGravity(Gravity.END);
-        LinearLayout.LayoutParams arlp = new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        arlp.setMargins(0, dp(6), 0, 0);
-        actionRow.setLayoutParams(arlp);
+        // 9.76: düğmeler başlığın sağına, tek satıra alındı (ayrı satır ~55 dp yiyordu
+        // ve altında boş alan bırakıyordu). Başlık kalan genişliği alır.
+        final LinearLayout actionRow = topRow;
 
         TextView multi = pill("▦ 3'lü", ACCENT);
         multi.setOnClickListener(new View.OnClickListener() {
@@ -143,6 +143,10 @@ public class MainActivity extends android.app.Activity {
                 return true;
             }
         });
+        LinearLayout.LayoutParams mlp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        mlp.setMargins(dp(6), 0, 0, 0);
+        multi.setLayoutParams(mlp);
         actionRow.addView(multi);
 
         TextView radio = pill("📻", SOFT);
@@ -183,13 +187,6 @@ public class MainActivity extends android.app.Activity {
         actionRow.addView(settings);
 
         head.addView(topRow);
-        head.addView(actionRow);
-
-        dataBar = new TextView(this);
-        dataBar.setTextSize(11);
-        dataBar.setTextColor(MUTED);
-        dataBar.setPadding(0, dp(6), 0, 0);
-        head.addView(dataBar);
 
         root.addView(head);
 
@@ -241,18 +238,18 @@ public class MainActivity extends android.app.Activity {
         searchRow.setGravity(Gravity.CENTER_VERTICAL);
         LinearLayout.LayoutParams srlp = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        srlp.setMargins(dp(14), dp(8), dp(14), dp(4));
+        srlp.setMargins(dp(12), dp(6), dp(12), dp(2));
         searchRow.setLayoutParams(srlp);
 
         EditText search = new EditText(this);
         search.setHint(Lang.t(this, "search"));
         search.setHintTextColor(MUTED);
         search.setTextColor(TEXT);
-        search.setTextSize(14);
+        search.setTextSize(13);
         search.setSingleLine(true);
         GradientDrawable sbg = rounded(CARD, 14);
         search.setBackground(sbg);
-        search.setPadding(dp(12), dp(8), dp(12), dp(8));
+        search.setPadding(dp(11), dp(7), dp(11), dp(7));
         searchRow.addView(search, new LinearLayout.LayoutParams(0,
                 ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
         search.addTextChangedListener(new TextWatcher() {
@@ -268,12 +265,12 @@ public class MainActivity extends android.app.Activity {
         noInput.setHint("No");
         noInput.setHintTextColor(MUTED);
         noInput.setTextColor(TEXT);
-        noInput.setTextSize(14);
+        noInput.setTextSize(13);
         noInput.setSingleLine(true);
         noInput.setInputType(InputType.TYPE_CLASS_NUMBER);
         noInput.setGravity(Gravity.CENTER);
         noInput.setBackground(rounded(CARD, 14));
-        LinearLayout.LayoutParams nlp = new LinearLayout.LayoutParams(dp(58),
+        LinearLayout.LayoutParams nlp = new LinearLayout.LayoutParams(dp(52),
                 ViewGroup.LayoutParams.WRAP_CONTENT);
         nlp.setMargins(dp(6), 0, 6, 0);
         noInput.setLayoutParams(nlp);
@@ -293,21 +290,18 @@ public class MainActivity extends android.app.Activity {
         searchRow.addView(go);
         root.addView(searchRow);
 
-        // --- cipler ---
-        HorizontalScrollView chipsScroll = new HorizontalScrollView(this);
-        chipsScroll.setHorizontalScrollBarEnabled(false);
+        // --- cipler: 4 sekme, ekran genişliğine eşit dağılır (sağa kaymaz) ---
         chipsRow = new LinearLayout(this);
         chipsRow.setOrientation(LinearLayout.HORIZONTAL);
-        chipsRow.setPadding(dp(12), dp(4), dp(12), dp(4));
-        chipsScroll.addView(chipsRow);
-        root.addView(chipsScroll);
+        chipsRow.setPadding(dp(12), dp(2), dp(12), dp(2));
+        root.addView(chipsRow);
         buildChips();
 
         // --- liste araclari: duzenle / sirala ---
         LinearLayout tools = new LinearLayout(this);
         tools.setOrientation(LinearLayout.HORIZONTAL);
         tools.setGravity(Gravity.CENTER_VERTICAL);
-        tools.setPadding(dp(14), dp(2), dp(14), dp(2));
+        tools.setPadding(dp(12), dp(0), dp(12), dp(2));
 
         editBtn = pill(Lang.t(this, "edit"), SOFT);
         editBtn.setOnClickListener(new View.OnClickListener() {
@@ -324,6 +318,14 @@ public class MainActivity extends android.app.Activity {
         sortLp.setMargins(dp(6), 0, 0, 0);
         sortBtn.setLayoutParams(sortLp);
         tools.addView(sortBtn);
+
+        // Sağda boş kalan alan: listede kaç kanal olduğunu gösterir (arama/filtrede değişir).
+        tools.addView(new View(this), new LinearLayout.LayoutParams(0, 1, 1f));
+        countLabel = new TextView(this);
+        countLabel.setTextSize(11);
+        countLabel.setTextColor(MUTED);
+        countLabel.setSingleLine(true);
+        tools.addView(countLabel);
 
         root.addView(tools);
 
@@ -417,8 +419,18 @@ public class MainActivity extends android.app.Activity {
         root.addView(list, new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
 
+        // Veri şeridi: tek yerde, listenin altında sabit (üstteki kopya kaldırıldı).
+        dataBar = new TextView(this);
+        dataBar.setTextSize(11);
+        dataBar.setTextColor(MUTED);
+        dataBar.setPadding(dp(12), dp(6), dp(12), dp(6));
+        dataBar.setSingleLine(true);
+        dataBar.setEllipsize(android.text.TextUtils.TruncateAt.END);
+        root.addView(dataBar);
+
         // reklam: alt bar sabit dursun (liste kaydırılınca kaybolmasın)
-        AdManager.wrap(this, root);
+        // usage=false → AdManager kendi veri satırını eklemez, yukarıdaki şerit tek kaynak.
+        AdManager.wrap(this, root, null, false);
         AdManager.init(this);
         handleExtras(getIntent());
         refresh();
@@ -468,21 +480,22 @@ public class MainActivity extends android.app.Activity {
 
     private void buildChips() {
         chipsRow.removeAllViews();
+        // 9.76: grup sekmeleri (Haber/Spor/Belgesel…) kaldırıldı; dört sekme ekran
+        // genişliğine eşit dağılır, sağa kaydırma gerekmez.
         List<String> cats = new ArrayList<String>();
         cats.add("Tümü");
         cats.add("★ Favoriler");
-        if ("tr".equals(Prefs.country(this))) {
-            cats.add("🇹🇷 Türkçe");
-            cats.add("🌐 Yabancı");
-        }
         cats.add("🕘 Son");
         cats.add("🗑 Gizlenenler");
-        cats.addAll(ChannelRepo.groups(this));
-        for (final String c : cats) {
+        for (int i = 0; i < cats.size(); i++) {
+            final String c = cats.get(i);
             TextView chip = new TextView(this);
             chip.setText(Lang.tab(this, c));
-            chip.setTextSize(12);
-            chip.setPadding(dp(12), dp(7), dp(12), dp(7));
+            chip.setTextSize(11);
+            chip.setGravity(Gravity.CENTER);
+            chip.setSingleLine(true);
+            chip.setEllipsize(android.text.TextUtils.TruncateAt.END);
+            chip.setPadding(dp(3), dp(6), dp(3), dp(6));
             chip.setTag(c);
             chip.setOnClickListener(new View.OnClickListener() {
                 @Override public void onClick(View v) {
@@ -493,9 +506,9 @@ public class MainActivity extends android.app.Activity {
                     refresh();
                 }
             });
-            LinearLayout.LayoutParams clp = new LinearLayout.LayoutParams(
-                    ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-            clp.setMargins(0, 0, dp(6), 0);
+            LinearLayout.LayoutParams clp = new LinearLayout.LayoutParams(0,
+                    ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
+            if (i > 0) clp.setMargins(dp(6), 0, 0, 0);
             chip.setLayoutParams(clp);
             chipsRow.addView(chip);
         }
@@ -878,7 +891,10 @@ public class MainActivity extends android.app.Activity {
         List<Channel> base = new ArrayList<Channel>();
         for (Channel c : all) {
             if (onlyHidden != hidden.contains(c.url)) continue;
-            if (!onlyHidden && Prefs.hideDead(this) && Prefs.fails(this, c.url) >= 2) continue;
+            // 9.75: TV8 gibi büyük kanallar iki geçici hatadan sonra listeden düşüyordu.
+            // Sabit (öne alınan) kanallar otomatik gizlemeden muaf.
+            if (!onlyHidden && Prefs.hideDead(this) && Prefs.fails(this, c.url) >= 2
+                    && !ChannelRepo.pinned(c.name)) continue;
             if (!"Tümü".equals(group)) {
                 if ("★ Favoriler".equals(group)) {
                     if (!favs.contains(c.url)) continue;
@@ -931,6 +947,7 @@ public class MainActivity extends android.app.Activity {
 
         updateSelCount();
         adapter.notifyDataSetChanged();
+        if (countLabel != null) countLabel.setText(shown.size() + " kanal");
         if (shown.isEmpty()) {
             emptyView.setVisibility(View.VISIBLE);
             final String cc = Prefs.country(this);
@@ -973,7 +990,7 @@ public class MainActivity extends android.app.Activity {
     private void updateDataBar() {
         long used = Prefs.todayBytes(this);
         int lim = Prefs.limitMb(this);
-        String s = "📶 Bugün: " + Net.mb(used);
+        String s = "📶 Bugün kullanılan veri: " + Net.mb(used);
         if (lim > 0) {
             s += " / " + lim + " MB";
             if (used > lim * 1048576L) s += "  ⚠ LİMİT AŞILDI";
@@ -983,6 +1000,7 @@ public class MainActivity extends android.app.Activity {
         s += "  · 🎚 " + QualityDialog.label(this);
         s += Prefs.audioOnlyMobile(this) ? "  · 🎧 mobilde sadece ses" : "";
         dataBar.setText(s);
+        dataBar.setVisibility(Prefs.showUsage(this) ? View.VISIBLE : View.GONE);
         dataBar.setTextColor(lim > 0 && used > lim * 1048576L ? Color.parseColor("#FF5252") : MUTED);
         updateRadioBar();
     }
@@ -1032,15 +1050,14 @@ public class MainActivity extends android.app.Activity {
         TextView t = new TextView(this);
         t.setText(s);
         t.setTextColor(Color.WHITE);
-        t.setTextSize(12);
+        t.setTextSize(11);
         t.setGravity(Gravity.CENTER);
-        // MP-20: üst bar düğmeleri 34dp yükseklikteydi; erişilebilirlik için 48dp.
-        // Yatay dolgu 12→6: dört düğme büyürken başlığı sıkıştırıp "UMAY Mul..." yapıyordu.
-        t.setPadding(dp(6), dp(8), dp(6), dp(8));
-        t.setBackground(rounded(color, 18));
-        t.setGravity(Gravity.CENTER);
-        t.setMinHeight(dp(48));
-        t.setMinWidth(dp(48));
+        // 9.76: 48dp düğmeler + ayrı satır üst kısmı şişiriyordu; 44dp (hâlâ rahat
+        // dokunulur) ve tek satır. Başlık kısalmadan sığıyor.
+        t.setPadding(dp(7), dp(6), dp(7), dp(6));
+        t.setBackground(rounded(color, 16));
+        t.setMinHeight(dp(44));
+        t.setMinWidth(dp(44));
         return t;
     }
 

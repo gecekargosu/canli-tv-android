@@ -184,7 +184,8 @@ public class PlayerActivity extends android.app.Activity {
         FrameLayout.LayoutParams nlp = new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         nlp.gravity = Gravity.TOP | Gravity.CENTER_HORIZONTAL;
-        nlp.setMargins(dp(12), dp(92), dp(12), 0);
+        // 9.76: düğmeler büyüdü; bilgi şeridi üst barın altında kalsın (üstüne binmesin).
+        nlp.setMargins(dp(12), dp(132), dp(12), 0);
         root.addView(noticeView, nlp);
 
         // --- ust bar: buyuk, yazili dugmeler ---
@@ -1256,7 +1257,8 @@ public class PlayerActivity extends android.app.Activity {
     private void setBarText(TextView t, String icon, String label) {
         android.text.SpannableStringBuilder sb = new android.text.SpannableStringBuilder(
                 icon + "\n" + label);
-        sb.setSpan(new android.text.style.RelativeSizeSpan(1.6f), 0, icon.length(),
+        // 9.76: üst bar ikonları çok küçüktü (9sp yazı / 1.6× ikon).
+        sb.setSpan(new android.text.style.RelativeSizeSpan(2.2f), 0, icon.length(),
                 android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         t.setText(sb);
     }
@@ -1265,15 +1267,15 @@ public class PlayerActivity extends android.app.Activity {
     private TextView barButton(String icon, String label) {
         TextView t = new TextView(this);
         t.setTextColor(TEXT);
-        t.setTextSize(9);
+        t.setTextSize(10);
         t.setGravity(Gravity.CENTER);
         setBarText(t, icon, label);
         GradientDrawable d = new GradientDrawable();
         d.setColor(Color.parseColor("#66000000"));
-        d.setCornerRadius(dp(12));
+        d.setCornerRadius(dp(14));
         t.setBackground(d);
-        t.setPadding(dp(2), dp(5), dp(2), dp(5));
-        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(dp(62), dp(50));
+        t.setPadding(dp(2), dp(6), dp(2), dp(4));
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(dp(68), dp(62));
         lp.setMargins(dp(3), 0, dp(3), 0);
         t.setLayoutParams(lp);
         return t;

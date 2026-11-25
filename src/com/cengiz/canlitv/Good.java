@@ -101,6 +101,8 @@ public final class Good {
             File target = file(ctx, cc);
             if (target.exists()) target.delete();
             boolean ok = tmp.renameTo(target);
+            // 9.76: yeni doğrulanmış liste geldi → eski "ölü kanal" sayaçları geçersiz.
+            if (ok) Prefs.clearAllFails(ctx);
             return ok;
         } catch (Exception ignored) {
             return false;

@@ -46,16 +46,46 @@ public class Prefs {
     }
 
     // --- olu kanal sayaci ---
+    /** Ölü sayacı bu süreden sonra geçersiz sayılır (9.76). */
+    private static final long FAIL_TTL_MS = 3L * 24 * 60 * 60 * 1000;
+
+    /**
+     * 9.76: sayaç hiç sıfırlanmadığı için aylar içinde iki kez tökezleyen kanal
+     * kalıcı olarak gizleniyordu (cihazda liste 128'den 32'ye düşmüştü).
+     * Artık yalnız son 3 gün içindeki hatalar sayılır; eski kayıtlar yok sayılır.
+     */
     public static int fails(Context c, String url) {
-        return sp(c).getInt("fail:" + url.hashCode(), 0);
+        SharedPreferences p = sp(c);
+        long at = p.getLong("failAt:" + url.hashCode(), 0L);
+        if (at <= 0 || System.currentTimeMillis() - at > FAIL_TTL_MS) return 0;
+        return p.getInt("fail:" + url.hashCode(), 0);
     }
 
     public static void addFail(Context c, String url) {
-        sp(c).edit().putInt("fail:" + url.hashCode(), fails(c, url) + 1).apply();
+        SharedPreferences.Editor e = sp(c).edit();
+        e.putInt("fail:" + url.hashCode(), fails(c, url) + 1);
+        e.putLong("failAt:" + url.hashCode(), System.currentTimeMillis());
+        e.apply();
     }
 
     public static void clearFails(Context c, String url) {
-        sp(c).edit().remove("fail:" + url.hashCode()).apply();
+        sp(c).edit().remove("fail:" + url.hashCode())
+                .remove("failAt:" + url.hashCode()).apply();
+    }
+
+    /**
+     * 9.76: "ölü kanal" sayaçları hiç sıfırlanmıyordu; aylar içinde iki kez
+     * tökezleyen kanal kalıcı olarak gizleniyor ve liste 128'den 32'ye düşüyordu.
+     * Doğrulanmış liste her tazelendiğinde (günlük) sayaçlar sıfırlanır.
+     */
+    public static void clearAllFails(Context c) {
+        SharedPreferences p = sp(c);
+        SharedPreferences.Editor e = p.edit();
+        boolean any = false;
+        for (String k : p.getAll().keySet()) {
+            if (k.startsWith("fail:") || k.startsWith("failAt:")) { e.remove(k); any = true; }
+        }
+        if (any) e.apply();
     }
 
     // --- AdMob test cihazı (kendi telefonunda test reklamı görmek için) ---
@@ -388,6 +418,27 @@ public class Prefs {
     }
 
     // --- kumanda numarasi degistirme ---
+    /**
+     * 9.75: eski sürümlerde kaydedilmiş numara/el sırası kayıtları ("no:" / "ord:")
+     * kanal listesi yenilenince çakışıyordu (iki kanal №1, boş №1). Bir kerelik temizlenir;
+     * numaralar yeniden 1'den başlar, sabit kanallar ilk beşte durur.
+     */
+    public static void migrateNumbers(Context c) {
+        SharedPreferences p = sp(c);
+        if (p.getInt("numbersRev", 0) >= 3) return;
+        SharedPreferences.Editor e = p.edit();
+        for (String k : p.getAll().keySet()) {
+            if (k.startsWith("no:") || k.startsWith("ord:")
+                    || k.startsWith("fail:") || k.startsWith("failAt:")) e.remove(k);
+        }
+        // 9.76: eski sürümlerden kalan toplu "listeden sil" kaydı (cihazda 115 kanal)
+        // listeyi 128'den 32'ye düşürüyordu. Elle silinen birkaç kanal korunur;
+        // 20'den fazlası kaza/toplu kayıt sayılır ve temizlenir.
+        java.util.Set<String> hid = p.getStringSet("hiddenCh", null);
+        if (hid != null && hid.size() > 20) e.remove("hiddenCh");
+        e.putInt("numbersRev", 3).apply();
+    }
+
     public static int noOverride(Context c, String url) {
         return sp(c).getInt("no:" + url.hashCode(), 0);
     }

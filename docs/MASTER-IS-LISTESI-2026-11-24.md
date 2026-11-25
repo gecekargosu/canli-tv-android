@@ -801,3 +801,23 @@ kalan P0'lar kullanıcıda (AAB yükleme, mağaza metni, 12 tester) ve P1 maddel
   İkililer yalnız GitHub Releases'te (`RELEASES.md`). Raporlar `docs/raporlar/` altında.
 - **9.72 yayınlandı:** versionCode 81, `verify-apk` temiz, GitHub release + site `/indir` v9.72,
   asset SHA-256 yerel APK ile aynı.
+
+### 25. yarı — ana sayfa kayması, TV8 ve Show TV (v9.75, 25 Kasım 2026)
+
+- **Ana sayfa kayması (yeni madde MP-29):** durum çubuğu payı kök yerleşimde iki kez
+  uygulanıyordu (~55 dp boşluk). `root.setFitsSystemWindows(false)` yapıldı; cihazda
+  başlık durum çubuğunun hemen altında başlıyor (`_build/home_now.png` → `_build/v975_home2.png`).
+- **TV8 listeden düşüyordu (MP-30):** iki geçici hatadan sonra `hideDead` sayacı kanalı
+  gizliyordu (Gizlenenler sekmesi boştu, yani elle silinmemişti). Sabit kanallar
+  (ATV, TV8, Show TV, Star TV, Kanal D) otomatik gizlemeden muaf tutuldu.
+- **Show TV eklendi (MP-31):** TürkNet/ERC yansısı (`showtv.m3u8` master + 720p yedek),
+  HTTP 200 + 1080/720/480/360 varyantları doğrulandı; `channels.m3u`, `good_tr.json`,
+  `site/public/good/tr.json` aynı anda güncellendi.
+- **Sıra/numara (MP-32):** TR'de ilk beş sabit (ATV, TV8, Show TV, Star TV, Kanal D);
+  eski `no:`/`ord:` kayıtları bir kez temizlendi (`Prefs.migrateNumbers`) — iki kanal №1,
+  boş №1 çakışması bitti. Cihazda: 1 ATV · 2 TV8 · 3 Show TV · 4 Star TV · 5 Kanal D ·
+  6 kendi kanalı · 7 TRT Haber (128 kanal).
+- **Mağaza görseli:** ana ekran görüntüsü 9.75 ile yenilendi (`docs/play/ekran-9.75-1-ana.png`).
+- **9.75 paketi:** versionCode 84, `releases/v9.75/` (APK + AAB), `verify-apk` temiz.
+- **Açık:** ATV (D-70, kullanıcı erteledi); GitHub release + site `/indir` 9.75 için henüz
+  güncellenmedi (yerel arşiv hazır).

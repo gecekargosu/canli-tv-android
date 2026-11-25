@@ -1,4 +1,4 @@
-# Play mağaza kaydı — kopyala/yapıştır metinler (9.74)
+# Play mağaza kaydı — kopyala/yapıştır metinler (9.76)
 
 Play Console'da **Uygulama oluştur** ekranı açıldığında bu dosyadaki metinleri aynen kullan.
 Karakter sınırları: ad 30, kısa açıklama 80, tam açıklama 4000.
@@ -88,7 +88,7 @@ Geri bildirim: cengizkilic1980@gmail.com
 |---|---|---|---|
 | Uygulama ikonu | 512×512 | `docs/play/ikon-512.png` | ✅ |
 | Öne çıkan görsel | 1024×500 | `docs/play/one-cikan-1024x500.png` | ✅ 9.74'te yenilendi |
-| Telefon ekran görüntüsü 1 | 1280×2342 | `docs/play/ekran-9.74-1-ana.png` | ✅ |
+| Telefon ekran görüntüsü 1 | 1280×2300 | `docs/play/ekran-9.76-1-ana.png` | ✅ 9.76 (kompakt üst bar) |
 | Telefon ekran görüntüsü 2 | 1280×2632 | `docs/play/ekran-9.74-2-oynatici.png` | ✅ |
 | Telefon ekran görüntüsü 3 | 1280×2342 | `docs/play/ekran-9.74-3-radyo.png` | ✅ |
 
@@ -124,6 +124,6 @@ kanal/istasyon listesi görünüyor. Play en az 2, en çok 8 telefon görüntüs
 1. Play Console → Uygulama oluştur (ad, dil, ücretsiz).
 2. Mağaza kaydı: metinler + ikon + öne çıkan görsel + 3 ekran görüntüsü.
 3. Uygulama içeriği: reklamlar, hedef kitle, içerik derecelendirme, veri güvenliği.
-4. Kapalı test → `releases/v9.74/UMAY-MULTI-TV-9.74.aab` (versionCode 83).
+4. Kapalı test → `releases/v9.76/UMAY-MULTI-TV-9.76.aab` (versionCode 85).
 5. En az 12 tester, 14 gün kesintisiz → üretim erişimi başvurusu.
 6. Onay sonrası üretim → aynı AAB → inceleme.

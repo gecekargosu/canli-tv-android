@@ -272,3 +272,8 @@ dokunma + `uiautomator dump` + `logcat` + ekran görüntüsü. "Kanıt" sütunu 
 | D-75 | 9.74 kapasite denetimi | **✅** `verify-apk --prev v9.73 --expect-version 9.74`: sınıf +0, dosya +0, 9.74 (83), imza aynı. |
 
 | D-76 | 48dp düğme sonrası başlık düzeni | **✅** İlk denemede başlık "UMAY Mul..." kesildi; düğmeler kendi satırına alındı, başlık ve alt yazı tam görünüyor (`_build/t974_main3.png`). |
+| D-77 | Ana sayfa üst boşluğu (9.75) | **✅** `fitsSystemWindows` iki kez uygulanıyordu; kapatıldı. Cihazda başlık durum çubuğunun altında, boşluk yok (`_build/v975_home2.png`). |
+| D-78 | TV8 listede | **✅** Sabit kanallar otomatik gizlemeden muaf; cihazda №2 TV8 göründü ve canlı oynadı (720p, 19:14). |
+| D-79 | Show TV | **✅** Kaynak HTTP 200 (master + 4 varyant); cihazda liste №3'te, açılışta yayın başladı (TOD reklam katmanı üstteydi, kapatınca liste döndü). Yayın akışı tek başına uzun süre izlenmedi. |
+| D-80 | 9.75 kapasite denetimi | **✅** `verify-apk --prev v9.74 --expect-version 9.75`: 400 dosya, 17.530 sınıf, imza `f3996c67…b8d5`, 9.75 (84). |
+| D-81 | ATV (№1) yeniden test | **⏳** Bu oturumda açılmadı (kullanıcı erteledi); D-70 açık kalıyor. |

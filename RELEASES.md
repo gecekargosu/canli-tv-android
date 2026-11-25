@@ -5,9 +5,26 @@ Hepsi GitHub Releases sayfasında:
 
 **https://github.com/gecekargosu/canli-tv-android/releases**
 
-- En son sürüm: `v9.74` — `CanliTV-9.74.apk` (telefon/tablet), `UMAY-MULTI-TV-9.74.aab` (Play).
+- En son sürüm: `v9.76` — `CanliTV-9.76.apk`, `UMAY-MULTI-TV-9.76.aab` (Play).
 - İndirme sayfası: https://umay-multi-tv-gq3zer.freebuff.site/indir
 - Sürüm notları: `releases/vX.YY/SURUM-NOTLARI.md`
+
+## v9.76 — kompakt üst bar, sekme sadeleştirme, tek veri şeridi
+
+- Üst kısım tek satıra indi (logo + başlık + düğmeler); liste ekranın ~%37 yerine ~%27'sinden başlıyor.
+- Kanal sekmeleri dörde indi: Tümü · Favoriler · Son · Gizlenenler; ekran genişliğine eşit dağılıyor.
+- Veri bilgisi tek yerde: listenin altında sabit şerit (üstteki kopya kaldırıldı).
+- Düzenle/Sırala satırının sağında kaç kanal göründüğü yazıyor.
+- Oynatıcı üst bar düğmeleri ve ikonlar büyütüldü; bilgi şeridi barın altına alındı.
+- Gizli kanal hatası: eski toplu "listeden sil" kaydı ve süresiz ölü sayacı listeyi 128'den 32'ye düşürüyordu; temizlendi.
+
+## v9.75 — ana sayfa kayması, TV8 geri, Show TV eklendi
+
+- Ana sayfada durum çubuğu payı iki kez uygulanıyordu (üstte ~55 dp boşluk); tek paya indirildi.
+- TV8 "ölü kanal" sayacı yüzünden gizleniyordu; sabit kanallar artık otomatik gizlenmiyor.
+- Show TV listeye eklendi (TürkNet/ERC yansısı, 1080/720/480/360 doğrulandı).
+- TR ilk beş sabit: ATV, TV8, Show TV, Star TV, Kanal D; eski numara/sıra kayıtları temizlendi.
+- ATV bu sürümde değişmedi (ayrı iş).
 
 ## v9.74 — kalite/veri tutarlılığı, çoklu ekran geri, kategori adları
 

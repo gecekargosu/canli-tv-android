@@ -260,6 +260,15 @@ public final class AdManager {
 
     /** key: bu ekranda gecerli kanal/istasyon adresi (reklamsiz serit icin). */
     public static void wrap(final Activity activity, View content, final String key) {
+        wrap(activity, content, key, Prefs.showUsage(activity));
+    }
+
+    /**
+     * usage=false: bu ekran kendi veri şeridini gösteriyor (ana ekran) —
+     * aynı bilgi iki yerde yazılmasın.
+     */
+    public static void wrap(final Activity activity, View content, final String key,
+                            final boolean usage) {
         try {
             LinearLayout holder = new LinearLayout(activity);
             holder.setOrientation(LinearLayout.VERTICAL);
@@ -267,7 +276,7 @@ public final class AdManager {
             content.setLayoutParams(new LinearLayout.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
             holder.addView(content);
-            if (Prefs.showUsage(activity)) holder.addView(usageBar(activity));
+            if (usage) holder.addView(usageBar(activity));
             View ad = banner(activity);
             if (ad != null) holder.addView(ad);
             // sistem gezinme cubugu (jest cubugu) banner'in uzerine binmesin:

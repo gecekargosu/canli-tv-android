@@ -46,6 +46,12 @@
    "url": "https://demiroren.daioncdn.net/kanald/kanald.m3u8?app=kanald_web&ce=3"
   },
   {
+   "name": "Show TV (Turkiye)",
+   "group": "Genel",
+   "logo": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/cb/Show_TV_logo.svg/500px-Show_TV_logo.svg.png",
+   "url": "https://rmtftbjlne.turknet.ercdn.net/bpeytmnqyp/showtv/showtv.m3u8"
+  },
+  {
    "name": "Haber Global",
    "group": "Haber",
    "logo": "https://i.imgur.com/fu6XeGS.png",
