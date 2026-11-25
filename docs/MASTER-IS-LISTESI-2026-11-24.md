@@ -821,3 +821,20 @@ kalan P0'lar kullanıcıda (AAB yükleme, mağaza metni, 12 tester) ve P1 maddel
 - **9.75 paketi:** versionCode 84, `releases/v9.75/` (APK + AAB), `verify-apk` temiz.
 - **Açık:** ATV (D-70, kullanıcı erteledi); GitHub release + site `/indir` 9.75 için henüz
   güncellenmedi (yerel arşiv hazır).
+
+### 26. yarı — kompakt ana ekran + eksik kanal düzeltmesi (v9.76, 25 Kasım 2026)
+
+- **Ana ekran üst kısmı (MP-33):** logo+başlık+düğmeler tek satır, arama ve sekmeler
+  sıkıştırıldı. Liste ekranın ~%37'si yerine ~%27'sinden başlıyor; ilk ekranda 8 kanal.
+- **Sekmeler (MP-34):** yalnız Tümü · Favoriler · Son · Gizlenenler; eşit genişlik, kaydırma yok.
+- **Veri şeridi (MP-35):** üstteki kopya kaldırıldı; liste altında tek sabit satır
+  (`Bugün kullanılan veri: … · limit yok · 360p`). AdManager `wrap(..., usage=false)`.
+- **Araç satırı (MP-36):** sağda "128 kanal" sayacı (arama/filtrede değişir).
+- **Oynatıcı barı (MP-37):** düğme 68×62dp, yazı 10sp, ikon 2,2×; bilgi şeridi 132dp'ye indi.
+- **Eksik kanal (MP-38):** cihazda liste 128 → 32'ye düşmüştü. Nedenler: (a) eski toplu
+  `hiddenCh` kaydı (115 URL), (b) süresi dolmayan ölü sayacı. Gizli kayıt >20 ise bir kez
+  temizleniyor; `fails()` yalnız son 3 günü sayıyor, Good tazelenince sıfırlanıyor.
+  Cihazda doğrulandı: **128 kanal**, numaralar 1'den başlıyor, sekmeler çalışıyor.
+- **Yayın:** 9.76 (85) — `verify-apk` temiz (sınıf +0, dosya +0), GitHub release `v9.76`,
+  site `/indir` 9.76 (HTTP 200), mağaza görseli `docs/play/ekran-9.76-1-ana.png`.
+- **Açık:** ATV (D-70, kullanıcı erteledi).

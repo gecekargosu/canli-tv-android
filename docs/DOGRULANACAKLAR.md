@@ -277,3 +277,8 @@ dokunma + `uiautomator dump` + `logcat` + ekran görüntüsü. "Kanıt" sütunu 
 | D-79 | Show TV | **✅** Kaynak HTTP 200 (master + 4 varyant); cihazda liste №3'te, açılışta yayın başladı (TOD reklam katmanı üstteydi, kapatınca liste döndü). Yayın akışı tek başına uzun süre izlenmedi. |
 | D-80 | 9.75 kapasite denetimi | **✅** `verify-apk --prev v9.74 --expect-version 9.75`: 400 dosya, 17.530 sınıf, imza `f3996c67…b8d5`, 9.75 (84). |
 | D-81 | ATV (№1) yeniden test | **⏳** Bu oturumda açılmadı (kullanıcı erteledi); D-70 açık kalıyor. |
+| D-82 | Ana ekran üst kısmı (9.76) | **✅** Tek satır başlık+düğme, 4 sekme, tek veri şeridi; liste ~%27'den başlıyor (`_build/v976_home5.png`). |
+| D-83 | Eksik kanal (128 → 32) | **✅** `hiddenCh` 115 kayıt + süresiz ölü sayacı. Temizlendi; cihazda "128 kanal" yazıyor, numaralar 1..128. |
+| D-84 | 9.76 kapasite denetimi | **✅** `verify-apk --prev v9.75 --expect-version 9.76`: 400 dosya, 17.530 sınıf, +332 bayt, imza aynı. |
+| D-85 | Site /indir 9.76 | **✅** Deploy `succeeded`; `/indir` HTTP 200, bağlantı `CanliTV-9.76.apk`. |
+| D-86 | Oynatıcı üst barı | **⏳** Düğmeler/ikonlar büyütüldü (ekran görüntüsü alındı) ama 9.76'da yeniden oynatma testi yapılmadı; TV8 9.75'te oynuyordu. |
