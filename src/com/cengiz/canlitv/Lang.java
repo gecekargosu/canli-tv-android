@@ -123,13 +123,13 @@ public class Lang {
         return n + " kanal";
     }
 
-    /** Alt baslik: "305 kanal · no ile aç, 3'lü izle, kayıt" */
+    /** Alt baslik. 9.77: kanal sayisi artik alttaki veri seridinde; burada tekrarlanmiyor. */
     public static String subtitle(Context c, int count) {
         String l = Prefs.uiLang(c);
-        if ("en".equals(l)) return count + " channels · open by number, watch 3 at once, record";
-        if ("ru".equals(l)) return count + " каналов · по номеру, 3 экрана, запись";
-        if ("ar".equals(l)) return count + " قناة · بالرقم، ٣ شاشات، تسجيل";
-        return count + " kanal · no ile aç, 3'lü izle, kayıt";
+        if ("en".equals(l)) return "open by number, watch 3 at once, record";
+        if ("ru".equals(l)) return "по номеру, 3 экрана, запись";
+        if ("ar".equals(l)) return "بالرقم، ٣ شاشات، تسجيل";
+        return "no ile aç, 3'lü izle, kayıt";
     }
 
     /** Sekme etiketi. Sekme ici anahtar Turkce sabit kalir (mantik onunla calisiyor), sadece gorunen ad cevrilir. */

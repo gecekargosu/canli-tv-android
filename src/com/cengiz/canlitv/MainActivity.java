@@ -57,7 +57,7 @@ public class MainActivity extends android.app.Activity {
     private boolean editMode = false;
     private final java.util.LinkedHashSet<String> selected = new java.util.LinkedHashSet<String>();
     private LinearLayout editBar;
-    private TextView editBtn, selCount, countLabel;
+    private TextView editBtn, selCount;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -297,37 +297,8 @@ public class MainActivity extends android.app.Activity {
         root.addView(chipsRow);
         buildChips();
 
-        // --- liste araclari: duzenle / sirala ---
-        LinearLayout tools = new LinearLayout(this);
-        tools.setOrientation(LinearLayout.HORIZONTAL);
-        tools.setGravity(Gravity.CENTER_VERTICAL);
-        tools.setPadding(dp(12), dp(0), dp(12), dp(2));
-
-        editBtn = pill(Lang.t(this, "edit"), SOFT);
-        editBtn.setOnClickListener(new View.OnClickListener() {
-            @Override public void onClick(View v) { setEditMode(!editMode); }
-        });
-        tools.addView(editBtn);
-
-        TextView sortBtn = pill(Lang.t(this, "sort"), SOFT);
-        sortBtn.setOnClickListener(new View.OnClickListener() {
-            @Override public void onClick(View v) { sortDialog(); }
-        });
-        LinearLayout.LayoutParams sortLp = new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        sortLp.setMargins(dp(6), 0, 0, 0);
-        sortBtn.setLayoutParams(sortLp);
-        tools.addView(sortBtn);
-
-        // Sağda boş kalan alan: listede kaç kanal olduğunu gösterir (arama/filtrede değişir).
-        tools.addView(new View(this), new LinearLayout.LayoutParams(0, 1, 1f));
-        countLabel = new TextView(this);
-        countLabel.setTextSize(11);
-        countLabel.setTextColor(MUTED);
-        countLabel.setSingleLine(true);
-        tools.addView(countLabel);
-
-        root.addView(tools);
+        // 9.77: Düzenle/Sırala satırı kaldırıldı. Sırala işe yaramıyordu; Düzenle
+        // sekme satırının sonuna taşındı. Kanal sayısı alt veri şeridinde.
 
         // --- duzenleme cubugu ---
         editBar = new LinearLayout(this);
@@ -512,12 +483,28 @@ public class MainActivity extends android.app.Activity {
             chip.setLayoutParams(clp);
             chipsRow.addView(chip);
         }
+        // Düzenleme düğmesi: sekme satırının sonunda, ikon olarak.
+        editBtn = new TextView(this);
+        editBtn.setText(editMode ? "✓" : "✏️");
+        editBtn.setTextSize(13);
+        editBtn.setGravity(Gravity.CENTER);
+        editBtn.setPadding(dp(8), dp(6), dp(8), dp(6));
+        editBtn.setBackground(rounded(editMode ? ACCENT : CARD, 18));
+        editBtn.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) { setEditMode(!editMode); }
+        });
+        LinearLayout.LayoutParams elp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        elp.setMargins(dp(6), 0, 0, 0);
+        editBtn.setLayoutParams(elp);
+        chipsRow.addView(editBtn);
         styleChips();
     }
 
     private void styleChips() {
         for (int i = 0; i < chipsRow.getChildCount(); i++) {
             TextView chip = (TextView) chipsRow.getChildAt(i);
+            if (chip.getTag() == null) continue;   // düzenleme düğmesi
             boolean sel = chip.getTag().toString().equals(group);
             chip.setBackground(rounded(sel ? ACCENT : CARD, 18));
             chip.setTextColor(sel ? Color.WHITE : MUTED);
@@ -595,8 +582,8 @@ public class MainActivity extends android.app.Activity {
         if (!on) selected.clear();
         if (editBar != null) editBar.setVisibility(on ? View.VISIBLE : View.GONE);
         if (editBtn != null) {
-            editBtn.setText(on ? "✏️ Düzenleniyor" : "✏️ Düzenle");
-            editBtn.setBackground(rounded(on ? ACCENT : SOFT, 18));
+            editBtn.setText(on ? "✓" : "✏️");
+            editBtn.setBackground(rounded(on ? ACCENT : CARD, 18));
         }
         updateSelCount();
         if (adapter != null) adapter.notifyDataSetChanged();
@@ -947,7 +934,6 @@ public class MainActivity extends android.app.Activity {
 
         updateSelCount();
         adapter.notifyDataSetChanged();
-        if (countLabel != null) countLabel.setText(shown.size() + " kanal");
         if (shown.isEmpty()) {
             emptyView.setVisibility(View.VISIBLE);
             final String cc = Prefs.country(this);
@@ -999,6 +985,8 @@ public class MainActivity extends android.app.Activity {
         }
         s += "  · 🎚 " + QualityDialog.label(this);
         s += Prefs.audioOnlyMobile(this) ? "  · 🎧 mobilde sadece ses" : "";
+        // 9.77: kanal sayısı artık bu sabit şeritte (ayrı satır kaldırıldı).
+        s += "  · 📺 " + shown.size() + " kanal";
         dataBar.setText(s);
         dataBar.setVisibility(Prefs.showUsage(this) ? View.VISIBLE : View.GONE);
         dataBar.setTextColor(lim > 0 && used > lim * 1048576L ? Color.parseColor("#FF5252") : MUTED);

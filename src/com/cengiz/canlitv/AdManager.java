@@ -433,8 +433,9 @@ public final class AdManager {
     private static TextView houseBar(final Activity a) {
         TextView t = new TextView(a);
         t.setTextSize(12f);
-        t.setTextColor(Color.parseColor("#0B1220"));
-        t.setBackgroundColor(Color.parseColor("#FFB020"));
+        // 9.77: şerit sarıydı, uygulamanın geri kalanı turuncu (ACCENT).
+        t.setTextColor(Color.WHITE);
+        t.setBackgroundColor(Color.parseColor("#FF7A18"));
         t.setPadding(dp(a, 12), dp(a, 10), dp(a, 12), dp(a, 10));
         t.setGravity(android.view.Gravity.CENTER);
         t.setText("▶  Reklam izle · " + Ads.REWARD_MINUTES + " dk reklamsız");

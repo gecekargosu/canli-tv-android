@@ -229,5 +229,16 @@
   "unpackedBytes": 17066125,
   "dexFiles": 2,
   "classes": 17530
+ },
+ {
+  "versionName": "9.77",
+  "versionCode": "86",
+  "apkBytes": 7131257,
+  "sha256": "9ac186ce2c3b9c2cf958703138a9fe8be015664a26cec63d0b1f0986fd5f6010",
+  "signSha256": "f3996c67ef0e0e0420f442fe3fcf6303a17caa88dcba8a2b19a10cd95c92b8d5",
+  "zipEntries": 400,
+  "unpackedBytes": 17065421,
+  "dexFiles": 2,
+  "classes": 17528
  }
 ]

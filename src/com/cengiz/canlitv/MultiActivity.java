@@ -5,7 +5,6 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.drawable.GradientDrawable;
-import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.os.Handler;
 import android.text.Editable;
@@ -219,7 +218,6 @@ public class MultiActivity extends android.app.Activity {
             }, 1200);
         }
         openedAt = System.currentTimeMillis();
-        Net.begin();
         ui.post(tick);
         hideControlsSoon();
         // P0-5i: ızgaradan arka plan sesine geçerken de bildirim izni istensin.
@@ -255,45 +253,46 @@ public class MultiActivity extends android.app.Activity {
      * - oynarken konumu 12 sn ilerlemeyen (donan) yayın → yeniden bağlan
      * Böylece ATV gibi boş kalan pencere ve TV8 gibi takılan yayın kendini toparlar.
      */
-    // M-81: çoklu ekran MediaPlayer ile oynuyor; ExoPlayer'ın bayt sayacı burada devrede
-    // değildi ve günlük veri sayacı çoklu ekranda HİÇ artmıyordu.
-    private long lastRx = -1;
-    private long pendingBytes = 0;
-
-    /** Çoklu ekranda indirilen baytları günlük sayaca yaz (TrafficStats farkı). */
-    private void countData() {
-        try {
-            long rx = android.net.TrafficStats.getUidRxBytes(android.os.Process.myUid());
-            if (rx < 0) return;
-            if (lastRx < 0) { lastRx = rx; return; }
-            if (rx > lastRx) {
-                pendingBytes += (rx - lastRx);
-                lastRx = rx;
-            }
-            if (pendingBytes >= 100000L) {
-                Prefs.addUsage(this, "multi", pendingBytes, 0);
-                pendingBytes = 0;
-            }
-        } catch (Throwable ignored) { }
-    }
+    // 9.77: çoklu ekranda veri İKİ kez sayılıyordu: hem buradaki TrafficStats
+    // farkı hem de onPause'daki Net.begin/end oturumu aynı baytları yazıyordu.
+    // Tek kaynak kaldı: Net oturumu (begin/end). Ekrandaki değer
+    // todayBytes + Net.sessionSoFar() ile canlı gösteriliyor.
 
     private final Runnable watchdog = new Runnable() {
         @Override public void run() {
             if (foreground) {
                 long now = System.currentTimeMillis();
                 for (Slot s : slots) if (s != null) s.check(now);
-                countData();
+                flushMulti();
             }
             ui.postDelayed(this, 3000);
         }
     };
+
+    /** Pencerelerin okuduğu baytları günlük sayaca yaz (3 sn'de bir + çıkışta). */
+    private void flushMulti() {
+        for (Slot s : slots) {
+            if (s == null) continue;
+            long b = s.bytes.getAndSet(0);
+            if (b <= 0) continue;
+            int ch = s.chan;
+            Prefs.addUsage(this, (ch >= 0 && ch < list.size()) ? list.get(ch).url : "multi", b, 0);
+        }
+    }
+
+    /** Henüz kayda geçmemiş (yazılmakta olan) baytlar. */
+    private long pendingBytes() {
+        long t = 0;
+        for (Slot s : slots) if (s != null) t += s.bytes.get();
+        return t;
+    }
 
     private final Runnable tick = new Runnable() {
         @Override public void run() {
             clock.setText(new java.text.SimpleDateFormat("HH:mm:ss", java.util.Locale.getDefault())
                     .format(new java.util.Date()));
             if (dataRef != null) dataRef.setText("📶 " + Net.mb(Prefs.todayBytes(MultiActivity.this)
-                    + Net.sessionSoFar()));
+                    + pendingBytes()));
             ui.postDelayed(this, 1000);
         }
     };
@@ -471,7 +470,12 @@ public class MultiActivity extends android.app.Activity {
 
         final SurfaceView surface;
         final TextView label, speaker;
-        MediaPlayer mp;
+        // 9.77: MediaPlayer yerine ExoPlayer — pencere başına bayt sayacı
+        // (CountingDataSource) böylece çalışıyor. Eski UID/TrafficStats sayacı
+        // bu cihazda 0 dönüyordu ve çoklu ekranda veri HİÇ artmıyordu.
+        androidx.media3.exoplayer.ExoPlayer ex;
+        final java.util.concurrent.atomic.AtomicLong bytes =
+                new java.util.concurrent.atomic.AtomicLong();
         int chan = 0;
         boolean surfaceReady = false, on = false;
         final int slotIndex;
@@ -554,7 +558,7 @@ public class MultiActivity extends android.app.Activity {
 
         void setAudible(boolean b) {
             on = b;
-            try { if (mp != null) mp.setVolume(b ? 1f : 0f, b ? 1f : 0f); } catch (Exception ignored) { }
+            try { if (ex != null) ex.setVolume(b ? 1f : 0f); } catch (Throwable ignored) { }
             speaker.setText(b ? "🔊" : "🔇");
         }
 
@@ -614,41 +618,48 @@ public class MultiActivity extends android.app.Activity {
             if (my != gen || !surfaceReady) return;
             releasePlayer();
             try {
-                final MediaPlayer player = new MediaPlayer();
-                mp = player;
-                player.setDisplay(surface.getHolder());
-                player.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
-                    @Override public void onPrepared(MediaPlayer m) {
-                        if (player != mp) return;
-                        prepared = true;
-                        startedAt = System.currentTimeMillis();
-                        stalls = 0;
-                        label.setVisibility(View.GONE);
-                        AudioService.stop(MultiActivity.this);
-                        screenOffAudio = false;
-                        m.setVolume(on ? 1f : 0f, on ? 1f : 0f);
-                        m.start();
-                    }
-                });
-                // "Hazır" görünüp görüntü vermeyen yayınları yakalamak için ilk kare bilgisi.
-                player.setOnInfoListener(new MediaPlayer.OnInfoListener() {
-                    @Override public boolean onInfo(MediaPlayer m, int what, int extra) {
-                        if (what == MediaPlayer.MEDIA_INFO_VIDEO_RENDERING_START) rendered = true;
-                        return false;
-                    }
-                });
-                player.setOnErrorListener(new MediaPlayer.OnErrorListener() {
-                    @Override public boolean onError(MediaPlayer m, int w, int e) {
-                        if (player != mp) return true;
-                        retry();
-                        return true;
-                    }
-                });
                 // Tarayıcı UA'sı: TV8 gibi CDN'ler aksi hâlde reklam kuşağı klibi döndürüyor.
-                player.setDataSource(MultiActivity.this, android.net.Uri.parse(url),
-                        Net.playerHeaders());
-                player.prepareAsync();
-            } catch (Exception e) {
+                androidx.media3.datasource.DefaultHttpDataSource.Factory http =
+                        new androidx.media3.datasource.DefaultHttpDataSource.Factory()
+                                .setUserAgent(Net.PLAYER_UA)
+                                .setDefaultRequestProperties(Net.playerHeaders())
+                                .setAllowCrossProtocolRedirects(true);
+                CountingDataSource.Sink sink = new CountingDataSource.Sink() {
+                    @Override public void add(long n) { bytes.addAndGet(n); }
+                };
+                final androidx.media3.exoplayer.ExoPlayer player =
+                        new androidx.media3.exoplayer.ExoPlayer.Builder(MultiActivity.this)
+                                .setMediaSourceFactory(
+                                        new androidx.media3.exoplayer.source.DefaultMediaSourceFactory(
+                                                new CountingDataSource.Factory(http, sink)))
+                                .build();
+                ex = player;
+                player.setVideoSurfaceView(surface);
+                player.setVolume(on ? 1f : 0f);
+                player.addListener(new androidx.media3.common.Player.Listener() {
+                    @Override public void onPlaybackStateChanged(int state) {
+                        if (player != ex) return;
+                        if (state == androidx.media3.common.Player.STATE_READY) {
+                            prepared = true;
+                            startedAt = System.currentTimeMillis();
+                            stalls = 0;
+                            label.setVisibility(View.GONE);
+                            AudioService.stop(MultiActivity.this);
+                            screenOffAudio = false;
+                        }
+                    }
+                    // "Hazır" görünüp görüntü vermeyen yayınları yakalamak için ilk kare bilgisi.
+                    @Override public void onRenderedFirstFrame() {
+                        if (player == ex) rendered = true;
+                    }
+                    @Override public void onPlayerError(androidx.media3.common.PlaybackException e) {
+                        if (player == ex) retry();
+                    }
+                });
+                player.setMediaItem(androidx.media3.common.MediaItem.fromUri(url));
+                player.prepare();
+                player.play();
+            } catch (Throwable e) {
                 retry();
             }
         }
@@ -657,8 +668,8 @@ public class MultiActivity extends android.app.Activity {
         /** İnternet geri geldi: boş/hatalı pencereyi kendiliğinden yeniden bağla. */
         void networkBack() {
             try {
-                if (mp != null && prepared && !failed) {
-                    try { if (mp.isPlaying()) return; } catch (Throwable ignored) { }
+                if (ex != null && prepared && !failed) {
+                    try { if (ex.isPlaying()) return; } catch (Throwable ignored) { }
                 }
                 gen++;
                 attempt = 0;
@@ -692,7 +703,7 @@ public class MultiActivity extends android.app.Activity {
 
         void check(long now) {
             if (!surfaceReady || failed) return;
-            if (mp == null) {
+            if (ex == null) {
                 if (startedAt > 0 && now - startedAt > 20000) retry();
                 return;
             }
@@ -704,8 +715,8 @@ public class MultiActivity extends android.app.Activity {
                 if (now - startedAt > 10000) retry();
                 return;
             }
-            int pos;
-            try { pos = mp.getCurrentPosition(); } catch (Exception e) { return; }
+            long pos;
+            try { pos = ex.getCurrentPosition(); } catch (Exception e) { return; }
             if (pos != lastPos) {
                 lastPos = pos;
                 lastPosAt = now;
@@ -723,8 +734,9 @@ public class MultiActivity extends android.app.Activity {
         }
 
         private void releasePlayer() {
-            try { if (mp != null) { mp.reset(); mp.release(); } } catch (Exception ignored) { }
-            mp = null;
+            final androidx.media3.exoplayer.ExoPlayer p = ex;
+            ex = null;
+            try { if (p != null) p.release(); } catch (Throwable ignored) { }
         }
 
         void release() {
@@ -863,21 +875,21 @@ public class MultiActivity extends android.app.Activity {
         if (isFinishing()) return;
         if (tracking) {
             tracking = false;
-            long bytes = Net.end();
+            flushMulti();
             int sec = (int) ((System.currentTimeMillis() - openedAt) / 1000);
             if (sec > 2) {
-                long per = bytes / Math.max(1, paneCount);
                 for (int i = 0; i < paneCount && i < slots.length; i++) {
+                    if (slots[i] == null) continue;
                     int ch = slots[i].chan;
                     if (ch >= 0 && ch < list.size())
-                        Prefs.addUsage(this, list.get(ch).url, per, sec);
+                        Prefs.addUsage(this, list.get(ch).url, 0, sec);
                 }
             }
         }
         // ekran kapaninca / uygulamadan cikinca sesli devam: sesi acik pencerenin akisi servise devredilir
         boolean wasPlaying = false;
         for (Slot s : slots) {
-            try { if (s.mp != null && s.mp.isPlaying()) wasPlaying = true; } catch (Exception ignored) { }
+            try { if (s.ex != null && s.ex.isPlaying()) wasPlaying = true; } catch (Throwable ignored) { }
         }
         if (wasPlaying) {
             int pick = 0;
@@ -888,7 +900,7 @@ public class MultiActivity extends android.app.Activity {
             screenOffAudio = true;
         }
         for (Slot s : slots) {
-            try { if (s.mp != null && s.mp.isPlaying()) s.mp.pause(); } catch (Exception ignored) { }
+            try { if (s.ex != null && s.ex.isPlaying()) s.ex.pause(); } catch (Throwable ignored) { }
         }
     }
 
@@ -897,13 +909,13 @@ public class MultiActivity extends android.app.Activity {
         super.onResume();
         foreground = true;
         for (Slot s : slots) {
-            try { if (s.mp != null && !s.mp.isPlaying()) s.mp.start(); } catch (Exception ignored) { }
+            try { if (s.ex != null && !s.ex.isPlaying()) s.ex.play(); } catch (Throwable ignored) { }
         }
         if (screenOffAudio) {
             screenOffAudio = false;
             AudioService.stop(this);
         }
-        if (!tracking) { tracking = true; openedAt = System.currentTimeMillis(); Net.begin(); }
+        if (!tracking) { tracking = true; openedAt = System.currentTimeMillis(); }
     }
 
     /** M-80: ağ geri gelince pencereleri kendiliğinden toparla. */
@@ -926,12 +938,6 @@ public class MultiActivity extends android.app.Activity {
 
     @Override
     protected void onDestroy() {
-        try {
-            if (pendingBytes > 0) {
-                Prefs.addUsage(this, "multi", pendingBytes, 0);
-                pendingBytes = 0;
-            }
-        } catch (Throwable ignored) { }
         ui.removeCallbacksAndMessages(null);
         if (recorder.isRunning()) recorder.stop();
         try {
