@@ -44,7 +44,7 @@ uygulamanın içinde hazır gelir; 50 ülkenin listesi istenirse sunucudan indir
 - Favoriler, ayarlar ve sayaçlar yalnız cihazda tutulur.
 - Teknik hata günlüğü cihazda tutulur; **günlük gönderimi** yalnız kullanıcı açarsa günde bir kez
   çalışır ve yalnızca teknik kayıtları gönderir.
-- Ayrıntı: <https://umay-multi-tv-gq3zer.freebuff.site/gizlilik-politikasi.html>
+- Ayrıntı: <https://umay-multi-tv-gq3zer.freebuff.site/gizlilik-politikasi>
 
 ## Derleme
 

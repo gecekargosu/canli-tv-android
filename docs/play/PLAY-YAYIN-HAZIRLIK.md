@@ -75,7 +75,7 @@ talep edebilir" → Evet** (e-posta ile; hesap olmadığı için cihaz verisi ku
 
 | Belge | Durum | Nerede |
 |---|---|---|
-| Gizlilik politikası (AdMob/UMP/Cloudflare/3. taraf yayıncılar) | ✅ 2.0 | `/gizlilik-politikasi.html` |
+| Gizlilik politikası (AdMob/UMP/Cloudflare/3. taraf yayıncılar) | ✅ 2.0 | `/gizlilik-politikasi` |
 | Kullanım koşulları | ✅ | `/kullanim-kosullari.html` |
 | Telif ve içerik kaldırma bildirimi (24–48 saat) | ✅ | `/telif-bildirimi.html` |
 | app-ads.txt | 🟡 | `site/public/app-ads.txt` yayında; **kök alan adı** gerekliliği için kendi alan adı (M-10) |

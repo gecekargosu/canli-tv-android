@@ -24,7 +24,7 @@ Console'da yapılabilecek** işleri ayırır. Kod/veri tarafında doğrulanmayan
 | Kayıt (telif) | ✅ | Yalnız TRT/TBMM/Diyanet |
 | Kanal listesi | ✅ | 126 kanal; lisanslı yabancılar ve alakasız kanallar çıkarıldı |
 | TV8 tokenlı adres | ✅ | Kaldırıldı; parametresiz TürkNet yansısı |
-| Gizlilik politikası | ✅ | `/gizlilik-politikasi.html` — reklam, hata günlüğü, veri saklama yazılı |
+| Gizlilik politikası | ✅ | `/gizlilik-politikasi` — reklam, hata günlüğü, veri saklama yazılı |
 | app-ads.txt | ✅ | `pub-7629051535337276` yayında |
 | Hata günlüğü | ✅ | Cihazda; otomatik gönderim **varsayılan kapalı**, kullanıcı açar |
 | Reklam geliri raporlaması | ✅ | SDK gösterimi kendisi raporlar; ayrı istemci kodu gerekmez |
