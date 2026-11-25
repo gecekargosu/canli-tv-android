@@ -140,6 +140,21 @@ Durum: ✅ doğru · 🟡 kısmen doğru / eksik · ❌ yanlış
   logcat'te `FATAL EXCEPTION` yok, `UmayAds: SDK hazir` görüldü.
 - Çıktılar: `releases/v9.88/UMAY-MULTI-TV-9.88.aab` ve `CanliTV-9.88.apk`.
 
+### TRT oynatma doğrulaması (cihaz, 25 Kasım 2026, 23:38–23:46)
+
+| Kanal | Sonuç | Kanıt |
+|---|---|---|
+| TRT 1 (`tv-trt1.medya.trt.com.tr`) | ✅ oynuyor | 3/6/9/12/16/22. saniyelerde alınan 6 görüntünün kare özeti **6 farklı değer** (video ilerliyor); odak `PlayerActivity`; `AudioTrack state:started 44100 Hz` |
+| TRT 2 (`tv-trt2...`) | ✅ oynuyor | 23:32 ve 23:38 görüntülerinde canlı kare, `queueBuffer fps≈25`, ses kanalı açık |
+| TRT Haber / TRT Müzik / TRT Türk / TRT Spor | ✅ kaynak sağlam | master 200, varyant playlist 633 B – 88 KB, segment 200 `video/MP2T` |
+
+> **Kaynak notu:** TRT 1, TRT 2 ve TRT Belgesel'in *varyant* playlist'i 648–895 KB
+> (≈14.000 segment, 24 saatlik pencere), diğer TRT kanallarında 633 B. Bu üç kanalda
+> açılış belirgin şekilde yavaş (playlist indirme + ayrıştırma). Uygulama 8 sn'de
+> "yavaş açılıyor" ipucu gösterip 20 sn'de yedek kaynağa geçiyor, akışı kesmiyor.
+> Kullanıcıda "açılmıyor" görünen durum bu gecikme olabilir; hangi TRT kanalı ve hangi
+> hata metni olduğu netleşirse kaynağa özel düzeltme yapılabilir.
+
 ### Claude raporu A-Z doğrulama (9.88 derlemesi + cihaz)
 
 | Rapor maddesi | Durum | Kanıt |
