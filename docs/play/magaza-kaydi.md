@@ -1,116 +1,129 @@
-# Play mağaza kaydı — kopyala/yapıştır metinler
+# Play mağaza kaydı — kopyala/yapıştır metinler (9.74)
 
 Play Console'da **Uygulama oluştur** ekranı açıldığında bu dosyadaki metinleri aynen kullan.
-Hepsi Play karakter sınırlarına uygundur (kısa açıklama 80, tam açıklama 4000).
+Karakter sınırları: ad 30, kısa açıklama 80, tam açıklama 4000.
 
 ## 1. Temel bilgiler
 
 | Alan | Değer |
 |---|---|
 | Uygulama adı (30) | `UMAY Multi TV: Canlı TV Radyo` |
-| Paket adı | `com.cengiz.canlitv` (AAB'den otomatik gelir, değiştirilemez) |
+| Paket adı | `com.cengiz.canlitv` (AAB'den gelir, değiştirilemez) |
 | Varsayılan dil | Türkçe |
-| Kategori | Eğlence (Video oynatıcılar ve editörler de olabilir) |
+| Kategori | Eğlence |
 | Etiketler | canlı tv, tv, radyo, haber, spor |
 | Geliştirici adı | YABANARISI |
 | E-posta | cengizkilic1980@gmail.com |
 | Gizlilik politikası | https://umay-multi-tv-gq3zer.freebuff.site/gizlilik-politikasi |
+| Kullanım koşulları | https://umay-multi-tv-gq3zer.freebuff.site/kullanim-kosullari |
+| Telif / kaldırma | https://umay-multi-tv-gq3zer.freebuff.site/telif-bildirimi |
 | Web sitesi | https://umay-multi-tv-gq3zer.freebuff.site |
 
 ## 2. Kısa açıklama (80 karakter)
 
 ```
-145 canlı TV kanalı ve 32 radyo: kanal numarası, favoriler, 3'lü izleme, kayıt.
+120+ canlı TV kanalı ve radyo: numaralı kanal, favoriler, 3'lü izleme, uyku modu.
 ```
 
 ## 3. Tam açıklama (kopyala)
 
 ```
-UMAY Multi TV, Türkiye'nin ve dünyanın canlı TV kanallarını ve popüler radyolarını tek
+UMAY Multi TV, Türkiye'nin ve dünyanın canlı TV kanallarını ve radyolarını tek
 uygulamada toplar. Kumanda alışkanlığına uygun numaralı kanal sistemi, favoriler ve
-çoklu izleme ile hızlı bir TV deneyimi sunar.
+çoklu izleme ile hızlı bir TV deneyimi sunar. Hesap açman gerekmez.
 
 🔢 NUMARALI KANAL (KUMANDA GİBİ)
-Üstteki No kutusuna kanal numarasını yaz, Git'e bas: kanal hemen açılır. 145 kanal
-Türkçe/yabancı ve tür olarak gruplanmıştır.
+Üstteki No kutusuna kanal numarasını yaz, Git'e bas: kanal hemen açılır.
+Kanallar Türkçe/yabancı ve türe göre gruplanmıştır.
 
-📺 145 CANLI KANAL
-TRT 1, TRT 2, TRT Spor, TV8, ATV, Star TV, Kanal D, Haber Global,
-NTV, A Haber, Halk TV, Kanal 7, TRT Müzik, TRT Çocuk ve çok daha fazlası.
-🌍 Ülke seç: 50 ülkenin kanalları listeye eklenir (Türkiye gömülü, internet gerekmez).
+📺 120'DEN FAZLA CANLI KANAL
+Ulusal, haber, spor, müzik, çocuk ve belgesel kanalları; ayrıca 50 ülkenin listesi.
+Ülke seç: seçtiğin ülkenin kanalları listeye eklenir (Türkiye listesi gömülü,
+internet gerekmez).
 
 📻 RADYO
-32 Türk radyosu: TRT, Kral, Süper FM, Metro FM, Power, Joy FM, Radyo 7, Karadeniz FM...
-Ülke değiştirince o ülkenin en çok dinlenen istasyonları listelenir.
+Türk radyoları tek listede. Ülke değiştirince o ülkenin istasyonları gelir.
 Ekran kilitliyken de çalar (arka plan sesi + bildirim).
 
 ▦ 3'LÜ / 4'LÜ İZLEME
-Aynı anda 3 veya 4 kanalı izle; her pencerenin sesini ayrı aç/kapat, pencereye dokununca
-o kanal solo olur. Setlerini kaydet, sonra tek dokunuşla geri yükle.
+Aynı anda 3 veya 4 kanalı izle; her pencerenin sesini ayrı aç/kapat. Setlerini
+kaydet, sonra tek dokunuşla geri yükle.
 
 ✏️ LİSTE SENİN
-Uzun bas → listeye gizle, sürükle-bırakla sırala, numara değiştir, favorilere ekle.
+Uzun bas → listeye gizle, sırala, numara değiştir, favorilere ekle.
 Kalite seç (360p/480p/720p/1080p), veri tasarrufu ve günlük internet limiti.
+Kanalda seçtiğin kalite yoksa uygulama en düşük mevcut kaliteye geçer ve bunu söyler.
 
-⏺ KAYIT
-Yayını sesiyle birlikte telefona kaydet (Movies/TV-Kayitlari), uygulama içinden izle.
+⏺ KAYIT (KAMU KANALLARI)
+TRT, TBMM ve Diyanet gibi kamu yayınlarını sesiyle birlikte telefona kaydet
+(Movies/TV-Kayitlari). Özel kanallarda telif nedeniyle kayıt kapalıdır.
 
 😴 UYKU ZAMANLAYICISI
-15/30/45/60/90/120 dakika veya saat gir; süre dolunca uygulama kapanır.
+15/30/45/60/90/120 dakika veya saat gir; süre dolunca yayın kapanır.
 
 🌐 4 DİL
-Türkçe, English, Русский, العربية. Menüler seçtiğin dilde.
+Türkçe, English, Русский, العربية.
 
 👤 HESAP GEREKMEZ
 Ne e-posta ne Google hesabı istenir; bütün özellikler açıktır.
+İstersen hata günlüğünü (varsayılan kapalı) açıp bize gönderebilirsin.
 
 NEDEN ÜCRETSİZ?
-Uygulama reklamla ayakta kalır: liste altında küçük bir banner ve seyrek geçiş reklamı.
-Video izleyip 15 dakika reklamsız (video reklamı kalkar, banner kalır) kullanabilirsin. Yayının üstüne reklam binmez,
-oynatma reklamla kesilmez.
+Uygulama reklamla ayakta kalır: liste altında küçük bir banner ve seyrek geçiş
+reklamı. Yayının üstüne reklam binmez, oynatma reklamla kesilmez. İstersen ödüllü
+reklam izleyip 15 dakika geçiş reklamlarını kapatabilirsin.
 
-NOT: Kanallar yayıncıların halka açık akışlarıdır; yayınlar zaman zaman kaldırılabilir.
-Uygulamada kanal barındırılmaz. Geri bildirimin için: cengizkilic1980@gmail.com
+İÇERİK VE TELİF
+Kanallar yayıncıların halka açık akışlarıdır; uygulamada kanal barındırılmaz.
+Yayınlar zaman zaman kaldırılabilir veya adres değiştirebilir. Hak sahibi bir
+yayının kaldırılmasını isterse 48 saat içinde listeden çıkarılır:
+umay-multi-tv-gq3zer.freebuff.site/telif-bildirimi
+
+Geri bildirim: cengizkilic1980@gmail.com
 ```
 
-## 4. Görseller (hazır dosyalar)
+## 4. Görseller
 
-| Play alanı | Ölçü | Dosya |
-|---|---|---|
-| Uygulama ikonu | 512×512 | `docs/play/ikon-512.png` |
-| Öne çıkan görsel | 1024×500 | `docs/play/one-cikan-1024x500.png` |
-| Telefon ekran görüntüsü (en az 2) | 1080×1920 önerilir | `docs/play/v9-reklam.png`, `docs/play/v8-oynatici.png`, `docs/play/v7-ana.png`, `docs/play/v7-ana2.png` |
+| Play alanı | Ölçü | Dosya | Durum |
+|---|---|---|---|
+| Uygulama ikonu | 512×512 | `docs/play/ikon-512.png` | ✅ |
+| Öne çıkan görsel | 1024×500 | `docs/play/one-cikan-1024x500.png` | ✅ 9.74'te yenilendi |
+| Telefon ekran görüntüsü 1 | 1280×2342 | `docs/play/ekran-9.74-1-ana.png` | ✅ |
+| Telefon ekran görüntüsü 2 | 1280×2632 | `docs/play/ekran-9.74-2-oynatici.png` | ✅ |
+| Telefon ekran görüntüsü 3 | 1280×2342 | `docs/play/ekran-9.74-3-radyo.png` | ✅ |
 
-Ekran görüntüsü sayısı 2–8 arası; ilk ikisi en çok indirme getirir
-(1: ana ekran + kanal listesi, 2: oynatıcı).
+Not: ekran görüntülerinde reklam şeridi kırpıldı; uygulama arayüzü ve gerçek
+kanal/istasyon listesi görünüyor. Play en az 2, en çok 8 telefon görüntüsü kabul eder.
 
 ## 5. Mağaza formu cevapları
 
 - **Reklam içeriyor mu?** Evet (banner + geçiş + ödüllü).
 - **Uygulama içi satın alma?** Hayır.
-- **Hedef kitle:** 13+ (çocuklara özel değil). "Çocuklara yönelik" seçilmezse
-  Aile politikası ek formu gerekmez.
-- **İçerik derecelendirmesi anketi:** Şiddet/cinsellik/kumar yok; kullanıcı etkileşimi yok;
-  "kullanıcılar arası iletişim" yok. Sonuç genelde "3+ / Herkes".
-- **Veri güvenliği (Data safety):**
-  - Toplanan: **E-posta adresi** (isteğe bağlı hesap) — "Uygulama işlevi" + "Hesap yönetimi".
-  - Şifre: cihazda PBKDF2 ile özetlenir, sunucuya düz gitmez → "Toplanmıyor" olarak beyan edilir.
-  - Reklam kimliği: AdMob SDK kullanıldığı için "Reklam veya pazarlama" amaçlı **cihaz kimlikleri**
-    toplanır → evet.
-  - Veriler şifreli iletişimle (HTTPS) aktarılır, silme talebi e-posta ile karşılanır.
-- **Hükümet uygulaması / finans / sağlık:** Hayır.
-- **Haber uygulaması mı?** Hayır (canlı TV/radyo).
-- **TV cihazı desteği:** İsteğe bağlı; şimdilik telefon/tablet yeterli.
+- **Hedef kitle:** 18+ (çocuklara yönelik değil).
+- **Haber uygulaması mı?** Hayır (canlı TV/radyo oynatıcı).
+- **Hükümet / finans / sağlık:** Hayır.
+- **İçerik derecelendirmesi:** Şiddet, cinsellik, kumar, kullanıcılar arası iletişim,
+  kullanıcı içeriği paylaşımı yok. Uygulama içeriği canlı yayınlardan gelir; derecelendirme
+  anketinde "canlı yayın içeriği" notu düşülebilir.
+- **Veri güvenliği:** aşağıdaki tabloyu birebir gir.
 
-## 6. Üst sıralarda çıkmak için (ASO) — sırayla
+### Veri güvenliği tablosu (kodla aynı)
 
-1. **Başlıkta anahtar kelime:** "UMAY Multi TV: Canlı TV Radyo" (marka + 2 kelime).
-2. **Kısa açıklamada sayı:** "145 kanal", "32 radyo" tıklama oranını artırır.
-3. **İlk 2 ekran görüntüsü:** ana ekran ve oynatıcı; üzerine kısa yazı eklenirse
-   (Canva'da 1080×1920) dönüşüm yükselir.
-4. **Yorum isteme:** Ayarlar → ⭐ Bizi değerlendir satırı hazır; ilk hafta 10+ yorum
-   sıralamayı belirgin etkiler. Yorumlara 48 saat içinde cevap ver.
-5. **Güncelleme sıklığı:** 2–4 haftada bir sürüm (Play yeni sürümleri üste taşır).
-6. **ANAhtar kelimeler:** açıklamada doğal geçsin: canlı tv, tv izle, radyo dinle,
-   kanal listesi, haber, spor, çocuk kanalları, ücretsiz tv.
-7. **Kırılmayı önle:** kanal listesini güncel tut (⚙ → Tüm kanalları test et).
+| Veri türü | Toplanıyor | Paylaşılıyor | Amaç | Not |
+|---|---|---|---|---|
+| Reklam kimliği (AD_ID) | Evet | Evet (Google AdMob) | Reklam/ölçüm | Uygulama kendi sunucusuna göndermez |
+| Cihaz kimliği | Evet (isteğe bağlı) | Hayır | Uygulama işlevi | Yalnız "günlük gönderimi" açılırsa; rastgele Android ID |
+| Çökme günlükleri | Evet (isteğe bağlı) | Hayır | Hata ayıklama | Varsayılan KAPALI, günde en fazla 1 |
+| Konum, ad, e-posta, ödeme, sağlık, mesaj, dosya | Hayır | — | — | Hesap ve ödeme yok |
+
+İşaretle: **"Veriler aktarım sırasında şifrelenir" → Evet**;
+**"Kullanıcı verilerinin silinmesini talep edebilir" → Evet** (e-posta ile).
+
+## 6. Yükleme sırası
+
+1. Play Console → Uygulama oluştur (ad, dil, ücretsiz).
+2. Mağaza kaydı: metinler + ikon + öne çıkan görsel + 3 ekran görüntüsü.
+3. Uygulama içeriği: reklamlar, hedef kitle, içerik derecelendirme, veri güvenliği.
+4. Kapalı test → `releases/v9.74/UMAY-MULTI-TV-9.74.aab` (versionCode 83).
+5. En az 12 tester, 14 gün kesintisiz → üretim erişimi başvurusu.
+6. Onay sonrası üretim → aynı AAB → inceleme.

@@ -1,6 +1,6 @@
 # Play Store yayını — resmî/evrak hazırlık kontrol listesi
 
-**Sürüm:** 9.44 · **Paket:** `com.cengiz.canlitv` · **Tarih:** 24 Kasım 2026
+**Sürüm:** 9.74 (83) · **Paket:** `com.cengiz.canlitv` · **Tarih:** 25 Kasım 2026
 **Amaç:** Play incelemesinde takılmamak için gereken belge, beyan ve metinlerin tek listesi.
 
 Durum: ✅ hazır · 🟡 kısmen · 👤 senin yapman gereken (Play Console / hesap)
@@ -11,11 +11,11 @@ Durum: ✅ hazır · 🟡 kısmen · 👤 senin yapman gereken (Play Console / h
 
 | Konu | Durum | Not |
 |---|---|---|
-| AAB (Android App Bundle) | ✅ | `make-aab.sh` → `CanliTV.aab` |
+| AAB (Android App Bundle) | ✅ | `releases/v9.74/UMAY-MULTI-TV-9.74.aab` (6,78 MB) |
 | targetSdk | ✅ | 36 (Play 2026 şartını karşılıyor) |
 | minSdk | ✅ | 26 (Android 8+) |
 | İmza | ✅ | Yükleme anahtarı `CN=UMAY Multi TV`; Play App Signing açılmalı |
-| `versionCode` artışı | ✅ | 53 (9.44) |
+| `versionCode` artışı | ✅ | 83 (9.74) |
 | 64-bit | ✅ | mimari bağımsız Java/Kotlin |
 | İzin gerekçeleri | ✅ | POST_NOTIFICATIONS, INTERNET, ACCESS_NETWORK_STATE; hassas izin yok |
 | Cleartext | ✅ | Varsayılan HTTPS, yalnız beyaz listedeki eski HTTP radyo alan adları |
@@ -30,8 +30,8 @@ Durum: ✅ hazır · 🟡 kısmen · 👤 senin yapman gereken (Play Console / h
 | Kısa açıklama (80) | `docs/play/magaza-kaydi.md` | ✅ |
 | Tam açıklama | Aynı dosya (145 kanal · 22+ radyo · 3'lü izleme) | ✅ |
 | Uygulama ikonu 512×512 | `docs/play/ikon-512.png` | ✅ |
-| Öne çıkan görsel 1024×500 | `docs/play/one-cikan-1024x500.png` | 🟡 yenilenmeli (reklam/3. taraf kare yok) |
-| Telefon ekran görüntüleri | `docs/play/v9-reklam.png`, `v91-radyo.png` | 🟡 reklamsız yeni set çekilmeli |
+| Öne çıkan görsel 1024×500 | `docs/play/one-cikan-1024x500.png` | ✅ 9.74 (120+ kanal · 25 radyo, reklamsız) |
+| Telefon ekran görüntüleri | `docs/play/ekran-9.74-1-ana.png`, `-2-oynatici.png`, `-3-radyo.png` | ✅ 9.74 (reklam şeridi kırpıldı) |
 | Kategori | Eğlence (Video oynatıcı/Medya) | 👤 |
 | İletişim e-postası | cengizkilic1980@gmail.com | ✅ |
 | Web sitesi | https://umay-multi-tv-gq3zer.freebuff.site | ✅ |
@@ -88,7 +88,7 @@ talep edebilir" → Evet** (e-posta ile; hesap olmadığı için cihaz verisi ku
 1. Play Console → yeni uygulama → **Uygulama imzalama** (Play App Signing) aç.
 2. Mağaza kaydını B bölümündeki metinlerle doldur, görselleri yükle (reklamsız yeni set).
 3. C bölümündeki beyanları ve Data safety tablosunu birebir gir.
-4. **Kapalı test** (en az 12 test kullanıcısı, 14 gün) → `docs/play/kapali-test.md`.
+4. **Kapalı test** (en az 12 tester, 14 gün kesintisiz) → `docs/play/kapali-test.md`.
 5. Üretime geçiş: AAB yükle → inceleme → yayın.
 6. Yayından sonra: güncellemeler yeni `versionCode` ile; aynı imza.
 
