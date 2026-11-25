@@ -5,7 +5,7 @@ Hepsi GitHub Releases sayfasında:
 
 **https://github.com/gecekargosu/canli-tv-android/releases**
 
-- En son sürüm: `v9.88` — `CanliTV-9.88.apk`, `UMAY-MULTI-TV-9.88.aab` (Play).
+- En son sürüm: `v9.89` — `CanliTV-9.89.apk`, `UMAY-MULTI-TV-9.89.aab` (Play).
 - İndirme sayfası: https://umay-multi-tv-gq3zer.freebuff.site/indir
 - Sürüm notları: `releases/vX.YY/SURUM-NOTLARI.md`
 
@@ -14,6 +14,22 @@ Site production güncellendi: gizlilik/kullanım metinleri yeni abonelik bölüm
 `/indir` artık **9.88**'i indiriyor. APK telefona kuruldu (97 / 9.88).
 Kaynak yedeği: `YEDEK/UMAY-MULTI-TV-9.88-2026-11-25/` ve aynı adlı `.tar.gz`
 (imza anahtarı `upload-keystore.jks` + `keystore.properties` dahil).
+
+## v9.89 — yedek kaynaklar, radyo listesi düzeltmesi, sade satır
+
+- **Yedek kaynak altyapısı:** `assets/backup_tr.json` ile **25 kanalın 94 doğrulanmış yedek
+  adresi** (360p/480p/720p/1080p varyantları) uygulamaya gömüldü. Asıl adres açılmazsa
+  sırayla yedekler denenir (`ChannelRepo.fallbacks`, tekli + çoklu ekran).
+- **Radyo yedeği:** `assets/backup_radio.json` — 13 istasyon için 19 yedek adres;
+  `AudioService` artık denemeler bitince yedek adrese geçiyor.
+- **Radyo listesi 24'e düşüyordu:** 2 kez açılmayan istasyon listeden tamamen kalkıyordu
+  (TRT Radyo 1 bu yüzden görünmüyordu). Kural kaldırıldı; istasyonlar ⚠ ile listede kalır,
+  yalnız kullanıcı "listeden gizle" derse kalkar.
+- **Ölü TV adresleri değiştirildi:** 13 kanalın ölü yayını (socialsmart/rocketcdn) yerine
+  doğrulanmış kaynaklar eklendi: TRT 3, TRT Arabi, TRT World, ATV Alanya, Bengütürk TV,
+  Bi Kanal, Cine 1, Hunat TV, KRT, Pati TV, Power TV, TV 41, Grand Cinema.
+- **Liste satırı sadeleşti:** harf rozeti (A/T/S…) kaldırıldı; satırda numara + kanal adı
+  + oynat düğmesi kaldı.
 
 ## v9.88 — Play kontrol listesi kapatıldı, R8, 120 kanal
 

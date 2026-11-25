@@ -1,4 +1,4 @@
-# Play mağaza kaydı — kopyala/yapıştır metinler (9.88 / kod 97)
+# Play mağaza kaydı — kopyala/yapıştır metinler (9.89 / kod 98)
 
 Play Console'da **Uygulama oluştur** ekranı açıldığında bu dosyadaki metinleri aynen kullan.
 Karakter sınırları: ad 30, kısa açıklama 80, tam açıklama 4000.
@@ -127,6 +127,6 @@ kanal/istasyon listesi görünüyor. Play en az 2, en çok 8 telefon görüntüs
 1. Play Console → Uygulama oluştur (ad, dil, ücretsiz).
 2. Mağaza kaydı: metinler + ikon + öne çıkan görsel + 3 ekran görüntüsü.
 3. Uygulama içeriği: reklamlar, hedef kitle, içerik derecelendirme, veri güvenliği.
-4. Kapalı test → `releases/v9.88/UMAY-MULTI-TV-9.88.aab` (versionCode 97).
+4. Kapalı test → `releases/v9.89/UMAY-MULTI-TV-9.89.aab` (versionCode 98).
 5. En az 12 tester, 14 gün kesintisiz → üretim erişimi başvurusu.
 6. Onay sonrası üretim → aynı AAB → inceleme.

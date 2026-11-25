@@ -1,0 +1,146 @@
+{
+ "https://tv-trt1.medya.trt.com.tr/master.m3u8": [
+  "https://tv-trt1.medya.trt.com.tr/master_480.m3u8",
+  "https://tv-trt1.medya.trt.com.tr/master_720.m3u8",
+  "https://tv-trt1.medya.trt.com.tr/master_360.m3u8",
+  "https://tv-trt1.medya.trt.com.tr/master_1080.m3u8"
+ ],
+ "https://tv-trt2.medya.trt.com.tr/master.m3u8": [
+  "https://tv-trt2.medya.trt.com.tr/master_1080.m3u8",
+  "https://tv-trt2.medya.trt.com.tr/master_480.m3u8",
+  "https://tv-trt2.medya.trt.com.tr/master_360.m3u8",
+  "https://tv-trt2.medya.trt.com.tr/master_720.m3u8"
+ ],
+ "https://tv-trthaber.medya.trt.com.tr/master.m3u8": [
+  "https://tv-trthaber.medya.trt.com.tr/master_1080.m3u8",
+  "https://tv-trthaber.medya.trt.com.tr/master_720.m3u8",
+  "https://tv-trthaber.medya.trt.com.tr/master_480.m3u8",
+  "https://tv-trthaber.medya.trt.com.tr/master_360.m3u8"
+ ],
+ "https://tv-trtspor1.medya.trt.com.tr/master.m3u8": [
+  "https://tv-trtspor1.medya.trt.com.tr/master_720.m3u8",
+  "https://tv-trtspor1.medya.trt.com.tr/master_1080.m3u8",
+  "https://tv-trtspor1.medya.trt.com.tr/master_480.m3u8",
+  "https://tv-trtspor1.medya.trt.com.tr/master_360.m3u8"
+ ],
+ "https://livetv.radyotvonline.net/kanal7live/kanal7avr/playlist.m3u8": [
+  "https://livetv.radyotvonline.net/kanal7live/kanal7avr/playlist_1080.m3u8",
+  "https://livetv.radyotvonline.net/kanal7live/kanal7avr/playlist_720.m3u8",
+  "https://livetv.radyotvonline.net/kanal7live/kanal7avr/playlist_360.m3u8",
+  "https://livetv.radyotvonline.net/kanal7live/kanal7avr/playlist_480.m3u8"
+ ],
+ "https://tv-trtbelgesel.medya.trt.com.tr/master.m3u8": [
+  "https://tv-trtbelgesel.medya.trt.com.tr/master_1080.m3u8",
+  "https://tv-trtbelgesel.medya.trt.com.tr/master_720.m3u8",
+  "https://tv-trtbelgesel.medya.trt.com.tr/master_480.m3u8",
+  "https://tv-trtbelgesel.medya.trt.com.tr/master_360.m3u8"
+ ],
+ "https://tv-trtavaz.medya.trt.com.tr/master.m3u8": [
+  "https://tv-trtavaz.medya.trt.com.tr/master_720.m3u8",
+  "https://tv-trtavaz.medya.trt.com.tr/master_1080.m3u8",
+  "https://tv-trtavaz.medya.trt.com.tr/master_360.m3u8",
+  "https://tv-trtavaz.medya.trt.com.tr/master_480.m3u8"
+ ],
+ "https://api-tv3.yayin.com.tr/postatv/postatv/playlist.m3u8": [
+  "https://api-tv3.yayin.com.tr/postatv/postatv/playlist_1080.m3u8",
+  "https://api-tv3.yayin.com.tr/postatv/postatv/playlist_480.m3u8",
+  "https://api-tv3.yayin.com.tr/postatv/postatv/playlist_360.m3u8",
+  "https://api-tv3.yayin.com.tr/postatv/postatv/playlist_720.m3u8"
+ ],
+ "http://1.rtmp.org/tv217/yayin.stream/playlist.m3u8": [
+  "http://1.rtmp.org/tv217/yayin.stream/playlist_720.m3u8",
+  "http://1.rtmp.org/tv217/yayin.stream/playlist_1080.m3u8",
+  "http://1.rtmp.org/tv217/yayin.stream/playlist_480.m3u8",
+  "http://1.rtmp.org/tv217/yayin.stream/playlist_360.m3u8"
+ ],
+ "https://603c568fccdf5.streamlock.net/live/dhaweb1_C5efC/playlist.m3u8": [
+  "https://603c568fccdf5.streamlock.net/live/dhaweb1_C5efC/playlist_720.m3u8",
+  "https://603c568fccdf5.streamlock.net/live/dhaweb1_C5efC/playlist_1080.m3u8",
+  "https://603c568fccdf5.streamlock.net/live/dhaweb1_C5efC/playlist_360.m3u8",
+  "https://603c568fccdf5.streamlock.net/live/dhaweb1_C5efC/playlist_480.m3u8"
+ ],
+ "https://win29.yayin.com.tr/erzurumwebtv/erzurumwebtv/iptvdelisi.m3u8": [
+  "https://win29.yayin.com.tr/erzurumwebtv/erzurumwebtv/iptvdelisi_720.m3u8",
+  "https://win29.yayin.com.tr/erzurumwebtv/erzurumwebtv/iptvdelisi_480.m3u8",
+  "https://win29.yayin.com.tr/erzurumwebtv/erzurumwebtv/iptvdelisi_360.m3u8",
+  "https://win29.yayin.com.tr/erzurumwebtv/erzurumwebtv/iptvdelisi_1080.m3u8"
+ ],
+ "https://yayin30.haber100.com/live/finansturk/playlist.m3u8": [
+  "https://yayin30.haber100.com/live/finansturk/playlist_1080.m3u8",
+  "https://yayin30.haber100.com/live/finansturk/playlist_480.m3u8",
+  "https://yayin30.haber100.com/live/finansturk/playlist_720.m3u8",
+  "https://yayin30.haber100.com/live/finansturk/playlist_360.m3u8"
+ ],
+ "https://b01c02nl.mediatriple.net/videoonlylive/mtkgeuihrlfwlive/u_stream_5c9e18f9cea15_1/playlist.m3u8": [
+  "https://b01c02nl.mediatriple.net/videoonlylive/mtkgeuihrlfwlive/u_stream_5c9e18f9cea15_1/playlist_720.m3u8",
+  "https://b01c02nl.mediatriple.net/videoonlylive/mtkgeuihrlfwlive/u_stream_5c9e18f9cea15_1/playlist_480.m3u8",
+  "https://b01c02nl.mediatriple.net/videoonlylive/mtkgeuihrlfwlive/u_stream_5c9e18f9cea15_1/playlist_1080.m3u8",
+  "https://b01c02nl.mediatriple.net/videoonlylive/mtkgeuihrlfwlive/u_stream_5c9e18f9cea15_1/playlist_360.m3u8"
+ ],
+ "https://b01c02nl.mediatriple.net/videoonlylive/mtkgeuihrlfwlive/u_stream_5c9e198784bdc_1/playlist.m3u8": [
+  "https://b01c02nl.mediatriple.net/videoonlylive/mtkgeuihrlfwlive/u_stream_5c9e198784bdc_1/playlist_480.m3u8",
+  "https://b01c02nl.mediatriple.net/videoonlylive/mtkgeuihrlfwlive/u_stream_5c9e198784bdc_1/playlist_720.m3u8",
+  "https://b01c02nl.mediatriple.net/videoonlylive/mtkgeuihrlfwlive/u_stream_5c9e198784bdc_1/playlist_360.m3u8",
+  "https://b01c02nl.mediatriple.net/videoonlylive/mtkgeuihrlfwlive/u_stream_5c9e198784bdc_1/playlist_1080.m3u8"
+ ],
+ "https://b01c02nl.mediatriple.net/videoonlylive/mtkgeuihrlfwlive/u_stream_5c9e2aa8acf44_1/playlist.m3u8": [
+  "https://b01c02nl.mediatriple.net/videoonlylive/mtkgeuihrlfwlive/u_stream_5c9e2aa8acf44_1/playlist_1080.m3u8",
+  "https://b01c02nl.mediatriple.net/videoonlylive/mtkgeuihrlfwlive/u_stream_5c9e2aa8acf44_1/playlist_720.m3u8",
+  "https://b01c02nl.mediatriple.net/videoonlylive/mtkgeuihrlfwlive/u_stream_5c9e2aa8acf44_1/playlist_480.m3u8",
+  "https://b01c02nl.mediatriple.net/videoonlylive/mtkgeuihrlfwlive/u_stream_5c9e2aa8acf44_1/playlist_360.m3u8"
+ ],
+ "https://b01c02nl.mediatriple.net/videoonlylive/mtkgeuihrlfwlive/broadcast_5c9e17cd59e8b.smil/playlist.m3u8": [
+  "https://b01c02nl.mediatriple.net/videoonlylive/mtkgeuihrlfwlive/broadcast_5c9e17cd59e8b.smil/playlist_720.m3u8",
+  "https://b01c02nl.mediatriple.net/videoonlylive/mtkgeuihrlfwlive/broadcast_5c9e17cd59e8b.smil/playlist_1080.m3u8",
+  "https://b01c02nl.mediatriple.net/videoonlylive/mtkgeuihrlfwlive/broadcast_5c9e17cd59e8b.smil/playlist_360.m3u8",
+  "https://b01c02nl.mediatriple.net/videoonlylive/mtkgeuihrlfwlive/broadcast_5c9e17cd59e8b.smil/playlist_480.m3u8"
+ ],
+ "https://livetv.powerapp.com.tr/powerTV/powerhd.smil/playlist.m3u8": [
+  "https://livetv.powerapp.com.tr/powerTV/powerhd.smil/playlist_480.m3u8",
+  "https://livetv.powerapp.com.tr/powerTV/powerhd.smil/playlist_360.m3u8",
+  "https://livetv.powerapp.com.tr/powerTV/powerhd.smil/playlist_1080.m3u8",
+  "https://livetv.powerapp.com.tr/powerTV/powerhd.smil/playlist_720.m3u8"
+ ],
+ "https://tv-e-okul01.medya.trt.com.tr/master.m3u8": [
+  "https://tv-e-okul01.medya.trt.com.tr/master_720.m3u8",
+  "https://tv-e-okul01.medya.trt.com.tr/master_480.m3u8"
+ ],
+ "https://tv-e-okul00.medya.trt.com.tr/master.m3u8": [
+  "https://tv-e-okul00.medya.trt.com.tr/master_720.m3u8",
+  "https://tv-e-okul00.medya.trt.com.tr/master_480.m3u8"
+ ],
+ "https://tv-trtgenc.medya.trt.com.tr/master.m3u8": [
+  "https://tv-trtgenc.medya.trt.com.tr/master_1080.m3u8",
+  "https://tv-trtgenc.medya.trt.com.tr/master_480.m3u8",
+  "https://tv-trtgenc.medya.trt.com.tr/master_720.m3u8",
+  "https://tv-trtgenc.medya.trt.com.tr/master_360.m3u8"
+ ],
+ "https://tv-trtkurdi.medya.trt.com.tr/master.m3u8": [
+  "https://tv-trtkurdi.medya.trt.com.tr/master_1080.m3u8",
+  "https://tv-trtkurdi.medya.trt.com.tr/master_720.m3u8",
+  "https://tv-trtkurdi.medya.trt.com.tr/master_480.m3u8",
+  "https://tv-trtkurdi.medya.trt.com.tr/master_360.m3u8"
+ ],
+ "https://tv-e-okul02.medya.trt.com.tr/master.m3u8": [
+  "https://tv-e-okul02.medya.trt.com.tr/master_480.m3u8",
+  "https://tv-e-okul02.medya.trt.com.tr/master_720.m3u8"
+ ],
+ "https://tv-trtmuzik.medya.trt.com.tr/master.m3u8": [
+  "https://tv-trtmuzik.medya.trt.com.tr/master_1080.m3u8",
+  "https://tv-trtmuzik.medya.trt.com.tr/master_720.m3u8",
+  "https://tv-trtmuzik.medya.trt.com.tr/master_480.m3u8",
+  "https://tv-trtmuzik.medya.trt.com.tr/master_360.m3u8"
+ ],
+ "https://tv-trtturk.medya.trt.com.tr/master.m3u8": [
+  "https://tv-trtturk.medya.trt.com.tr/master_1080.m3u8",
+  "https://tv-trtturk.medya.trt.com.tr/master_720.m3u8",
+  "https://tv-trtturk.medya.trt.com.tr/master_480.m3u8",
+  "https://tv-trtturk.medya.trt.com.tr/master_360.m3u8"
+ ],
+ "http://m.live.net.sa:1935/live/quran/gmswf.m3u8": [
+  "http://m.live.net.sa:1935/live/quran/gmswf_1080.m3u8",
+  "http://m.live.net.sa:1935/live/quran/gmswf_480.m3u8",
+  "http://m.live.net.sa:1935/live/quran/gmswf_360.m3u8",
+  "http://m.live.net.sa:1935/live/quran/gmswf_720.m3u8"
+ ]
+}

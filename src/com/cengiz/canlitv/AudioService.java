@@ -393,6 +393,30 @@ public class AudioService extends Service {
     private boolean preparedOk = false;
     private boolean retryPending = false;
     private int passiveTries = 0;
+
+    /** 9.89: aynı istasyonun yedek adresleri (assets/backup_radio.json). */
+    private String fbBase = null;
+    private int fbIdx = 0;
+
+    /** Yedek adres varsa sıradakini dener; denendi ise true. */
+    private boolean tryFallback() {
+        try {
+            String[] alts = RadioRepo.fallbacks(this, fbBase);
+            if (alts == null || fbIdx >= alts.length) return false;
+            String alt = alts[fbIdx++];
+            if (alt == null || alt.trim().isEmpty()) return false;
+            CrashLog.event(this, "radio", "yedek adres deneniyor: " + alt);
+            notifyText("Yedek yayın deneniyor…");
+            currentUrl = alt;
+            attempt = 0;
+            passiveTries = 0;
+            retryPending = false;
+            attemptPlay(alt);
+            return true;
+        } catch (Throwable t) {
+            return false;
+        }
+    }
     private long playStartedAt = 0;
     private final android.os.Handler ui = new android.os.Handler(android.os.Looper.getMainLooper());
     private long sleepAt = 0;
@@ -515,6 +539,8 @@ public class AudioService extends Service {
         attempt = 0;
         passiveTries = 0;
         retryPending = false;
+        fbBase = url;
+        fbIdx = 0;
         httpsTried = url != null && url.startsWith("https://");
         attemptPlay(url);
     }
@@ -552,6 +578,8 @@ public class AudioService extends Service {
                     }
                 }, 15000L);
             } else {
+                // 9.89: aynı istasyonun yedek adresi varsa onu dene, sonra pes et.
+                if (tryFallback()) return;
                 notifyText("Yayın açılamadı (bağlantı) · ⏭ ile başka istasyon");
             }
         }

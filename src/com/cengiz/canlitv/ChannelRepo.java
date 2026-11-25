@@ -61,6 +61,41 @@ public class ChannelRepo {
         return n.startsWith("TRT") || n.contains("TBMM") || n.contains("DIYANET");
     }
 
+    /** assets/backup_tr.json bir kez okundu mu? */
+    private static boolean backupsLoaded = false;
+
+    /**
+     * 9.89: doğrulanmış yedek adresler (assets/backup_tr.json).
+     * Aynı kanalın diğer varyantları (360p/480p/720p/1080p) burada tutulur;
+     * asıl adres açılmazsa sırayla denenir.
+     */
+    private static void loadBackups(Context c) {
+        if (backupsLoaded) return;
+        backupsLoaded = true;
+        java.io.InputStream in = null;
+        try {
+            in = c.getAssets().open("backup_tr.json");
+            java.io.ByteArrayOutputStream bo = new java.io.ByteArrayOutputStream();
+            byte[] buf = new byte[4096];
+            int n;
+            while ((n = in.read(buf)) > 0) bo.write(buf, 0, n);
+            org.json.JSONObject o = new org.json.JSONObject(bo.toString("UTF-8"));
+            java.util.Iterator<String> it = o.keys();
+            while (it.hasNext()) {
+                String key = it.next();
+                org.json.JSONArray arr = o.optJSONArray(key);
+                if (arr == null || arr.length() == 0) continue;
+                if (FALLBACK.containsKey(key)) continue;   // elle yazılan kurallar önce gelir
+                String[] list = new String[arr.length()];
+                for (int i = 0; i < arr.length(); i++) list[i] = arr.optString(i, null);
+                FALLBACK.put(key, list);
+            }
+        } catch (Throwable ignored) {
+        } finally {
+            try { if (in != null) in.close(); } catch (Throwable ignored) { }
+        }
+    }
+
     /** Yedek URL listesi (yoksa null). */
     public static String[] fallbacks(String url) {
         return url == null ? null : FALLBACK.get(url);
@@ -119,6 +154,7 @@ public class ChannelRepo {
 
     public static synchronized List<Channel> all(Context ctx) {
         String cc = Prefs.country(ctx);
+        loadBackups(ctx);
         if (!cc.equals(loadedCountry)) {
             CHANNELS.clear();
             CHANNELS.addAll(CountryRepo.load(ctx, cc));

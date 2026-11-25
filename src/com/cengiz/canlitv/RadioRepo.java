@@ -37,6 +37,44 @@ public final class RadioRepo {
     private static String loadedCountry = null;
     public static boolean downloading = false;
 
+    /** 9.89: istasyon başına yedek adresler (assets/backup_radio.json). */
+    private static final java.util.Map<String, String[]> FALLBACK =
+            new java.util.HashMap<String, String[]>();
+    private static boolean backupsLoaded = false;
+
+    private static void loadBackups(Context c) {
+        if (backupsLoaded) return;
+        backupsLoaded = true;
+        java.io.InputStream in = null;
+        try {
+            in = c.getAssets().open("backup_radio.json");
+            java.io.ByteArrayOutputStream bo = new java.io.ByteArrayOutputStream();
+            byte[] buf = new byte[4096];
+            int n;
+            while ((n = in.read(buf)) > 0) bo.write(buf, 0, n);
+            JSONObject o = new JSONObject(bo.toString("UTF-8"));
+            java.util.Iterator<String> it = o.keys();
+            while (it.hasNext()) {
+                String key = it.next();
+                JSONArray arr = o.optJSONArray(key);
+                if (arr == null || arr.length() == 0) continue;
+                String[] list = new String[arr.length()];
+                for (int i = 0; i < arr.length(); i++) list[i] = arr.optString(i, null);
+                FALLBACK.put(key, list);
+            }
+        } catch (Throwable ignored) {
+        } finally {
+            try { if (in != null) in.close(); } catch (Throwable ignored) { }
+        }
+    }
+
+    /** İstasyonun yedek adresleri (yoksa null). */
+    public static String[] fallbacks(Context c, String url) {
+        if (url == null) return null;
+        loadBackups(c);
+        return FALLBACK.get(url);
+    }
+
     private RadioRepo() { }
 
     public static String country(Context c) {
@@ -160,8 +198,9 @@ public final class RadioRepo {
                 if (line.startsWith("#EXTINF")) {
                     info = line.substring(line.indexOf(',') + 1).trim();
                 } else if (!line.startsWith("#") && info != null) {
-                    // 2 kez açılmayan istasyon listeden kalkar (TV ile aynı kural)
-                    if (Prefs.hideDead(c) && Prefs.fails(c, line) >= 2) { info = null; continue; }
+                    // 9.89: 2 kez açılmayan istasyon listeden tamamen kalkıyordu; TRT Radyo 1
+                    // gibi istasyonlar bir süre sonra hiç görünmüyordu (31 → 24).
+                    // Artık yalnız kullanıcı "listeden gizle" derse kalkar; kalanlar ⚠ ile durur.
                     String[] p = info.split("\\|");
                     NAMES.add(p.length > 0 ? p[0].trim() : "Radyo");
                     META.add(p.length > 1 ? (p[1].trim() + (p.length > 2 ? " · " + p[2].trim() : ""))

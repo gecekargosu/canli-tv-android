@@ -1227,16 +1227,6 @@ public class MainActivity extends android.app.Activity {
         return (int) (v * getResources().getDisplayMetrics().density);
     }
 
-    /** Logo gelmediğinde gösterilecek baş harf ("Show TV" → "S"). */
-    private String initialOf(String name) {
-        if (name == null) return "?";
-        for (int i = 0; i < name.length(); i++) {
-            char ch = name.charAt(i);
-            if (Character.isLetterOrDigit(ch)) return String.valueOf(Character.toUpperCase(ch));
-        }
-        return "?";
-    }
-
     private class ChannelAdapter extends BaseAdapter {
         @Override public int getCount() { return shown.size(); }
         @Override public Object getItem(int i) { return shown.get(i); }
@@ -1277,30 +1267,8 @@ public class MainActivity extends android.app.Activity {
             no.setLayoutParams(nlp);
             row.addView(no);
 
-            // 9.82: logo gelmezse (ör. Wikimedia 429) boş kutu yerine kanalın baş harfi görünür.
-            FrameLayout logoBox = new FrameLayout(MainActivity.this);
-            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(dp(38), dp(38));
-            lp.setMargins(0, 0, dp(10), 0);
-            logoBox.setLayoutParams(lp);
-            final TextView initial = new TextView(MainActivity.this);
-            initial.setText(initialOf(c.name));
-            initial.setTextColor(MUTED);
-            initial.setTextSize(15);
-            initial.setGravity(Gravity.CENTER);
-            initial.setBackground(rounded(SOFT, 10));
-            logoBox.addView(initial, new FrameLayout.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
-            ImageView logo = new ImageView(MainActivity.this);
-            logo.setLayoutParams(new FrameLayout.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
-            logo.setScaleType(ImageView.ScaleType.FIT_CENTER);
-            LogoLoader.load(logo, c.logo, new LogoLoader.Cb() {
-                @Override public void done(boolean ok) {
-                    initial.setVisibility(ok ? View.GONE : View.VISIBLE);
-                }
-            });
-            logoBox.addView(logo);
-            row.addView(logoBox);
+            // 9.89: logo alanı kaldırıldı. Harici logolar (P0-5) ve yer tutucu harf
+            // rozetleri kullanıcıya bilgi vermiyordu; satır numara + kanal adıyla kalıyor.
 
             LinearLayout texts = new LinearLayout(MainActivity.this);
             texts.setOrientation(LinearLayout.VERTICAL);
