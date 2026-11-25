@@ -5,7 +5,7 @@ Hepsi GitHub Releases sayfasında:
 
 **https://github.com/gecekargosu/canli-tv-android/releases**
 
-- En son sürüm: `v9.89` — `CanliTV-9.89.apk`, `UMAY-MULTI-TV-9.89.aab` (Play).
+- En son sürüm: `v9.90` — `CanliTV-9.90.apk`, `UMAY-MULTI-TV-9.90.aab` (Play).
 - İndirme sayfası: https://umay-multi-tv-gq3zer.freebuff.site/indir
 - Sürüm notları: `releases/vX.YY/SURUM-NOTLARI.md`
 
@@ -14,6 +14,19 @@ Site production güncellendi: gizlilik/kullanım metinleri yeni abonelik bölüm
 `/indir` artık **9.88**'i indiriyor. APK telefona kuruldu (97 / 9.88).
 Kaynak yedeği: `YEDEK/UMAY-MULTI-TV-9.88-2026-11-25/` ve aynı adlı `.tar.gz`
 (imza anahtarı `upload-keystore.jks` + `keystore.properties` dahil).
+
+## v9.90 — radyo kalıcı onarım, büyük istasyonlar önce
+
+- **Radyo artık kendiliğinden istasyon değiştirmiyor:** 3 başarısız denemeden sonra
+  sıradaki istasyona atlıyordu ("kendiliğinden değişti" şikayeti) — kaldırıldı.
+- **Kesintide sürekli yeniden bağlanma:** TRT gibi Icecast/AdBreak sunucuları reklam
+  kuşrağında akışı kesiyor; 1,2/2,4/3,6/4/8 sn artan aralıkla ~10 dk boyunca sessizce
+  yeniden bağlanılıyor, hata ekranı gösterilmiyor.
+- **Radyo sırası:** TRT FM, TRT Radyo 1, Kral FM, Süper FM, Metro FM, Joy FM,
+  Power FM, NTV Radyo, Virgin, Show Radyo… büyük istasyonlar başta.
+- **Durum metinleri netleşti:** "⏳ Yayın bekleniyor · otomatik yeniden bağlanıyor",
+  "⏸ Başka uygulama ses çalıyor · kapanınca devam eder".
+- Denetim raporu: `docs/play/DENETIM-9.90.md` (Play mühendisi / yazılım / kullanıcı).
 
 ## v9.89 — yedek kaynaklar, radyo listesi düzeltmesi, sade satır
 

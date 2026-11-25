@@ -388,6 +388,8 @@ public class AudioService extends Service {
     private int attempt = 0;
     /** Zayıf internette kaç kez yeniden bağlanılacağı. */
     private static final int MAX_ATTEMPTS = 3;
+    /** 9.90: sessiz yeniden bağlanma üst sınırı (~10 dk). */
+    private static final int MAX_SILENT_RETRIES = 80;
     /** Yavaş bağlantıda ilk bağlanma için tanınan süre. */
     private static final long START_GRACE_MS = 30000L;
     private boolean preparedOk = false;
@@ -549,40 +551,40 @@ public class AudioService extends Service {
     private boolean httpsTried = false;
 
     /**
-     * Zayıf bağlantı: istasyonu hemen bırakmak yerine aynı adrese geri dön.
-     * 3 deneme sonunda vazgeçip kullanıcıya bilgi ver (radyo ekranı sıradakine geçer).
+     * 9.90: kalıcı yeniden bağlanma.
+     *
+     * TRT gibi Icecast + AdBreak sunucuları reklam kuşağında akışı belli bir an
+     * kesiyor (HTTP/1.0, Connection: Close, ADTS AAC). Eski davranış 3 denemeden
+     * sonra 15 sn'de bir deniyor, sonra "yayın açılamadı" diyordu; kullanıcı da
+     * reklam bitene kadar sessizlik görüyordu. Yeni davranış: kısa artan
+     * aralıklarla, kullanıcı durdurana kadar **sürekli** yeniden bağlan.
      */
     private void scheduleRetry(final String reason) {
         if (retryPending) return;
-        if (attempt < MAX_ATTEMPTS - 1) {
-            attempt++;
-            notifyText(reason + " · yeniden bağlanılıyor (" + attempt + "/" + (MAX_ATTEMPTS - 1) + ")");
-            state = S_BUFFERING;
-            long delay = 8000L;
-            android.util.Log.w("UmayRadio", "yeniden baglanma " + attempt + " gecikme=" + delay);
-            retryPending = true;
-            ui.postDelayed(new Runnable() {
-                @Override public void run() { retryPending = false; attemptPlay(currentUrl); }
-            }, delay);
-        } else {
-            // İnternet geri gelebilir: istasyonu "ölü" işaretlemeden sessizce beklemeye devam et.
-            if (passiveTries < 12) {
-                passiveTries++;
-                notifyText("Bağlantı bekleniyor · otomatik yeniden denenecek");
-                retryPending = true;
-                ui.postDelayed(new Runnable() {
-                    @Override public void run() {
-                        retryPending = false;
-                        attempt = 0;
-                        attemptPlay(currentUrl);
-                    }
-                }, 15000L);
-            } else {
-                // 9.89: aynı istasyonun yedek adresi varsa onu dene, sonra pes et.
-                if (tryFallback()) return;
-                notifyText("Yayın açılamadı (bağlantı) · ⏭ ile başka istasyon");
-            }
+        attempt++;
+        if (attempt > MAX_SILENT_RETRIES) {
+            // ~10 dakika sonunda hâlâ yok: kullanıcıya söyle, ama hata sayacına yazma
+            // (istasyon listeden gizlenmesin, tek dokunuşla yeniden denensin).
+            if (tryFallback()) return;
+            state = S_ERROR;
+            notifyText("Yayın şu an yok · ⏭ ile başka istasyon");
+            return;
         }
+        if (attempt % 6 == 0) {
+            // Ara ara diğer adresi de dene (reklam kuşağı bir kaynakta takılıyorsa).
+            if (tryFallback()) return;
+        }
+        long delay;
+        if (attempt <= 3) delay = 1200L * attempt;        // 1,2 · 2,4 · 3,6 sn
+        else if (attempt <= 10) delay = 4000L;            // 4 sn
+        else delay = 8000L;                              // 8 sn
+        notifyText(reason + " · yeniden bağlanıyor");
+        state = S_BUFFERING;
+        android.util.Log.w("UmayRadio", "yeniden baglanma " + attempt + " gecikme=" + delay);
+        retryPending = true;
+        ui.postDelayed(new Runnable() {
+            @Override public void run() { retryPending = false; attemptPlay(currentUrl); }
+        }, delay);
     }
 
         /**
@@ -623,9 +625,22 @@ public class AudioService extends Service {
                 }
                 @Override public void onPlayerError(androidx.media3.common.PlaybackException e) {
                     if (player != ex) return;
-                    state = S_ERROR;
                     CrashLog.event(AudioService.this, "radio",
                             "hata " + e.errorCode + " " + candidate);
+                    // 9.90: yayın sonu / zaman aşımı = Icecast reklam kuşağı kesintisi.
+                    // Hata ekranı göstermeden hemen yeniden bağlan.
+                    // Media3: 2xxx = giriş/çıkış (ağ, akış sonu, zaman aşımı) hataları.
+                    boolean kesinti = (e.errorCode >= 2000 && e.errorCode <= 2999)
+                            || e.errorCode == androidx.media3.common.PlaybackException.ERROR_CODE_UNSPECIFIED;
+                    if (kesinti && attempt < MAX_SILENT_RETRIES) {
+                        state = S_BUFFERING;
+                        ui.postDelayed(new Runnable() {
+                            @Override public void run() {
+                                if (player == ex) attemptPlay(candidate);
+                            }
+                        }, 900L);
+                        return;
+                    }
                     scheduleRetry("Yayın kesildi");
                 }
             });

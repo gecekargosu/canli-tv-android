@@ -70,10 +70,11 @@ public final class Popular {
 
     /** Ülke -> sırayla aranacak radyo adları (TR listesi için). */
     private static final String[][] RADIO = {
-            {"tr", "genç kral", "genc kral", "kral fm", "süper fm", "super fm", "metro fm",
-                    "joy türk", "joy fm", "radio 7", "ntv radyo", "trt fm", "radyo 1",
-                    "power fm", "virgin radio", "fenomen", "best fm", "number one",
-                    "radyo d", "alem fm", "show radyo", "pal fm", "retro türk"},
+            // 9.90: büyük/ulusal istasyonlar önce. Sıra = listede görünme sırası.
+            {"tr", "trt fm", "trt radyo 1", "radyo 1", "kral fm", "süper fm", "super fm",
+                    "metro fm", "joy fm", "joy türk", "power fm", "ntv radyo", "virgin radio",
+                    "show radyo", "alem fm", "fenomen", "number one", "pal fm", "best fm",
+                    "radio 7", "genç kral", "genc kral", "radyo d", "retro türk"},
     };
 
     private static final int UNKNOWN = 1000;

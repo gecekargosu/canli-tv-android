@@ -339,5 +339,16 @@
   "unpackedBytes": 7671618,
   "dexFiles": 1,
   "classes": 6994
+ },
+ {
+  "versionName": "9.90",
+  "versionCode": "99",
+  "apkBytes": 3854654,
+  "sha256": "152544cee2e138fe5e5503ef79ebb0dd5f947617876fb7a6cbe08134b121d453",
+  "signSha256": "f3996c67ef0e0e0420f442fe3fcf6303a17caa88dcba8a2b19a10cd95c92b8d5",
+  "zipEntries": 393,
+  "unpackedBytes": 7671498,
+  "dexFiles": 1,
+  "classes": 6995
  }
 ]

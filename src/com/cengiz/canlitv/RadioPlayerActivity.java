@@ -466,27 +466,19 @@ public class RadioPlayerActivity extends Activity {
                 }
                 return;
             }
-            // 15 sn içinde ses gelmedi: 5 sn arayla 3 kez daha bağlan.
-            if (stationRetries < 3) {
-                stationRetries++;
-                customStatus = true;
-                statusView.setText("📶 Bağlantı sorunu · yeniden deneniyor ("
-                        + stationRetries + "/3)");
+            // 9.90: istasyonu kullanıcı istemeden DEĞİŞTİRME.
+            // TRT gibi Icecast/AdBreak yayınları reklam kuşağında akışı kesiyor;
+            // eski kod 3 denemeden sonra otomatik sıradaki istasyona geçiyordu
+            // ("kendiliğinden değişti" şikayeti). Artık AudioService sessizce
+            // yeniden bağlanır, ekran yalnız durumu yazar.
+            stationRetries++;
+            customStatus = true;
+            statusView.setText("⏳ Yayın bekleniyor · otomatik yeniden bağlanıyor");
+            if (stationRetries == 1 || stationRetries % 10 == 0) {
                 CrashLog.event(RadioPlayerActivity.this, "radio",
-                        "yeniden deneme " + stationRetries + "/3: " + urls.get(index));
-                AudioService.start(RadioPlayerActivity.this, urls.get(index), names.get(index));
-                ui.postDelayed(this, 5000);
-                return;
+                        "bekleme " + stationRetries + ": " + urls.get(index));
             }
-            if (radioSkips >= 3) {
-                customStatus = true;
-                statusView.setText("İnternet zayıf görünüyor · Tekrar dene veya başka istasyon seç");
-                return;
-            }
-            radioSkips++;
-            Toast.makeText(RadioPlayerActivity.this,
-                    "Bağlantı kurulamadı, sonraki istasyona geçiliyor", Toast.LENGTH_SHORT).show();
-            changeStation(1);
+            ui.postDelayed(this, 4000);
         }
     };
 
@@ -499,11 +491,11 @@ public class RadioPlayerActivity extends Activity {
             }
             if (statusView != null && !customStatus) {
                 if (AudioService.stateStatic() == AudioService.S_PAUSED) {
-                    statusView.setText("⏸ Duraklatıldı (reklam/başka ses) · kapanınca devam eder");
+                    statusView.setText("⏸ Başka uygulama ses çalıyor · kapanınca devam eder");
                 } else if (playing && AudioService.isPlayingStatic()) {
                     statusView.setText("✅ Bağlantı iyi · çalıyor");
                 } else if (playing) {
-                    statusView.setText("📶 Bağlanıyor… (internet zayıf olabilir)");
+                    statusView.setText("⏳ Bağlanıyor…");
                 }
             }
             ui.postDelayed(this, 150);
