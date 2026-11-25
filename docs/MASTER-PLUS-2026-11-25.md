@@ -1,0 +1,122 @@
+# MASTER PLUS — birleşik iş listesi (25 Kasım 2026)
+
+İki bağımsız raporun birleştirilmiş hâli:
+- **PDF raporu** — `docs/ISLER-PDF-RAPOR-970.md` (APK incelemesi, yayın odaklı)
+- **Antigravity raporu** — `docs/ISLER-ANTIGRAVITY-990.md` (derin analiz, UX/kod kalitesi)
+- Mevcut liste: `docs/MASTER-IS-LISTESI-2026-11-24.md` (103 madde · 54 ✅)
+
+Tekrarlar birleştirildi; her satırın kaynağı yazılı. Durum kodu: ✅ bitti · 🔧 açık · 👤 senin işin · 🧪 cihaz testi.
+
+---
+
+## 1. Özet: kaç iş kaldı?
+
+| Grup | Adet | Ne demek |
+|------|------|----------|
+| **P0 — yayın blokeri** | 9 | Play'e göndermeden önce yapılmalı (gerçek risk) |
+| **P1 — ilk hafta** | 13 | Yayın sonrası ilk sürümde olması iyi |
+| **P2 — sonraki sürümler** | 8 | Konfor/kalite işleri |
+| **P3 — büyük refactor** | 3 | Sürüm değil, ayrı proje |
+| **👤 Sende** | 6 | Play Console, e-posta, ekran görüntüsü, onay |
+
+**Tek parmağımızı basacağımız yer: P0'ın 9 maddesi.** Bunların 6'sı kod/veri (bende), 3'ü sende.
+
+---
+
+## 2. Play Store'u ne engelliyor? (senin sorunun cevabı)
+
+Yayına çıkmayı **teknik** olarak engelleyen bir şey yok: APK/AAB imzalı, debuggable değil, `allowBackup=false`, cleartext kapalı, hedef SDK 36.
+Ama **ret riski** yaratan 5 şey var — hepsi P0:
+
+1. **Kanal listesi (en büyük risk).** 12 lisanslı yabancı içerik + 7 alakasız/siyasi kanal + yabancı çocuk kanalları. Telif şikâyeti → ret veya yayından kaldırma.
+2. **TV8 `?app=…` yedek adresi.** Başka uygulamanın erişim anahtarı gibi görünüyor; kaldırılmalı.
+3. **Reklam sıklığı.** Şu an `ZAPS_BEFORE_INTERSTITIAL=1` → **her zap'ta** geçiş reklamı, 20 sn arayla. Play "reklam politikası" ve AdMob "beklenmedik reklam" riski.
+4. **Test modu + reklam kimliği ekranı** kullanıcıya açık. Gelir düşürür, gizlilik beyanıyla çelişir.
+5. **Kayıt (HlsRecorder) her kanalda açık.** Telifli yayının .ts dosyası galeriden paylaşılabilir → ilk sürümde kapatmak en güvenlisi.
+
+Bunlar kapanınca Play'e kapalı test için yükleme yapılabilir. (Kapalı test: 12 kullanıcı / 14 gün şartı — Play Console'dan doğrula.)
+
+---
+
+## 3. P0 — yayın blokerleri (9)
+
+| ID | İş | Kaynak | Durum | Kabul testi |
+|----|----|--------|-------|-------------|
+| MP-01 | Kanal listesini temizle: 12 lisanslı yabancı + 7 alakasız/siyasi + yabancı çocuk kanalları → ~126 kanal | PDF-01/02/03 | 🔧 | TR listesinde bu adlar aranamıyor; resmî sayaç 126 |
+| MP-02 | `ChannelRepo.FALLBACK`'ten TV8 `?app=` ve Show/NOW ölü yedeklerini sil | PDF-04 | 🔧 | Kodda `app=` geçmiyor; kanal açılışında yedek denemesi TV8 için yok |
+| MP-03 | Reklam sıklığı: her **3.** zap + en az **180 sn** arayla | PDF-05, ANT-14 | 🔧 | 3 kanal gez, reklam yok; 4.'de çıkıyor |
+| MP-04 | Test modu ve "reklam kimliğini kopyala" ekranını release'te gizle | PDF-06 | 🔧 | Ayarlar'da satır yok (debug'da var) |
+| MP-05 | Kayıt: ilk sürümde kapat veya yalnız kamu kanallarında aç | PDF-07 | 🔧 | Özel kanalda kayıt düğmesi pasif/uyarı veriyor |
+| MP-06 | Ölü kanal / geçici kopma ayrımı: 45 sn kuralı + uçak modu testi | PDF-10, **M-99** | 🔧 (9.71'de denendi, cihaz testi bekliyor) | BLK açılınca ~45 sn'de hata; uçak modu 5 sn aç-kapa sonrası kanal gizlenmiyor |
+| MP-07 | Ödüllü reklam sayacı + geçiş sayacı doğru anda sayılsın, test modu sayılmasın | bu oturum | 🔧 (9.71, derlendi) | Sayaç yalnız gerçek gösterimde artıyor |
+| MP-08 | AAB üret, imzayı doğrula, Play Console'a kapalı teste yükle | PDF-15 | 👤 | AAB aynı SHA-256 ile imzalı |
+| MP-09 | Mağaza metni + test reklamsız ekran görüntüleri + 12 tester + formlar | PDF-15 | 👤 | Console'da "kapalı test incelemede" |
+
+## 4. P1 — ilk hafta (13)
+
+| ID | İş | Kaynak | Durum |
+|----|----|--------|-------|
+| MP-10 | ExoPlayer'ı çoklu ekrana taşı (MediaPlayer → media3) | PDF-09, ANT-01 | 🔧 |
+| MP-11 | Radyo/servis tarafını media3'e taşı (MediaSessionService) | PDF-09 | 🔧 |
+| MP-12 | Radyo kapanınca kayıt oturumunu kapat (dosya birikmesi) | ANT-02 | 🔧 |
+| MP-13 | Çoklu ekranda geri tuşu ana listeye dönsün | ANT-03 | 🔧 |
+| MP-14 | Kalite seçimi ↔ veri tasarrufu tutarlılığı (kalite seçilince tasarruf kapanır, "otomatik"e dönülebilir) | ANT-05 | 🔧 |
+| MP-15 | 720p/1080p varyantı olmayan kanalda otomatik düşüş + tek satır açıklama | ANT-04 | 🔧 |
+| MP-16 | Sabit metinleri `Lang`'e taşı, EN+TR tamamla (RU/AR sonra) | PDF-11, ANT-10 | 🔧 |
+| MP-17 | Ölü hesap metinlerini sil (Rusça "Аккаунт", "6-значный код" vb.) | PDF-08 | 🔧 |
+| MP-18 | `setMaxAdContentRating` G → PG | PDF-16 | 🔧 |
+| MP-19 | R8/minify + shrinkResources aç, sürüm doğrula | PDF-12 | 🔧 |
+| MP-20 | Üst bar ikonlarını 48dp dokunma alanına çıkar | ANT-07 | 🔧 |
+| MP-21 | Liste düzenleme: "kaydet" ve geri ekleme donmasını düzelt | ANT-06 | 🧪 önce üret |
+| MP-22 | Gizlilik sayfası + `/app-ads.txt` + depoyu private yap | PDF-14 | 👤 |
+
+## 5. P2 — sonraki sürümler (8)
+
+| ID | İş | Kaynak | Durum |
+|----|----|--------|-------|
+| MP-23 | MainActivity portre kilidini kaldır + yatay tablet düzeni | PDF-18 | 🔧 |
+| MP-24 | Reklam kurallarını `good/config.json`'dan uzaktan oku | PDF-19 | 🔧 |
+| MP-25 | GitHub Actions ile günlük kanal sağlık taraması | PDF-20 | 🔧 |
+| MP-26 | Yurtdışı IP testi + EN/DE mağaza metni | PDF-21 | 👤 |
+| MP-27 | Grup adları düzgün ("Muzik" → "Müzik") | PDF-17 | 🔧 |
+| MP-28 | Ayarlar "kullanım verisi" satırı taşması | ANT-08 | 🔧 |
+| MP-29 | ListView → RecyclerView (300+ öğe) | ANT-12 | 🔧 |
+| MP-30 | Keystore şifresini ortam değişkenine taşı | ANT-13 | 🔧 |
+
+## 6. P3 — büyük işler (3)
+
+| ID | İş | Kaynak |
+|----|----|--------|
+| MP-31 | MainActivity/Ads sınıflarını MVP/MVVM'e böl | ANT-11 |
+| MP-32 | Mediation / native reklam / Pro (Play Billing) / Firebase Analytics | PDF-23 |
+| MP-33 | JUnit + Espresso testleri, CI | PDF-24 |
+
+---
+
+## 7. Eski master listeyle eşleşme
+
+| Bu liste | Eski madde |
+|----------|------------|
+| MP-06 | **M-99** (ölü kanal sonsuz yükleme) — aynı iş |
+| MP-07 | **M-26** reklam sayacı tarafı (kayıt maddesi değil; sayaç bu oturumda düzeltildi) |
+| MP-10/11 | **M-72** (media3 radyo) ile aynı alan |
+| MP-16 | **M-34** (i18n) |
+| MP-19 | **M-40** (R8) |
+| MP-23 | **M-37** (inset/çentik/yatay) |
+| MP-01/02 | **M-13** (`kanallar.json` veri kaynağı) ile birlikte yapılmalı |
+
+Eski listedeki diğer açık maddeler (M-54 in-app review, M-55 analytics, M-57 EPG, M-59 yedekleme, M-33 kalanlar…) bu listeyle çelişmiyor; P2/P3 altında yaşıyor.
+
+---
+
+## 8. Sıradaki 6 adım (bu sırayla)
+
+1. **MP-07 + MP-06 doğrula** → 9.71 sürümü (sayaç + ölü kanal) → cihaz testi → GitHub/site.
+   _Durum (25 Kasım): kod derleniyor, cihaz bağlı olmadığı için cihaz testi yapılamadı; sürüm çıkarılmadı._
+2. **MP-03 reklam sıklığı** (tek satır sabit) + **MP-04 test modu gizle** → aynı sürümde.
+3. **MP-02 TV8/Show/NOW yedeklerini sil** (küçük, temiz).
+4. **MP-01 kanal listesi temizliği** (veri; 19 kanal + yabancı çocuklar).
+5. **MP-05 kayıt kısıtı** (ilk sürüm için kapat).
+6. **MP-08/09** sende: AAB → kapalı test.
+
+Bu 6 adım bitince "Play'e yüklenebilir" noktasına geliyoruz; P1 maddeleri yayın sonrası ilk haftada.

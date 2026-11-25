@@ -1,3 +1,4 @@
+> **25 Kasım 2026:** Bu liste iki bağımsız raporla birleştirildi. Güncel iş listesi: `docs/MASTER-PLUS-2026-11-25.md`.
 # UMAY Multi TV — MASTER İŞ LİSTESİ
 
 **Sürüm:** v9.32 (versionCode 41) · **Tarih:** 24 Kasım 2026
