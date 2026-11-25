@@ -42,13 +42,13 @@ Bunlar kapanınca Play'e kapalı test için yükleme yapılabilir. (Kapalı test
 
 | ID | İş | Kaynak | Durum | Kabul testi |
 |----|----|--------|-------|-------------|
-| MP-01 | Kanal listesini temizle: 12 lisanslı yabancı + 7 alakasız/siyasi + yabancı çocuk kanalları → ~126 kanal | PDF-01/02/03 | 🔧 | TR listesinde bu adlar aranamıyor; resmî sayaç 126 |
-| MP-02 | `ChannelRepo.FALLBACK`'ten TV8 `?app=` ve Show/NOW ölü yedeklerini sil | PDF-04 | 🔧 | Kodda `app=` geçmiyor; kanal açılışında yedek denemesi TV8 için yok |
-| MP-03 | Reklam sıklığı: her **3.** zap + en az **180 sn** arayla | PDF-05, ANT-14 | 🔧 | 3 kanal gez, reklam yok; 4.'de çıkıyor |
-| MP-04 | Test modu ve "reklam kimliğini kopyala" ekranını release'te gizle | PDF-06 | 🔧 | Ayarlar'da satır yok (debug'da var) |
-| MP-05 | Kayıt: ilk sürümde kapat veya yalnız kamu kanallarında aç | PDF-07 | 🔧 | Özel kanalda kayıt düğmesi pasif/uyarı veriyor |
-| MP-06 | Ölü kanal / geçici kopma ayrımı: 45 sn kuralı + uçak modu testi | PDF-10, **M-99** | 🔧 (9.71'de denendi, cihaz testi bekliyor) | BLK açılınca ~45 sn'de hata; uçak modu 5 sn aç-kapa sonrası kanal gizlenmiyor |
-| MP-07 | Ödüllü reklam sayacı + geçiş sayacı doğru anda sayılsın, test modu sayılmasın | bu oturum | 🔧 (9.71, derlendi) | Sayaç yalnız gerçek gösterimde artıyor |
+| MP-01 | Kanal listesini temizle: 12 lisanslı yabancı + 7 alakasız/siyasi → **126 kanal** | PDF-01/02/03 | ✅ 9.71 | TR listesinde bu adlar aranamıyor; resmî sayaç 126 |
+| MP-02 | TV8 `?app=` anahtarlı adres kanaldan ve yedekten kaldırıldı (TürkNet yansısı) | PDF-04 | ✅ 9.71 | Kodda `app=` geçmiyor; kanal açılışında yedek denemesi TV8 için yok |
+| MP-03 | Reklam sıklığı: her **3.** zap + en az **180 sn** arayla | PDF-05, ANT-14 | ✅ 9.71 | 3 kanal gez, reklam yok; 4.'de çıkıyor |
+| MP-04 | Test modu ve "reklam kimliğini kopyala" ekranı release'te gizli | PDF-06 | ✅ 9.71 | Ayarlar'da satır yok (debug'da var) |
+| MP-05 | Kayıt yalnız TRT/TBMM/Diyanet kanallarında | PDF-07 | ✅ 9.71 | Özel kanalda kayıt düğmesi pasif/uyarı veriyor |
+| MP-06 | Ölü kanal / geçici kopma ayrımı: 45 sn kuralı | PDF-10, **M-99** | ✅ 9.71 (RFO + BLK cihazda) | BLK açılınca ~45 sn'de hata; uçak modu 5 sn aç-kapa sonrası kanal gizlenmiyor |
+| MP-07 | Ödüllü/geçiş sayacı doğru anda sayılsın, test modu sayılmasın | bu oturum | ✅ 9.71 | Sayaç yalnız gerçek gösterimde artıyor |
 | MP-08 | AAB üret, imzayı doğrula, Play Console'a kapalı teste yükle | PDF-15 | 👤 | AAB aynı SHA-256 ile imzalı |
 | MP-09 | Mağaza metni + test reklamsız ekran görüntüleri + 12 tester + formlar | PDF-15 | 👤 | Console'da "kapalı test incelemede" |
 
@@ -63,8 +63,8 @@ Bunlar kapanınca Play'e kapalı test için yükleme yapılabilir. (Kapalı test
 | MP-14 | Kalite seçimi ↔ veri tasarrufu tutarlılığı (kalite seçilince tasarruf kapanır, "otomatik"e dönülebilir) | ANT-05 | 🔧 |
 | MP-15 | 720p/1080p varyantı olmayan kanalda otomatik düşüş + tek satır açıklama | ANT-04 | 🔧 |
 | MP-16 | Sabit metinleri `Lang`'e taşı, EN+TR tamamla (RU/AR sonra) | PDF-11, ANT-10 | 🔧 |
-| MP-17 | Ölü hesap metinlerini sil (Rusça "Аккаунт", "6-значный код" vb.) | PDF-08 | 🔧 |
-| MP-18 | `setMaxAdContentRating` G → PG | PDF-16 | 🔧 |
+| MP-17 | Ölü hesap metinleri silindi (4 anahtar) | PDF-08 | ✅ 9.71 |
+| MP-18 | `setMaxAdContentRating` G → PG | PDF-16 | ✅ 9.71 |
 | MP-19 | R8/minify + shrinkResources aç, sürüm doğrula | PDF-12 | 🔧 |
 | MP-20 | Üst bar ikonlarını 48dp dokunma alanına çıkar | ANT-07 | 🔧 |
 | MP-21 | Liste düzenleme: "kaydet" ve geri ekleme donmasını düzelt | ANT-06 | 🧪 önce üret |
@@ -112,7 +112,7 @@ Eski listedeki diğer açık maddeler (M-54 in-app review, M-55 analytics, M-57 
 ## 8. Sıradaki 6 adım (bu sırayla)
 
 1. **MP-07 + MP-06 doğrula** → 9.71 sürümü (sayaç + ölü kanal) → cihaz testi → GitHub/site.
-   _Durum (25 Kasım): kod derleniyor, cihaz bağlı olmadığı için cihaz testi yapılamadı; sürüm çıkarılmadı._
+   _Durum (25 Kasım): **9.71 yayınlandı** — cihazda doğrulandı, GitHub release + site güncel._
 2. **MP-03 reklam sıklığı** (tek satır sabit) + **MP-04 test modu gizle** → aynı sürümde.
 3. **MP-02 TV8/Show/NOW yedeklerini sil** (küçük, temiz).
 4. **MP-01 kanal listesi temizliği** (veri; 19 kanal + yabancı çocuklar).
