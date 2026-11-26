@@ -15,6 +15,13 @@ Site production güncellendi: gizlilik/kullanım metinleri yeni abonelik bölüm
 Kaynak yedeği: `YEDEK/UMAY-MULTI-TV-9.88-2026-11-25/` ve aynı adlı `.tar.gz`
 (imza anahtarı `upload-keystore.jks` + `keystore.properties` dahil).
 
+## v9.96 — Gizlenenler düzeltmesi
+
+- 🗑 Gizlenenler sekmesi boş geliyordu; listeden silinen kanal geri eklenemiyordu.
+  `refresh()` içindeki kategori filtresi gizli sekmede uygulanmıyor artık.
+- Kapasite denetimi temiz (sınıf +0, dosya +0), cihazda sil→geri ekle testi geçti.
+- Play için yeni AAB: `releases/v9.96/app-release.aab` (105).
+
 ## v9.93 — ödüllü reklam sunucu doğrulaması + güvenlik denetimi
 
 - Ödüllü reklama `ServerSideVerificationOptions` eklendi (cihaz kimliği `custom_data`).

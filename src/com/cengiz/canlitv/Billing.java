@@ -12,12 +12,15 @@ import com.android.billingclient.api.BillingClient;
 import com.android.billingclient.api.BillingClientStateListener;
 import com.android.billingclient.api.BillingFlowParams;
 import com.android.billingclient.api.BillingResult;
+import com.android.billingclient.api.PendingPurchasesParams;
 import com.android.billingclient.api.ProductDetails;
 import com.android.billingclient.api.ProductDetailsResponseListener;
 import com.android.billingclient.api.Purchase;
 import com.android.billingclient.api.PurchasesResponseListener;
 import com.android.billingclient.api.PurchasesUpdatedListener;
 import com.android.billingclient.api.QueryProductDetailsParams;
+import com.android.billingclient.api.QueryProductDetailsResult;
+import com.android.billingclient.api.QueryPurchasesParams;
 
 import java.util.Collections;
 import java.util.List;
@@ -63,7 +66,10 @@ public final class Billing {
                         }
                     }
                 })
-                .enablePendingPurchases()
+                // Billing 8: enablePendingPurchases() parametresiz hâli kaldırıldı.
+                .enablePendingPurchases(PendingPurchasesParams.newBuilder()
+                        .enableOneTimeProducts()
+                        .build())
                 .build();
         connect(ctx);
     }
@@ -103,7 +109,9 @@ public final class Billing {
         connect(a, new Runnable() {
             @Override public void run() {
                 if (client == null || !client.isReady()) return;
-                client.queryPurchasesAsync(BillingClient.ProductType.SUBS,
+                client.queryPurchasesAsync(QueryPurchasesParams.newBuilder()
+                                .setProductType(BillingClient.ProductType.SUBS)
+                                .build(),
                         new PurchasesResponseListener() {
                             @Override public void onQueryPurchasesResponse(BillingResult r,
                                                                            List<Purchase> list) {
@@ -146,7 +154,10 @@ public final class Billing {
                         .build();
                 client.queryProductDetailsAsync(params, new ProductDetailsResponseListener() {
                     @Override public void onProductDetailsResponse(BillingResult r,
-                                                                   List<ProductDetails> list) {
+                                                                   QueryProductDetailsResult sonuc) {
+                        // Billing 8: ürün listesi QueryProductDetailsResult içinden gelir.
+                        List<ProductDetails> list = sonuc == null
+                                ? null : sonuc.getProductDetailsList();
                         if (r.getResponseCode() != BillingClient.BillingResponseCode.OK
                                 || list == null || list.isEmpty()) {
                             toast(a, "Abonelik şu an satışta değil (mağazada henüz tanımlı değil)");

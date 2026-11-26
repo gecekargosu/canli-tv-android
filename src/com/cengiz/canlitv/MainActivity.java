@@ -1032,7 +1032,10 @@ public class MainActivity extends android.app.Activity {
             // Sabit (öne alınan) kanallar otomatik gizlemeden muaf.
             if (!onlyHidden && Prefs.hideDead(this) && Prefs.fails(this, c.url) >= 2
                     && !ChannelRepo.pinned(c.name)) continue;
-            if (!"Tümü".equals(group)) {
+            // 9.96: "Gizlenenler" sekmesi bir kategori adi degil; gizli kanallar
+            // kategori filtresine takilip liste bos kaliyordu (silinen kanal geri
+            // eklenemiyordu). Gizli sekmede kategori filtresi uygulanmaz.
+            if (!"Tümü".equals(group) && !onlyHidden) {
                 if ("★ Favoriler".equals(group)) {
                     if (!favs.contains(c.url)) continue;
                 } else if ("🇹🇷 Türkçe".equals(group)) {

@@ -383,5 +383,38 @@
   "unpackedBytes": 7678988,
   "dexFiles": 1,
   "classes": 7000
+ },
+ {
+  "versionName": "9.94",
+  "versionCode": "103",
+  "apkBytes": 3886414,
+  "sha256": "03645b7ab6dacdfc8d4d5d88b128c5e0c181dc7ea16de6995c55cffca32dcb1c",
+  "signSha256": "f3996c67ef0e0e0420f442fe3fcf6303a17caa88dcba8a2b19a10cd95c92b8d5",
+  "zipEntries": 393,
+  "unpackedBytes": 7736911,
+  "dexFiles": 1,
+  "classes": 7032
+ },
+ {
+  "versionName": "9.95",
+  "versionCode": "104",
+  "apkBytes": 3886414,
+  "sha256": "f5ac6a4a66a63bc47f6c112fb05b92aeea87df64b760806cee189f95785ac0d3",
+  "signSha256": "f3996c67ef0e0e0420f442fe3fcf6303a17caa88dcba8a2b19a10cd95c92b8d5",
+  "zipEntries": 393,
+  "unpackedBytes": 7736911,
+  "dexFiles": 1,
+  "classes": 7032
+ },
+ {
+  "versionName": "9.96",
+  "versionCode": "105",
+  "apkBytes": 3886454,
+  "sha256": "5c858e38ce774c3bad813d9361656866d95795ba107462e78ade4b2b4dd591bd",
+  "signSha256": "f3996c67ef0e0e0420f442fe3fcf6303a17caa88dcba8a2b19a10cd95c92b8d5",
+  "zipEntries": 393,
+  "unpackedBytes": 7736918,
+  "dexFiles": 1,
+  "classes": 7032
  }
 ]
