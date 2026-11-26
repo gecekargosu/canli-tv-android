@@ -69,6 +69,11 @@ public class MainActivity extends android.app.Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        // Telefonda dikey kal; tablette yatay/dikey serbest olsun. Manifest portre
+        // kilitli olduğu için yatay tablete geçince ekran dönmüyordu.
+        if (getResources().getConfiguration().smallestScreenWidthDp >= 600) {
+            setRequestedOrientation(android.content.pm.ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
+        }
         // Kanal aramasında da klavye listeyi yutmasın.
         getWindow().setSoftInputMode(
                 android.view.WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING);
@@ -114,18 +119,20 @@ public class MainActivity extends android.app.Activity {
         // K-18: tablet / geniş ekranda içerik 560dp'yi geçmesin.
         // Aksi halde üst bar kutuları ve liste satırları ekran boyunca geriliyor,
         // ikonlar ortada kalıyor, alt durum şeridi taşıyordu.
+        // K-18: başlık 560dp'de ortalanır; kanal listesi tablette tam genişliği kullanır.
+        // Önceden tüm kök 560dp'ye sıkıştırıldığı için tablette yanlarda büyük boşluk kalıyordu.
+        int sidePad = 0;
         try {
             int wDp = getResources().getConfiguration().screenWidthDp;
             if (wDp > 560) {
-                int pad = (int) ((wDp - 560) / 2f * getResources().getDisplayMetrics().density);
-                root.setPadding(pad, 0, pad, 0);
+                sidePad = (int) ((wDp - 560) / 2f * getResources().getDisplayMetrics().density);
             }
         } catch (Throwable ignored) { }
 
         // --- baslik: 3 sabit satir, hepsi ayni 12dp kenardan baslar/biter ---
         LinearLayout head = new LinearLayout(this);
         head.setOrientation(LinearLayout.VERTICAL);
-        head.setPadding(dp(12), dp(8), dp(12), dp(0));
+        head.setPadding(dp(12) + sidePad, dp(8), dp(12) + sidePad, dp(0));
 
         // 1. satir: marka TEK kutunun icinde. Logo 40dp ve hep tam parlak; solmuyor.
         // Arkasindaki turuncu isik nabiz gibi atiyor, parlayan logo gibi duruyor.
