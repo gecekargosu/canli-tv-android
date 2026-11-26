@@ -268,6 +268,41 @@ public class MainActivity extends android.app.Activity {
         });
         actionRow.addView(settings, slot(4));
 
+        // Ödüllü reklam her zaman görünür bir giriş: 15 dk reklamsız.
+        // Eskiden yalnız banner dolmadığında alt şeritte çıkıyordu; kullanıcı bulamıyordu.
+        TextView gift = pill("🎁", SOFT);
+        gift.setContentDescription("Ödüllü reklam: 15 dakika reklamsız");
+        gift.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) {
+                if (Prefs.subActive(MainActivity.this)) {
+                    android.widget.Toast.makeText(MainActivity.this,
+                            "Aboneliğin zaten reklamsız", android.widget.Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                int left = AdManager.adFreeMinutesLeft(MainActivity.this);
+                if (left > 0) {
+                    android.widget.Toast.makeText(MainActivity.this,
+                            "Reklamsız süren: " + left + " dk",
+                            android.widget.Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                AdManager.showRewarded(MainActivity.this, new Runnable() {
+                    @Override public void run() {
+                        android.widget.Toast.makeText(MainActivity.this,
+                                "Teşekkürler! " + Ads.REWARD_MINUTES + " dakika reklamsız.",
+                                android.widget.Toast.LENGTH_LONG).show();
+                    }
+                }, new Runnable() {
+                    @Override public void run() {
+                        android.widget.Toast.makeText(MainActivity.this,
+                                "Reklam şu an hazır değil, biraz sonra tekrar dene",
+                                android.widget.Toast.LENGTH_SHORT).show();
+                    }
+                });
+            }
+        });
+        actionRow.addView(gift, slot(5));
+
         root.addView(head);
 
         // --- radyo çalarken her zaman görünen kapatma şeridi ---

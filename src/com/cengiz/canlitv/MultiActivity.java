@@ -39,6 +39,7 @@ public class MultiActivity extends android.app.Activity {
     private android.net.ConnectivityManager.NetworkCallback netCb;
     private final boolean[] audible = {true, false, false, false};
     private int paneCount = 3;
+    private boolean tablet = false;
     private boolean tracking = false;
     private long openedAt = 0;
     private LinearLayout panelRef;
@@ -88,6 +89,7 @@ public class MultiActivity extends android.app.Activity {
         }
         for (int i = 0; i < 4; i++) audible[i] = aud[i];
         paneCount = Math.max(1, Math.min(4, cnt));
+        tablet = getResources().getConfiguration().smallestScreenWidthDp >= 600;
 
         FrameLayout root = new FrameLayout(this);
         root.setBackgroundColor(Color.BLACK);
@@ -371,6 +373,25 @@ public class MultiActivity extends android.app.Activity {
                     ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
             col.addView(r2, new LinearLayout.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
+        } else if (n == 3 && tablet) {
+            // TABLET 3 EKRAN: dikey 3 tam genişlik şerit yerine 2x2 ızgara.
+            // Her pencere 16:9'a yakın kalır; boş kalan hücre ses kontrol paneline ayrılır.
+            LinearLayout r1 = new LinearLayout(this);
+            r1.setOrientation(LinearLayout.HORIZONTAL);
+            r1.addView(slots[0], new LinearLayout.LayoutParams(0,
+                    ViewGroup.LayoutParams.MATCH_PARENT, 1f));
+            r1.addView(slots[1], new LinearLayout.LayoutParams(0,
+                    ViewGroup.LayoutParams.MATCH_PARENT, 1f));
+            LinearLayout r2 = new LinearLayout(this);
+            r2.setOrientation(LinearLayout.HORIZONTAL);
+            r2.addView(slots[2], new LinearLayout.LayoutParams(0,
+                    ViewGroup.LayoutParams.MATCH_PARENT, 1f));
+            r2.addView(buildTabletPanel(), new LinearLayout.LayoutParams(0,
+                    ViewGroup.LayoutParams.MATCH_PARENT, 1f));
+            col.addView(r1, new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
+            col.addView(r2, new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
         } else {
             for (int i = 0; i < n; i++) {
                 col.addView(slots[i], new LinearLayout.LayoutParams(
@@ -378,6 +399,73 @@ public class MultiActivity extends android.app.Activity {
             }
         }
         saveState();
+    }
+
+    /** Tablet 3 ekran: 2x2 ızgaranın boş hücresi — marka + pencere ses düğmeleri. */
+    private View buildTabletPanel() {
+        LinearLayout p = new LinearLayout(this);
+        p.setOrientation(LinearLayout.VERTICAL);
+        p.setGravity(Gravity.TOP | Gravity.CENTER_HORIZONTAL);
+        p.setPadding(dp(12), dp(12), dp(12), dp(12));
+        GradientDrawable bg = new GradientDrawable();
+        bg.setColor(Color.parseColor("#101A29"));
+        bg.setCornerRadius(dp(10));
+        p.setBackground(bg);
+
+        TextView brand = new TextView(this);
+        brand.setText("UMAY MULTI TV");
+        brand.setTextColor(Color.parseColor("#FF8A24"));
+        brand.setTextSize(13);
+        brand.setGravity(Gravity.CENTER);
+        brand.setTypeface(brand.getTypeface(), android.graphics.Typeface.BOLD);
+        p.addView(brand);
+
+        TextView sub = new TextView(this);
+        sub.setText("3 EKRAN · SES KONTROLÜ");
+        sub.setTextColor(Color.parseColor("#C5CEDA"));
+        sub.setTextSize(10);
+        sub.setGravity(Gravity.CENTER);
+        sub.setPadding(0, dp(2), 0, dp(6));
+        p.addView(sub);
+
+        final TextView[] btns = new TextView[3];
+        for (int i = 0; i < 3; i++) {
+            final int k = i;
+            TextView b = new TextView(this);
+            b.setText((audible[i] ? "🔊 " : "🔇 ") + (i + 1) + ". ekran");
+            b.setTextColor(Color.WHITE);
+            b.setTextSize(12);
+            b.setGravity(Gravity.CENTER);
+            b.setPadding(dp(8), dp(7), dp(8), dp(7));
+            GradientDrawable bb = new GradientDrawable();
+            bb.setColor(Color.parseColor("#1E2A3D"));
+            bb.setCornerRadius(dp(8));
+            b.setBackground(bb);
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            lp.topMargin = dp(5);
+            b.setOnClickListener(new View.OnClickListener() {
+                @Override public void onClick(View v) {
+                    for (int j = 0; j < 3; j++) audible[j] = (j == k);
+                    applyAudio();
+                    saveState();
+                    for (int j = 0; j < 3; j++) {
+                        btns[j].setText((audible[j] ? "🔊 " : "🔇 ") + (j + 1) + ". ekran");
+                    }
+                }
+            });
+            btns[i] = b;
+            p.addView(b, lp);
+        }
+
+        TextView hint = new TextView(this);
+        hint.setText("Pencereye dokun → kanal seç");
+        hint.setTextColor(Color.parseColor("#8FA0B5"));
+        hint.setTextSize(10);
+        hint.setGravity(Gravity.CENTER);
+        hint.setPadding(0, dp(7), 0, 0);
+        p.addView(hint);
+        return p;
     }
 
     private void saveState() {
@@ -602,8 +690,15 @@ public class MultiActivity extends android.app.Activity {
                 // zayıf Wi-Fi'de hiçbiri beslenemiyordu; 720p tavanı takılmayı belirgin azaltır.
                 // Sesli pencere artık master playlist ile açılıyor → ABR tavana kadar kendi düşürür.
                 if (on) {
-                    b.setMaxVideoSize(1280, 720);
-                    b.setMaxVideoBitrate(2500000);
+                    // 3+ pencere: sesli pencere 480p tavanlı. Üç akış aynı anda 720p
+                    // isteyince tablet gibi cihazlarda çözücü/ağ yetmiyordu.
+                    if (paneCount >= 3) {
+                        b.setMaxVideoSize(854, 480);
+                        b.setMaxVideoBitrate(1200000);
+                    } else {
+                        b.setMaxVideoSize(1280, 720);
+                        b.setMaxVideoBitrate(2500000);
+                    }
                 } else {
                     b.setMaxVideoSize(640, 360);
                     b.setMaxVideoBitrate(700000);
