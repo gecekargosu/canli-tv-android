@@ -115,6 +115,18 @@ public class Quality {
         });
     }
 
+    /**
+     * 9.97: çoklu ekran pencereleri artık MASTER playlist ile açılır; tavan
+     * ({@code applyQualityCap}) ile sınırlanır ve ExoPlayer kendi içinde ABR yapar.
+     * Sabit varyant URL'i verildiğinde zayıf Wi-Fi'de kalite asla düşemiyor,
+     * pencere sürekli donup yeniden bağlanıyordu.
+     */
+    public static void resolveAdaptive(final Context ctx, final String url, final UrlCallback cb) {
+        if (cb == null) return;
+        String custom = Prefs.quality(ctx, url);
+        cb.onUrl(custom != null ? custom : url);
+    }
+
     /** Kalite tercihini oynatıcıya uygula (varyant URL'i yerine track sınırı). */
     public static void applyPref(android.content.Context ctx,
                                  androidx.media3.exoplayer.ExoPlayer player) {

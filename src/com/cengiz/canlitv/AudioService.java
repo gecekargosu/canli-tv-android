@@ -606,8 +606,12 @@ public class AudioService extends Service {
         ui.removeCallbacks(watchdog);
         CrashLog.event(this, "radio", "baglaniyor: " + candidate);
         try {
+            // 9.97: zayıf Wi-Fi'de radyo takılması — sabırlı soket + büyük ses tamponu.
             final androidx.media3.exoplayer.ExoPlayer ex =
-                    new androidx.media3.exoplayer.ExoPlayer.Builder(this).build();
+                    new androidx.media3.exoplayer.ExoPlayer.Builder(this)
+                            .setMediaSourceFactory(Tune.source(Tune.http()))
+                            .setLoadControl(Tune.liveAudio())
+                            .build();
             player = ex;
             ex.setAudioAttributes(new androidx.media3.common.AudioAttributes.Builder()
                     .setUsage(androidx.media3.common.C.USAGE_MEDIA)

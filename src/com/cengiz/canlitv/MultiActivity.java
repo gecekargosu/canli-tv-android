@@ -598,7 +598,13 @@ public class MultiActivity extends android.app.Activity {
                 androidx.media3.common.TrackSelectionParameters.Builder b =
                         p.getTrackSelectionParameters().buildUpon();
                 b.clearOverridesOfType(androidx.media3.common.C.TRACK_TYPE_VIDEO);
-                if (!on) {
+                // 9.97: sesli pencerede de tavan var. Dört pencere aynı anda 1080p çekince
+                // zayıf Wi-Fi'de hiçbiri beslenemiyordu; 720p tavanı takılmayı belirgin azaltır.
+                // Sesli pencere artık master playlist ile açılıyor → ABR tavana kadar kendi düşürür.
+                if (on) {
+                    b.setMaxVideoSize(1280, 720);
+                    b.setMaxVideoBitrate(2500000);
+                } else {
                     b.setMaxVideoSize(640, 360);
                     b.setMaxVideoBitrate(700000);
                 }
@@ -627,7 +633,7 @@ public class MultiActivity extends android.app.Activity {
             if (!surfaceReady) return;
 
             if (attempt == 0) {
-                Quality.resolveForPlayer(MultiActivity.this, c.url, new Quality.UrlCallback() {
+                Quality.resolveAdaptive(MultiActivity.this, c.url, new Quality.UrlCallback() {
                     @Override public void onUrl(final String url) {
                         runOnUiThread(new Runnable() {
                             @Override public void run() { open(url, my); }
@@ -646,7 +652,7 @@ public class MultiActivity extends android.app.Activity {
                 // Aynı kaynağı taze playlist ile dene (CDN oturumu/token yenilenir).
                 label.setText(Lang.t(MultiActivity.this, "multi_reconnect"));
                 label.setVisibility(View.VISIBLE);
-                Quality.resolveForPlayer(MultiActivity.this, c.url, new Quality.UrlCallback() {
+                Quality.resolveAdaptive(MultiActivity.this, c.url, new Quality.UrlCallback() {
                     @Override public void onUrl(final String url) {
                         runOnUiThread(new Runnable() {
                             @Override public void run() { open(url, my); }
@@ -663,19 +669,15 @@ public class MultiActivity extends android.app.Activity {
             releasePlayer();
             try {
                 // Tarayıcı UA'sı: TV8 gibi CDN'ler aksi hâlde reklam kuşağı klibi döndürüyor.
-                androidx.media3.datasource.DefaultHttpDataSource.Factory http =
-                        new androidx.media3.datasource.DefaultHttpDataSource.Factory()
-                                .setUserAgent(Net.PLAYER_UA)
-                                .setDefaultRequestProperties(Net.playerHeaders())
-                                .setAllowCrossProtocolRedirects(true);
+                // 9.97: sabırlı soket (25 sn) + 6 sessiz tekrar + büyük tampon (Tune).
+                androidx.media3.datasource.DefaultHttpDataSource.Factory http = Tune.http();
                 CountingDataSource.Sink sink = new CountingDataSource.Sink() {
                     @Override public void add(long n) { bytes.addAndGet(n); }
                 };
                 final androidx.media3.exoplayer.ExoPlayer player =
                         new androidx.media3.exoplayer.ExoPlayer.Builder(MultiActivity.this)
-                                .setMediaSourceFactory(
-                                        new androidx.media3.exoplayer.source.DefaultMediaSourceFactory(
-                                                new CountingDataSource.Factory(http, sink)))
+                                .setMediaSourceFactory(Tune.source(new CountingDataSource.Factory(http, sink)))
+                                .setLoadControl(Tune.liveVideo())
                                 .build();
                 ex = player;
                 player.setVideoSurfaceView(surface);
@@ -757,6 +759,7 @@ public class MultiActivity extends android.app.Activity {
 
         /** 3 saniyede bir çağrılır: hazırlanmayan, görüntü vermeyen veya donan yayını kurtarır. */
         int stalls = 0;
+        long lastBuffered = -1;
 
         void check(long now) {
             if (!surfaceReady || failed) return;
@@ -780,12 +783,26 @@ public class MultiActivity extends android.app.Activity {
                 if (stalls > 0) { stalls = 0; label.setVisibility(View.GONE); }
                 return;
             }
-            if (now - lastPosAt > 12000) {
+            if (now - lastPosAt > 22000) {
+                // 9.97: 12 sn çok erken bir eşikti; zayıf ağda her kısa boşlukta oynatıcı
+                // sıfırdan kuruluyor (yeniden bağlanma) ve takılma uzuyordu. Artık 22 sn
+                // bekleniyor ve tampon ilerliyorsa (hâlâ indiriyor) müdahale edilmiyor.
+                long buffered = 0;
+                try { buffered = ex.getBufferedPosition(); } catch (Throwable ignored) { }
+                if (buffered != lastBuffered) {
+                    lastBuffered = buffered;
+                    lastPosAt = now;
+                    return;
+                }
                 stalls++;
-                label.setText(stalls >= 2
+                label.setText((stalls >= 2
                         ? Lang.t(MultiActivity.this, "multi_ad")
-                        : Lang.t(MultiActivity.this, "multi_stall"));
+                        : Lang.t(MultiActivity.this, "multi_stall"))
+                        + "\n\uD83D\uDCF6 ağ " + Tune.mbps(MultiActivity.this));
                 label.setVisibility(View.VISIBLE);
+                CrashLog.event(MultiActivity.this, "multi",
+                        "pencere " + (slotIndex + 1) + " 22 sn dondu, ağ "
+                                + Tune.mbps(MultiActivity.this) + ": " + list.get(chan).url);
                 retry();
             }
         }

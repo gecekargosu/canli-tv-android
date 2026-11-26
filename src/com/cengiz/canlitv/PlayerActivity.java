@@ -109,19 +109,15 @@ public class PlayerActivity extends android.app.Activity {
         root.setBackgroundColor(Color.BLACK);
 
         // #107: MediaPlayer yerine ExoPlayer (media3) — HLS, 302 ve hata toparlama daha güvenli.
-        androidx.media3.datasource.DefaultHttpDataSource.Factory httpFactory =
-                new androidx.media3.datasource.DefaultHttpDataSource.Factory()
-                        .setUserAgent(Net.PLAYER_UA)
-                        .setDefaultRequestProperties(Net.playerHeaders())
-                        .setAllowCrossProtocolRedirects(true);
+        // 9.97: zayıf Wi-Fi — 25 sn okuma beklemesi, 6 sessiz tekrar, büyük tampon (Tune).
+        androidx.media3.datasource.DefaultHttpDataSource.Factory httpFactory = Tune.http();
         // #155: tüketim artık TrafficStats yerine oynatıcının okuduğu baytlardan sayılıyor.
         CountingDataSource.Sink sink = new CountingDataSource.Sink() {
             @Override public void add(long n) { sessionBytes.addAndGet(n); }
         };
         player = new androidx.media3.exoplayer.ExoPlayer.Builder(this)
-                .setMediaSourceFactory(
-                        new androidx.media3.exoplayer.source.DefaultMediaSourceFactory(
-                                new CountingDataSource.Factory(httpFactory, sink)))
+                .setMediaSourceFactory(Tune.source(new CountingDataSource.Factory(httpFactory, sink)))
+                .setLoadControl(Tune.liveVideo())
                 .build();
         player.setAudioAttributes(new androidx.media3.common.AudioAttributes.Builder()
                 .setUsage(androidx.media3.common.C.USAGE_MEDIA)
@@ -1155,14 +1151,25 @@ public class PlayerActivity extends android.app.Activity {
             try {
                 if (!player.isPlaying()) {
                     if (giveUpIfDead()) return;
+                    // 9.97: tampon doluyorsa bu bir HATA değil, yavaş ağdır. Eskiden BUFFERING
+                    // durumunda da stop+prepare yapılıyor, tampon her 15 sn'de sıfırlanıyordu
+                    // (takılmanın en büyük programsal sebebi). Artık yüklemeyi bekliyoruz.
+                    boolean loading = player.getPlaybackState()
+                            == androidx.media3.common.Player.STATE_BUFFERING || player.isLoading();
+                    if (loading) {
+                        ui.removeCallbacks(this);
+                        ui.postDelayed(this, 15000);
+                        return;
+                    }
                     // Zayıf internet: kanalı "ölü" saymadan önce aynı yayına 2 kez daha bağlan.
                     if (sameRetries < 2) {
                         sameRetries++;
                         final String cur = list.get(index).url;
-                        showNotice("📶 Bağlantı sorunu · yeniden bağlanıyorum ("
-                                + sameRetries + "/3)");
+                        showNotice("📶 Bağlantı sorunu · ağ " + Tune.mbps(PlayerActivity.this)
+                                + " · yeniden bağlanıyorum (" + sameRetries + "/3)");
                         CrashLog.event(PlayerActivity.this, "tv",
-                                "15 sn ses yok, tekrar " + sameRetries + "/3: " + cur);
+                                "15 sn ses yok, ağ " + Tune.mbps(PlayerActivity.this)
+                                        + ", tekrar " + sameRetries + "/3: " + cur);
                         ready = false;   // tekrar açılışta onReady() çalışsın
                         try {
                             player.stop();

@@ -838,3 +838,25 @@ kalan P0'lar kullanıcıda (AAB yükleme, mağaza metni, 12 tester) ve P1 maddel
 - **Yayın:** 9.76 (85) — `verify-apk` temiz (sınıf +0, dosya +0), GitHub release `v9.76`,
   site `/indir` 9.76 (HTTP 200), mağaza görseli `docs/play/ekran-9.76-1-ana.png`.
 - **Açık:** ATV (D-70, kullanıcı erteledi).
+
+## Oturum 2026-11-26 (akşam) — Wi-Fi takılma şikâyeti / 9.97
+
+- **D-1 (yeni, kullanıcı şikâyeti):** "Wi-Fi'de TV ve radyo takılıyor."
+  Kod incelemesinde **programsal** iki sebep bulundu:
+  1. `PlayerActivity` watchdog'u `isPlaying()==false` görünce (BUFFERING dahil) 15 sn'de bir
+     `stop()+clearMediaItems()+prepare()` yapıyordu → tampon sürekli sıfırlanıyordu.
+  2. Soket okuma beklemesi Media3 varsayılanı 8 sn; yavaş ağda her parça hataya düşüp
+     oynatıcı sıfırdan kuruluyordu. Ayrıca çoklu ekran sabit varyant URL'i ile açıldığı için
+     kalite ağa göre düşemiyordu.
+  Yapılan: `Tune.java` (25 sn okuma, 12 sn bağlanma, 6 sessiz tekrar, 25/90 sn video tamponu,
+  30/180 sn radyo tamponu), BUFFERING'de müdahale yok, çoklu ekran 22 sn eşiği + master
+  playlist/ABR + 720p/2,5 Mbps (sesli) · 360p/0,7 Mbps (sessiz) tavanı, takılma anında
+  ekranda ölçülen ağ hızı (ağ mı uygulama mı ayırmak için).
+  **Derleme:** 9.97 (106) — `verify-apk` temiz (sınıf +0, dosya +0), cihaza kuruldu.
+  **Açık:** gerçek zayıf Wi-Fi'de 10-15 dk önce/sonra ölçümü (kullanıcı testi).
+- **app-ads.txt:** `https://umay-multi-tv-gq3zer.freebuff.site/app-ads.txt` canlı ve doğru
+  (`google.com, pub-7629051535337276, DIRECT, f08c47fec0942fa0`), Play mağaza ayarlarındaki
+  web sitesi de aynı alan adı. AdMob uyarısı tarama gecikmesi + AdMob'da "Kurulumu bitir"
+  adımının tamamlanmamış olmasından; kod tarafında eksik yok.
+- **Reklam seti:** Play videosunda telefon çerçevesi/ekran hizası düzeltildi (çerçeve
+  980 px'e sığdırıldı), 55,02 sn olarak yeniden üretildi.
