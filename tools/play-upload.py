@@ -40,6 +40,7 @@ def main():
     ap.add_argument("--upload")
     ap.add_argument("--track", default=None)
     ap.add_argument("--status", default="completed")
+    ap.add_argument("--name", default="UMAY Multi TV 10.05")
     a = ap.parse_args()
     if not os.path.exists(SA):
         sys.exit("Servis hesabi yok: %s" % SA)
@@ -69,7 +70,7 @@ def main():
             packageName=PKG, editId=eid, track=track,
             body={"track": track,
                   "releases": [{"versionCodes": [code], "status": a.status,
-                                "name": "UMAY Multi TV 9.98"}]}).execute()
+                                "name": a.name}]}).execute()
         commit = svc.edits().commit(packageName=PKG, editId=eid).execute()
         print("Commit:", commit.get("id"))
         print("Yukleme tamam. Play Console'da 'Incelemeye gonder' adimi gerekir.")
