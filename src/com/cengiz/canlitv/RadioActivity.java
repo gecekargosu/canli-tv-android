@@ -195,6 +195,20 @@ public class RadioActivity extends Activity {
         root.addView(list, new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
 
+        // v10.11: radyo listesi boşsa (ör. Türkiye dışı bir ülkede indirme başarısız)
+        // ekran tamamen boş kalıyordu. Artık sebep + ne yapılacağı yazıyor.
+        TextView emptyRadio = new TextView(this);
+        emptyRadio.setText(I18n.t(this, "Radyo bulunamadı.\n\nAramanı temizlemeyi ya da "
+                + "Ayarlar → Ülke bölümünden başka bir ülke seçmeyi deneyebilirsin."));
+        emptyRadio.setTextColor(MUTED);
+        emptyRadio.setTextSize(13);
+        emptyRadio.setGravity(android.view.Gravity.CENTER);
+        emptyRadio.setPadding(dp(24), dp(24), dp(24), dp(24));
+        LinearLayout.LayoutParams erlp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f);
+        root.addView(emptyRadio, erlp);
+        list.setEmptyView(emptyRadio);
+
         TextView foot = new TextView(this);
         foot.setText(I18n.t(this, "İpucu: bir radyoya uzun bas → listeden gizle. Gizlediklerini "
                 + "\"🗑 Gizlenenler\" sekmesinden geri ekleyebilirsin."));

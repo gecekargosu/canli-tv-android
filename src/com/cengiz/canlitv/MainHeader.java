@@ -139,7 +139,8 @@ final class MainHeader {
         actionRow.addView(multi, ui.slot(0));
 
         TextView radio = ui.pill("📻", MainUi.SOFT);
-        radio.setContentDescription("Radyo");
+        // v10.11: etiket sabit "Radyo" idi; İngilizce arayüzde TalkBack Türkçe okuyordu.
+        radio.setContentDescription(I18n.t(a, "Radyo"));
         radio.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View v) { host.headerRadio(); }
         });
@@ -167,7 +168,7 @@ final class MainHeader {
         actionRow.addView(recordings, ui.slot(3));
 
         TextView settings = ui.pill("⚙", MainUi.SOFT);
-        settings.setContentDescription("Ayarlar");
+        settings.setContentDescription(I18n.t(a, "Ayarlar"));
         settings.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View v) { host.headerSettings(); }
         });

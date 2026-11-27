@@ -544,8 +544,15 @@ public class PlayerActivity extends android.app.Activity {
             if (AdManager.isShowingFullScreen()) {
                 if (!adPaused) {
                     adPaused = true;
+                    adPausedAt = System.currentTimeMillis();
                     try { player.pause(); } catch (Throwable ignored) { }
                     ui.removeCallbacks(watchdog);
+                } else if (System.currentTimeMillis() - adPausedAt > 180000L) {
+                    // v10.11: reklam bayrağı takılı kaldıysa (reklam kapandı ama durum
+                    // sıfırlanmadıysa) oynatıcı sonsuza kadar duraklatılmış kalıyordu.
+                    adPaused = false;
+                    CrashLog.event(PlayerActivity.this, "tv", "reklam durumu 180 sn takılı kaldı · devam");
+                    play();
                 }
             } else if (adPaused) {
                 // Reklam kapandı: kaldığı yerden devam etmek yerine canlıya yeniden bağlan.
@@ -559,6 +566,7 @@ public class PlayerActivity extends android.app.Activity {
                 play();
             }
             checkStall();
+            checkFirstFrameDeadline();
             checkFrames();
             // K-02: izlerken zamanlanmış tam ekran reklam kaldırıldı.
             // Reklam yalnız kanal değişiminde (3. zap / 180 sn) çıkar.
@@ -826,6 +834,31 @@ public class PlayerActivity extends android.app.Activity {
         if (System.currentTimeMillis() - tryStartedAt < 45000) return false;
         markDead("Zaman aşımı");
         return true;
+    }
+
+    /**
+     * v10.11: SON TARİHLİ İLK KARE — kanal 60 sn içinde hiç hazır olmadıysa siyah ekranda
+     * "açılıyor…" yazısıyla sonsuza kadar beklemek yerine hata ekranı + bildirim düğmesi
+     * gösterilir. (Emülatörde 4 dakika boyunca siyah ekran + "Stream is opening slowly"
+     * kaldığı, hata ekranının hiç gelmediği görüldü.)
+     * giveUpIfDead'ten bağımsız: o yalnız watchdog/checkStall yolundan çağrılıyor.
+     */
+    private boolean deadTimerFired = false;
+    /** Reklam nedeniyle duraklatmanın başladığı an (takılı bayrak koruması). */
+    private long adPausedAt = 0;
+
+    private void checkFirstFrameDeadline() {
+        try {
+            if (deadTimerFired || ready || tryStartedAt <= 0 || isFinishing()) return;
+            // Gerçekten tam ekran reklam varsa bekle; ama bayrak takılı kaldıysa bekleme.
+            if (AdManager.isShowingFullScreen()
+                    && System.currentTimeMillis() - adPausedAt < 180000L) return;
+            if (System.currentTimeMillis() - tryStartedAt < 60000) return;
+            deadTimerFired = true;
+            CrashLog.event(this, "tv", "60 sn içinde ilk kare gelmedi · "
+                    + list.get(index).name);
+            markDead("İlk kare 60 sn içinde gelmedi");
+        } catch (Throwable ignored) { }
     }
 
     private void checkStall() {
@@ -1141,6 +1174,8 @@ public class PlayerActivity extends android.app.Activity {
         // döngüye açıktı; ölü kanal kararı artık zamana bağlı.
         tryStartedAt = System.currentTimeMillis();
         everPlayed = false;
+        deadTimerFired = false;
+        adPausedAt = 0;
         netTries = 0;
         fbTried = 0;
         tracking = true;
@@ -1562,7 +1597,8 @@ public class PlayerActivity extends android.app.Activity {
     private TextView barButton(String icon, String label) {
         TextView t = new TextView(this);
         t.setTextColor(TEXT);
-        t.setTextSize(10);
+        // v10.11: 56dp'lik kutuya etiket tek satırda sığsın ("Sadece ses"/"Audio only").
+        t.setTextSize(9);
         t.setGravity(Gravity.CENTER);
         setBarText(t, icon, I18n.t(this, label));   // v10.05: alt bar etiketi 8 dilde
         GradientDrawable d = new GradientDrawable();
@@ -1570,8 +1606,10 @@ public class PlayerActivity extends android.app.Activity {
         d.setCornerRadius(dp(14));
         t.setBackground(d);
         t.setPadding(dp(2), dp(6), dp(2), dp(4));
-        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(dp(68), dp(62));
-        lp.setMargins(dp(3), 0, dp(3), 0);
+        // v10.11: 68dp × 9 düğme 411dp'lik telefonda sığmıyordu (PiP/Kilit/Ses ekran
+        // dışında kalıyor, kimse kaydırmayı fark etmiyordu). 56dp ile 7 düğme görünüyor.
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(dp(56), dp(62));
+        lp.setMargins(dp(2), 0, dp(2), 0);
         t.setLayoutParams(lp);
         return t;
     }

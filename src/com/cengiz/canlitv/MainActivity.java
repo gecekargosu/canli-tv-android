@@ -518,7 +518,20 @@ public class MainActivity extends android.app.Activity
         }
     }
 
+    /** v10.11: "Git"e basınca klavye açık kalıyor, onay penceresi klavyenin üstüne sıkışıyordu. */
+    private void hideIme() {
+        try {
+            View f = getCurrentFocus();
+            if (f != null) {
+                InputMethodManager im = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
+                if (im != null) im.hideSoftInputFromWindow(f.getWindowToken(), 0);
+                f.clearFocus();
+            }
+        } catch (Throwable ignored) { }
+    }
+
     private void gotoNumber(int no) {
+        hideIme();
         final Channel c = ChannelRepo.byNumber(this, no);
         if (c == null) {
             Toast.makeText(this, "№" + no + " " + I18n.t(this, "diye kanal yok") + " (1-" + all.size() + ")",
@@ -854,9 +867,13 @@ public class MainActivity extends android.app.Activity
         if (shown.isEmpty()) {
             emptyView.setVisibility(View.VISIBLE);
             final String cc = Prefs.country(this);
-            if (base.isEmpty() && !"tr".equals(cc)) {
+            // v10.11: bu uyarı yalnızca ÜLKE LİSTESİ hiç yokken gösterilir. Önceden
+            // "shown boş" yeterliydi; Favoriler/Son/Gizli sekmelerinde ve sonuçsuz
+            // aramada da "list not ready — dokun, tekrar indir" çıkıyordu.
+            if ((all == null || all.isEmpty()) && !"tr".equals(cc)) {
                 // #148: ülke listesi inmediyse/hazır değilse boş ekran yerine açıklama + tekrar dene
-                emptyView.setText("" + Countries.flag(cc) + " " + Countries.name(cc, false)
+                emptyView.setText("" + Countries.flag(cc) + " "
+                        + Countries.name(cc, !"tr".equals(Prefs.uiLang(this)))
                         + I18n.t(this, " listesi henüz hazır değil.\n\nBu ülke için kanallar sunucudan indirilemedi ya da henüz doğrulanmadı.\n\nDokun → tekrar indirmeyi dene\nveya Ayarlar → Ülke bölümünden Türkiye'ye dön."));
                 emptyView.setOnClickListener(new View.OnClickListener() {
                     @Override public void onClick(View v) {
