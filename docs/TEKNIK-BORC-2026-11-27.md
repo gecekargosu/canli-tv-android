@@ -72,6 +72,15 @@ ekran görüntüleri) değiştirir; bu senin kararın. D-pad desteği bundan ba�
 | "Bu kanal çalışmıyor" bildir düğmesi | ✅ yapıldı (oynatıcı + liste menüsü, çevrimdışı kuyruk) |
 | "Gerçek kare geldi mi" ölçümü (`onRenderedFirstFrame` yerine READY + video izi + 10 sn) | ✅ yapıldı |
 | `CrashLog.event` → logcat | ✅ yapıldı (`adb logcat -s UmayEvent`) |
-| MainActivity'yi `ChannelFilter` / `ChannelEditController` olarak bölme | ⏳ duruyor (davranış değişmeyecek) |
+| MainActivity'yi `ChannelFilter` / `ChannelEdit` olarak bölme | ✅ v10.10'da yapıldı (1272 → 1128 satır) |
 
 Yeni test: `tools/StreamDiagTest.java` (26 senaryo, `javac`+`java`, Android gerekmez).
+
+## 6. v10.10 (28 Kasım 2026)
+
+- `ChannelFilter`: filtre + sıralama (sekme, arama, gizlenenler, ölü kanal eleme, kayıtlı
+  sıra, "🕘 Son"). Arayüzden bağımsız.
+- `ChannelEdit`: düzenleme modu (seçim, taşıma, en üste/en alta, silme, sıra kaydı) +
+  `Host` arayüzü. `MainActivity` 1272 → **1128 satır**.
+- `YEDEK/` altındaki 30 dosyada düz yazı keystore şifresi maskelendi (ana
+  `keystore.properties` değişmedi).

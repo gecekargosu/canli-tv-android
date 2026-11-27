@@ -33,7 +33,7 @@ import java.util.List;
 import java.util.Set;
 
 public class MainActivity extends android.app.Activity
-        implements MainHeader.Host, ChannelRow.Host {
+        implements MainHeader.Host, ChannelRow.Host, ChannelEdit.Host {
 
     // v10.08: renkler ve kutu yardımcıları MainUi'de (MainActivity bölündü).
     private static final int BG = MainUi.BG;
@@ -62,9 +62,8 @@ public class MainActivity extends android.app.Activity
     private String shownCountry = "";
     private String shownLang = "";
 
-    // --- liste duzenleme ---
-    private boolean editMode = false;
-    private final java.util.LinkedHashSet<String> selected = new java.util.LinkedHashSet<String>();
+    // --- liste duzenleme (v10.10: secim/siralama mantigi ChannelEdit'te) ---
+    private final ChannelEdit edit = new ChannelEdit(this);
     private LinearLayout editBar;
     private TextView editBtn, selCount, qualityBtn, editIcon;
     private LinearLayout editBox, qualityBox;
@@ -267,7 +266,7 @@ public class MainActivity extends android.app.Activity
         TextView doneBtn = mini("✓ Bitti");
         doneBtn.setBackground(rounded(ACCENT, 14));
         doneBtn.setOnClickListener(new View.OnClickListener() {
-            @Override public void onClick(View v) { setEditMode(false); }
+            @Override public void onClick(View v) { edit.setMode(false); }
         });
         editBar.addView(doneBtn);
 
@@ -281,31 +280,31 @@ public class MainActivity extends android.app.Activity
 
         TextView upBtn = mini("▲");
         upBtn.setOnClickListener(new View.OnClickListener() {
-            @Override public void onClick(View v) { moveSelected(-1); }
+            @Override public void onClick(View v) { edit.moveSelected(-1); }
         });
         editBar.addView(upBtn);
 
         TextView downBtn = mini("▼");
         downBtn.setOnClickListener(new View.OnClickListener() {
-            @Override public void onClick(View v) { moveSelected(1); }
+            @Override public void onClick(View v) { edit.moveSelected(1); }
         });
         editBar.addView(downBtn);
 
         TextView topBtn = mini("⤒");
         topBtn.setOnClickListener(new View.OnClickListener() {
-            @Override public void onClick(View v) { moveSelectedToEdge(true); }
+            @Override public void onClick(View v) { edit.toEdge(true); }
         });
         editBar.addView(topBtn);
 
         TextView bottomBtn = mini("⤓");
         bottomBtn.setOnClickListener(new View.OnClickListener() {
-            @Override public void onClick(View v) { moveSelectedToEdge(false); }
+            @Override public void onClick(View v) { edit.toEdge(false); }
         });
         editBar.addView(bottomBtn);
 
         TextView delBtn = mini("🗑");
         delBtn.setOnClickListener(new View.OnClickListener() {
-            @Override public void onClick(View v) { deleteSelected(); }
+            @Override public void onClick(View v) { edit.deleteSelected(); }
         });
         editBar.addView(delBtn);
 
@@ -459,7 +458,7 @@ public class MainActivity extends android.app.Activity
                 @Override public void onClick(View v) {
                     group = c;
                     onlyHidden = "🗑 Gizlenenler".equals(c);
-                    selected.clear();
+                    edit.clear();
                     styleChips();
                     refresh();
                 }
@@ -487,13 +486,13 @@ public class MainActivity extends android.app.Activity
 
         // Düzenleme düğmesi: kalem + "Düzen" yazısı.
         TextView[] eLab = new TextView[1];
-        editBox = tabBox("✏️", Lang.t(this, editMode ? "ui_done" : "ui_edit"), eLab);
+        editBox = tabBox("✏️", Lang.t(this, edit.mode() ? "ui_done" : "ui_edit"), eLab);
         editBtn = eLab[0];
         editIcon = (TextView) editBox.getChildAt(0);
         editBox.setOnClickListener(new View.OnClickListener() {
-            @Override public void onClick(View v) { setEditMode(!editMode); }
+            @Override public void onClick(View v) { edit.setMode(!edit.mode()); }
         });
-        editBox.setBackground(rounded(editMode ? ACCENT : CARD, 16));
+        editBox.setBackground(rounded(edit.mode() ? ACCENT : CARD, 16));
         editBox.setLayoutParams(slot(5));
         chipsRow.addView(editBox);
         styleChips();
@@ -585,131 +584,45 @@ public class MainActivity extends android.app.Activity
                 }).show();
     }
 
-    // ---------- duzenleme modu ----------
-    private void setEditMode(boolean on) {
-        editMode = on;
-        if (!on) selected.clear();
+    // ---------- v10.10: ChannelEdit.Host (duzenleme modu mantigi ChannelEdit'te) ----------
+    @Override public android.content.Context context() { return this; }
+
+    @Override public List<Channel> shownList() { return shown; }
+
+    @Override public String group() { return group; }
+
+    @Override public String query() { return query; }
+
+    @Override public boolean hiddenTab() { return onlyHidden; }
+
+    @Override public void editUi(boolean on, int count) {
         if (editBar != null) editBar.setVisibility(on ? View.VISIBLE : View.GONE);
         if (editBox != null) {
             if (editIcon != null) {
-                editIcon.setText(on ? "✓" : "✏️");
+                editIcon.setText(on ? "\u2713" : "\u270f\ufe0f");
                 editIcon.setTextColor(on ? Color.WHITE : MUTED);
             }
             if (editBtn != null) {
-                editBtn.setText(Lang.t(MainActivity.this, on ? "ui_done" : "ui_edit"));
+                editBtn.setText(Lang.t(this, on ? "ui_done" : "ui_edit"));
                 editBtn.setTextColor(on ? Color.WHITE : MUTED);
             }
             editBox.setBackground(rounded(on ? ACCENT : CARD, 16));
         }
-        updateSelCount();
+        if (selCount != null) {
+            selCount.setText(count == 0
+                    ? I18n.t(this, "kanala dokun \u2192 seç")
+                    : count + " " + I18n.t(this, "kanal seçili"));
+        }
+    }
+
+    @Override public void listChanged() {
         if (adapter != null) adapter.notifyDataSetChanged();
     }
 
-    private void toggleSelect(Channel c) {
-        if (selected.contains(c.url)) selected.remove(c.url);
-        else selected.add(c.url);
-        updateSelCount();
-        adapter.notifyDataSetChanged();
-    }
+    @Override public void listRebuilt() { refresh(); }
 
-    private void updateSelCount() {
-        if (selCount != null) {
-            selCount.setText(selected.size() == 0
-                    ? I18n.t(this, "kanala dokun → seç")
-                    : selected.size() + " " + I18n.t(this, "kanal seçili"));
-        }
-        if (editBar != null) editBar.setVisibility(editMode ? View.VISIBLE : View.GONE);
-    }
-
-    private List<Channel> selectedChannels() {
-        List<Channel> out = new ArrayList<Channel>();
-        for (Channel c : shown) if (selected.contains(c.url)) out.add(c);
-        return out;
-    }
-
-    private void moveSelected(int delta) {
-        if (!canReorder()) return;
-        List<Channel> sel = selectedChannels();
-        if (sel.isEmpty()) {
-            Toast.makeText(this, I18n.t(this, "Önce kanallara dokunup seç"), Toast.LENGTH_SHORT).show();
-            return;
-        }
-        if (delta < 0) {
-            for (Channel c : sel) {
-                int i = shown.indexOf(c);
-                if (i > 0) { shown.remove(i); shown.add(i - 1, c); }
-            }
-        } else {
-            for (int k = sel.size() - 1; k >= 0; k--) {
-                Channel c = sel.get(k);
-                int i = shown.indexOf(c);
-                if (i >= 0 && i < shown.size() - 1) { shown.remove(i); shown.add(i + 1, c); }
-            }
-        }
-        saveOrder();
-        adapter.notifyDataSetChanged();
-    }
-
-    private void moveSelectedToEdge(boolean top) {
-        if (!canReorder()) return;
-        List<Channel> sel = selectedChannels();
-        if (sel.isEmpty()) {
-            Toast.makeText(this, I18n.t(this, "Önce kanallara dokunup seç"), Toast.LENGTH_SHORT).show();
-            return;
-        }
-        shown.removeAll(sel);
-        if (top) shown.addAll(0, sel);
-        else shown.addAll(sel);
-        saveOrder();
-        adapter.notifyDataSetChanged();
-        Toast.makeText(this, I18n.t(this, top ? "En üste alındı" : "En alta alındı"), Toast.LENGTH_SHORT).show();
-    }
-
-    private void deleteSelected() {
-        if (!canReorder()) return;
-        List<Channel> sel = selectedChannels();
-        if (sel.isEmpty()) {
-            Toast.makeText(this, I18n.t(this, "Silmek için kanal seç"), Toast.LENGTH_SHORT).show();
-            return;
-        }
-        for (Channel c : sel) {
-            if (onlyHidden) Prefs.unhideChannel(this, c.url);
-            else Prefs.hideChannel(this, c.url);
-        }
-        shown.removeAll(sel);
-        for (Channel c : sel) selected.remove(c.url);
-        saveOrder();
-        refresh();
-        Toast.makeText(this, onlyHidden
-                        ? sel.size() + " " + I18n.t(this, "kanal listeye geri eklendi")
-                        : sel.size() + " " + I18n.t(this, "kanal listeden silindi · 🗑 Gizlenenler'den geri alabilirsin"),
-                Toast.LENGTH_LONG).show();
-    }
-
-    private boolean canReorder() {
-        if (query.length() > 0) {
-            Toast.makeText(this, I18n.t(this, "Sıralamak için arama kutusunu temizle"), Toast.LENGTH_SHORT).show();
-            return false;
-        }
-        return true;
-    }
-
-    private void saveOrder() {
-        if ("🕘 Son".equals(group)) return;
-        List<String> urls = new ArrayList<String>();
-        for (Channel c : shown) urls.add(c.url);
-        Prefs.setOrder(this, group, urls);
-    }
-
-    /** Tek bir kanali bir adim yukari/asagi tasi (satirdaki oklar). */
-    private void moveItem(int pos, int delta) {
-        if (!canReorder()) return;
-        int j = pos + delta;
-        if (pos < 0 || pos >= shown.size() || j < 0 || j >= shown.size()) return;
-        Channel c = shown.remove(pos);
-        shown.add(j, c);
-        saveOrder();
-        adapter.notifyDataSetChanged();
+    @Override public void say(String msg) {
+        Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
     }
 
     private void askNumber(final Channel c) {
@@ -749,7 +662,7 @@ public class MainActivity extends android.app.Activity
                                     return a.no - b.no;
                                 }
                             });
-                            saveOrder();
+                            edit.saveOrder();
                         }
                         refresh();
                         Toast.makeText(MainActivity.this,
@@ -759,7 +672,7 @@ public class MainActivity extends android.app.Activity
     }
 
     private void sortDialog() {
-        if (!canReorder()) return;
+        if (!edit.canReorder()) return;
         final String[] items = {
                 I18n.t(this, "🕘 Çok izlediklerim en üstte"),
                 I18n.t(this, "🆕 Hiç izlemediklerim en üstte"),
@@ -775,7 +688,7 @@ public class MainActivity extends android.app.Activity
                     @Override public void onClick(DialogInterface d, int which) {
                         if (which == 4) {
                             Prefs.setOrder(MainActivity.this, group, new ArrayList<String>());
-                            setEditMode(false);
+                            edit.setMode(false);
                             refresh();
                             Toast.makeText(MainActivity.this, I18n.t(MainActivity.this, "Varsayılan sıra geri geldi"),
                                     Toast.LENGTH_SHORT).show();
@@ -807,8 +720,8 @@ public class MainActivity extends android.app.Activity
                         }
                         shown.clear();
                         shown.addAll(sorted);
-                        saveOrder();
-                        setEditMode(false);
+                        edit.saveOrder();
+                        edit.setMode(false);
                         refresh();
                         Toast.makeText(MainActivity.this, I18n.t(MainActivity.this, "Sıra kaydedildi"), Toast.LENGTH_SHORT).show();
                     }
@@ -838,8 +751,8 @@ public class MainActivity extends android.app.Activity
                         if (which == 1) { Prefs.toggleFav(MainActivity.this, c.url); refresh(); return; }
                         if (which == 2) { askNumber(c); return; }
                         if (which == 3) {
-                            setEditMode(true);
-                            toggleSelect(c);
+                            edit.setMode(true);
+                            edit.toggle(c);
                             return;
                         }
                         // Menü sırası: 0 Aç · 1 Favori · 2 Numara · 3 Seçim · 4 Sil/ekle · 5 Bildir
@@ -918,7 +831,7 @@ public class MainActivity extends android.app.Activity
         }
         if (it.getBooleanExtra("edit", false)) {
             it.removeExtra("edit");
-            setEditMode(true);
+            edit.setMode(true);
         }
         if (it.getBooleanExtra("sort", false)) {
             it.removeExtra("sort");
@@ -929,71 +842,14 @@ public class MainActivity extends android.app.Activity
 
     private void refresh() {
         ChannelRepo.applyNumbers(this);
+        // v10.10: filtre + siralama ChannelFilter'da; burada yalniz gorunum kurulur.
+        List<Channel> base = ChannelFilter.build(this, all, group, query, onlyHidden);
         shown.clear();
-        Set<String> favs = Prefs.favs(this);
-        List<String> recent = Prefs.recent(this);
-        java.util.Set<String> hidden = Prefs.hiddenChannels(this);
-        List<Channel> base = new ArrayList<Channel>();
-        for (Channel c : all) {
-            if (onlyHidden != hidden.contains(c.url)) continue;
-            // 9.75: TV8 gibi büyük kanallar iki geçici hatadan sonra listeden düşüyordu.
-            // Sabit (öne alınan) kanallar otomatik gizlemeden muaf.
-            if (!onlyHidden && Prefs.hideDead(this) && Prefs.fails(this, c.url) >= 2
-                    && !ChannelRepo.pinned(c.name)) continue;
-            // 9.96: "Gizlenenler" sekmesi bir kategori adi degil; gizli kanallar
-            // kategori filtresine takilip liste bos kaliyordu (silinen kanal geri
-            // eklenemiyordu). Gizli sekmede kategori filtresi uygulanmaz.
-            if (!"Tümü".equals(group) && !onlyHidden) {
-                if ("★ Favoriler".equals(group)) {
-                    if (!favs.contains(c.url)) continue;
-                } else if ("🇹🇷 Türkçe".equals(group)) {
-                    if (!c.turkish()) continue;
-                } else if ("🌐 Yabancı".equals(group)) {
-                    if (c.turkish()) continue;
-                } else if ("🕘 Son".equals(group)) {
-                    if (!recent.contains(c.url)) continue;
-                } else if (!c.group.equals(group)) {
-                    continue;
-                }
-            }
-            if (query.length() > 0
-                    && !Lang.fold(c.name).contains(query)
-                    && !Lang.fold(c.group).contains(query)
-                    && !String.valueOf(c.no).equals(query)) continue;
-            base.add(c);
-        }
-
-        // Bu sekme icin kaydedilmis kullanici sirasi (surukle/birak yerine kalici sira)
-        if (!"🕘 Son".equals(group)) {
-            final List<String> ord = Prefs.order(this, group);
-            if (!ord.isEmpty()) {
-                java.util.Collections.sort(base, new java.util.Comparator<Channel>() {
-                    @Override public int compare(Channel a, Channel b) {
-                        int ia = ord.indexOf(a.url);
-                        int ib = ord.indexOf(b.url);
-                        if (ia < 0) ia = Integer.MAX_VALUE;
-                        if (ib < 0) ib = Integer.MAX_VALUE;
-                        return ia < ib ? -1 : (ia == ib ? 0 : 1);
-                    }
-                });
-            }
-        }
         shown.addAll(base);
 
-        if ("🕘 Son".equals(group)) {
-            final List<Channel> ordered = new ArrayList<Channel>();
-            for (String u : recent) for (Channel c : shown) if (c.url.equals(u)) ordered.add(c);
-            for (Channel c : new ArrayList<Channel>(shown)) if (!ordered.contains(c)) ordered.add(c);
-            shown.clear();
-            shown.addAll(ordered);
-        }
-
-        // secimleri yalnizca gorunen kanallarla sinirla
-        java.util.Set<String> visible = new java.util.HashSet<String>();
-        for (Channel c : shown) visible.add(c.url);
-        selected.retainAll(visible);
-
-        updateSelCount();
+        // secimleri yalnizca gorunen kanallarla sinirla (v10.10: ChannelEdit)
+        edit.retainVisible();
+        edit.publish();
         adapter.notifyDataSetChanged();
         if (shown.isEmpty()) {
             emptyView.setVisibility(View.VISIBLE);
@@ -1135,7 +991,7 @@ public class MainActivity extends android.app.Activity
                 @Override public void onClick(View v) {
                     if (pos < 0 || pos >= shown.size()) return;
                     Channel c = shown.get(pos);
-                    if (editMode) { toggleSelect(c); return; }
+                    if (edit.mode()) { edit.toggle(c); return; }
                     if (onlyHidden) { channelMenu(c); return; }
                     open(c);
                 }
@@ -1154,7 +1010,7 @@ public class MainActivity extends android.app.Activity
     /** v10.08: satır görünümü ChannelRow'da (MainActivity bölündü). */
     private LinearLayout buildRow(int i) {
         Channel c = shown.get(i);
-        return ChannelRow.build(this, ui, c, i, editMode, selected.contains(c.url), this);
+        return ChannelRow.build(this, ui, c, i, edit.mode(), edit.isSelected(c.url), this);
     }
 
     // ---------- v10.08: MainHeader.Host (üst çubuk düğmeleri) ----------
@@ -1208,7 +1064,7 @@ public class MainActivity extends android.app.Activity
     }
 
     // ---------- v10.08: ChannelRow.Host (satırdaki ▲▼ okları) ----------
-    @Override public void moveChannel(int pos, int delta) { moveItem(pos, delta); }
+    @Override public void moveChannel(int pos, int delta) { edit.moveRow(pos, delta); }
 
     // ---------- v10.08: kumanda (D-pad) desteği ----------
     private final StringBuilder digits = new StringBuilder();

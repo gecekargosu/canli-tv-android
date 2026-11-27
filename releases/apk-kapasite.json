@@ -537,5 +537,16 @@
   "unpackedBytes": 8891515,
   "dexFiles": 1,
   "classes": 7866
+ },
+ {
+  "versionName": "10.10",
+  "versionCode": "119",
+  "apkBytes": 4476343,
+  "sha256": "8a7645d89887671dce37cb32e01b132fc0070e8b82b8136cdbda8f6dc702773a",
+  "signSha256": "f3996c67ef0e0e0420f442fe3fcf6303a17caa88dcba8a2b19a10cd95c92b8d5",
+  "zipEntries": 429,
+  "unpackedBytes": 8891846,
+  "dexFiles": 1,
+  "classes": 7866
  }
 ]
