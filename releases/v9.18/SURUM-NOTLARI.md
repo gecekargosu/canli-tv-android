@@ -22,7 +22,7 @@ Claude'un v9.16 derin analizindeki bulgular tek tek kodda doğrulandı; doğru �
 - Sonuç gelince klavye otomatik kapanıyor, liste hemen ekranda görünüyor.
 
 ### 🔴 İmza şifresi repoda açık yazılıydı (P0-7)
-- `app/build.gradle` içindeki `UmayMultiTV2026!` kaldırıldı.
+- `app/build.gradle` içindeki `*** (keystore.properties) ***!` kaldırıldı.
 - Şifre artık kökteki `keystore.properties` (git'e **girmez**, `.gitignore`'da) veya `UMAY_STOREPASSWORD`/`UMAY_KEYPASSWORD` ortam değişkeninden okunuyor.
 - ⚠️ Şifre eskiden herkese açık geçmişte duruyor; Play App Signing açılınca **yeni anahtar** üretilecek.
 
