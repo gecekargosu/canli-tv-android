@@ -17,6 +17,16 @@ public class RingGauge extends View {
 
     private final Paint p = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final RectF arc = new RectF();
+    private final RectF inner = new RectF();
+    // H-04: onDraw içinde allocation/parseColor yok — renkler ve gradyan önbellekte.
+    private static final int C_RAIL = Color.parseColor("#1D2A40");
+    private static final int C_GRAD_A = Color.parseColor("#FF7A18");
+    private static final int C_GRAD_B = Color.parseColor("#FFC078");
+    private static final int C_LIVE = Color.parseColor("#33FF7A18");
+    private static final int C_IDLE = Color.parseColor("#1B2942");
+    private static final int C_GLOW = Color.parseColor("#22FF7A18");
+    private LinearGradient grad;
+    private float gradSize = -1f;
     private float progress = 0.25f;      // 0..1
     private boolean live = false;
 
@@ -48,28 +58,32 @@ public class RingGauge extends View {
         p.setStrokeWidth(stroke);
         p.setStrokeCap(Paint.Cap.ROUND);
         p.setShader(null);
-        p.setColor(Color.parseColor("#1D2A40"));
+        p.setColor(C_RAIL);
         canvas.drawArc(arc, 135, 270, false, p);
 
-        // dolu kısım: turuncu -> amber
-        p.setShader(new LinearGradient(arc.left, arc.top, arc.right, arc.bottom,
-                Color.parseColor("#FF7A18"), Color.parseColor("#FFC078"), Shader.TileMode.CLAMP));
+        // dolu kısım: turuncu -> amber (gradyan boyut değişmedikçe yeniden üretilmez)
+        if (grad == null || Math.abs(gradSize - size) > 1f) {
+            grad = new LinearGradient(arc.left, arc.top, arc.right, arc.bottom,
+                    C_GRAD_A, C_GRAD_B, Shader.TileMode.CLAMP);
+            gradSize = size;
+        }
+        p.setShader(grad);
         canvas.drawArc(arc, 135, 270 * (0.06f + progress * 0.94f), false, p);
         p.setShader(null);
 
         // iç halka (cam hissi)
         p.setStyle(Paint.Style.STROKE);
         p.setStrokeWidth(dp(1));
-        p.setColor(Color.parseColor(live ? "#33FF7A18" : "#1B2942"));
+        p.setColor(live ? C_LIVE : C_IDLE);
         float r2 = r - stroke;
-        RectF inner = new RectF(cx - r2, cy - r2, cx + r2, cy + r2);
+        inner.set(cx - r2, cy - r2, cx + r2, cy + r2);
         canvas.drawArc(inner, 0, 360, false, p);
 
         // çalarken yumuşak parlama
         if (live) {
             p.setStyle(Paint.Style.STROKE);
             p.setStrokeWidth(dp(3));
-            p.setColor(Color.parseColor("#22FF7A18"));
+            p.setColor(C_GLOW);
             canvas.drawArc(arc, 135, 360, false, p);
         }
     }

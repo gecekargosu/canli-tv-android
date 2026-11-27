@@ -323,8 +323,8 @@ public class RadioActivity extends Activity {
             if (!"Tümü".equals(cat) && !"★ Favoriler".equals(cat) && !showHidden
                     && !cat.equals(category(NAMES.get(i)))) continue;
             if (query.length() > 0) {
-                String nm = NAMES.get(i).toLowerCase();
-                String mt = META.get(i).toLowerCase();
+                String nm = NAMES.get(i).toLowerCase(java.util.Locale.ROOT);
+                String mt = META.get(i).toLowerCase(java.util.Locale.ROOT);
                 String qs = query.replace(" ", "");
                 nm = Lang.fold(nm); mt = Lang.fold(mt);
                 boolean hit = nm.contains(query) || mt.contains(query)

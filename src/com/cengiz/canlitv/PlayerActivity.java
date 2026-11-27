@@ -257,7 +257,7 @@ public class PlayerActivity extends android.app.Activity {
         });
         barRow.addView(qualityBtn);
 
-        recButton = barButton("⏺", "Kaydet");   // alt barda kısa etiket (Enr./Aufn.…)
+        recButton = barButton("⏺", "Kayıt");   // alt barda kısa etiket (Rec/Aufn./Enr.…)
         hint(recButton, "Yayını telefona kaydet (Movies/TV-Kayitlari)");
         recButton.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View v) { toggleRecording(); }
@@ -907,7 +907,7 @@ public class PlayerActivity extends android.app.Activity {
                                 c.add(java.util.Calendar.DAY_OF_MONTH, 1);
                             sleepUntil = c.getTimeInMillis();
                             Prefs.setSleepUntil(PlayerActivity.this, sleepUntil);
-                            Toast.makeText(PlayerActivity.this, "Saat " + String.format("%02d:%02d", h, mi)
+                            Toast.makeText(PlayerActivity.this, "Saat " + String.format(java.util.Locale.ROOT, "%02d:%02d", h, mi)
                                     + " de kapanacak", Toast.LENGTH_LONG).show();
                         } catch (Exception e) {
                             Toast.makeText(PlayerActivity.this, "Saat formatı: 23:30", Toast.LENGTH_SHORT).show();
@@ -1222,8 +1222,18 @@ public class PlayerActivity extends android.app.Activity {
         if (Build.VERSION.SDK_INT < 26) return false;
         try {
             if (!player.isPlaying()) return false;
-            enterPictureInPictureMode(new PictureInPictureParams.Builder()
-                    .setAspectRatio(new Rational(16, 9)).build());
+            PictureInPictureParams.Builder b = new PictureInPictureParams.Builder()
+                    .setAspectRatio(new Rational(16, 9));
+            if (Build.VERSION.SDK_INT >= 31) {
+                // H-03: Android 12+ yumuşak geçiş — otomatik giriş + kaynak dikdörtgeni.
+                b.setAutoEnterEnabled(true);
+                if (video != null && video.getWidth() > 0) {
+                    android.graphics.Rect src = new android.graphics.Rect();
+                    video.getGlobalVisibleRect(src);
+                    if (!src.isEmpty()) b.setSourceRectHint(src);
+                }
+            }
+            enterPictureInPictureMode(b.build());
             return true;
         } catch (Exception e) {
             return false;

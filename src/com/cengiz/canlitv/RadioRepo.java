@@ -227,7 +227,7 @@ public final class RadioRepo {
             @Override public void run() {
                 boolean ok = false;
                 try {
-                    String q = API + "?countrycode=" + URLEncoder.encode(cc.toUpperCase(), "UTF-8")
+                    String q = API + "?countrycode=" + URLEncoder.encode(cc.toUpperCase(java.util.Locale.ROOT), "UTF-8")
                             + "&hidebroken=true&order=clickcount&reverse=true&limit=80";
                     HttpURLConnection con = (HttpURLConnection) new URL(q).openConnection();
                     con.setConnectTimeout(15000);
@@ -316,8 +316,8 @@ public final class RadioRepo {
             String codec = o.optString("codec", "MP3");
             String bitrate = o.optString("bitrate", "");
             String city = o.optString("state", "");
-            if (city.length() == 0) city = o.optString("country", cc.toUpperCase());
-            String meta = codec.toUpperCase() + (bitrate.length() > 0 ? " · " + bitrate + " kbps" : "")
+            if (city.length() == 0) city = o.optString("country", cc.toUpperCase(java.util.Locale.ROOT));
+            String meta = codec.toUpperCase(java.util.Locale.ROOT) + (bitrate.length() > 0 ? " · " + bitrate + " kbps" : "")
                     + " | " + city;
             all.add(new String[]{name, meta, url});
         }

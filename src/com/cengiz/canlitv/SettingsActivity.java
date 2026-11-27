@@ -50,7 +50,8 @@ public class SettingsActivity extends Activity {
         DE.put("Yayın ve internet", "Streaming und Internet");
         DE.put("Kanal listesi", "Senderliste");
         DE.put("Geliştirici", "Entwickler");
-        DE.put("Kayıt", "Aufnahme");
+        DE.put("Kayıt", "Aufn.");
+        DE.put("Kayıt ve Yayın", "Aufnahme & Sendung");
         DE.put("Radyo", "Radio");
         DE.put("Hakkında", "Über die App");
         // satır başlıkları
@@ -445,7 +446,7 @@ public class SettingsActivity extends Activity {
                 });
 
         // --- kayit ---
-        section("Kayıt");
+        section("Kayıt ve Yayın");
         row("🎬", "Kayıtlarım", "Telefona kaydettiğin yayınlar",
                 "Aç ›", new View.OnClickListener() {
                     @Override public void onClick(View v) {
@@ -938,7 +939,7 @@ public class SettingsActivity extends Activity {
                 .setTitle("Günlük mobil veri limiti (MB)")
                 .setMessage("Limit dolunca kanal açmadan önce uyarı verir.")
                 .setView(et)
-                .setPositiveButton("Kaydet", new DialogInterface.OnClickListener() {
+                .setPositiveButton(I18n.t(this, "Kaydet"), new DialogInterface.OnClickListener() {
                     @Override public void onClick(DialogInterface d, int w) {
                         try {
                             Prefs.setLimitMb(SettingsActivity.this,
@@ -1028,7 +1029,7 @@ public class SettingsActivity extends Activity {
         new Thread(new Runnable() {
             @Override public void run() {
                 final String id = AdsTest.gaid(SettingsActivity.this);
-                final String hash = id == null ? null : AdsTest.md5(id.toUpperCase());
+                final String hash = id == null ? null : AdsTest.md5(id.toUpperCase(java.util.Locale.ROOT));
                 runOnUiThread(new Runnable() {
                     @Override public void run() {
                         if (id == null) {

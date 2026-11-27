@@ -69,7 +69,7 @@ public class Countries {
 
     public static String name(String code, boolean english) {
         for (String[] c : LIST) if (c[0].equals(code)) return english ? c[2] : c[1];
-        return code.toUpperCase();
+        return code.toUpperCase(java.util.Locale.ROOT);
     }
 
     /** Ulke kodundan bayrak emojisi uretir (tr -> TR). */

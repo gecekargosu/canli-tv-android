@@ -20,11 +20,17 @@ public class SpectrumView extends View {
 
     private final Paint p = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final RectF r = new RectF();
+    private final RectF tip = new RectF();
     private final float[] shown = new float[8];
     private final int[] colors = {
             Color.parseColor("#FF7A18"), Color.parseColor("#FFA24A"),
             Color.parseColor("#FFD9B0"), Color.parseColor("#E7EEF8")
     };
+    // H-04: onDraw içinde allocation yok — gradyanlar önbelleklenir (yalnız yükseklik
+    // 6 px'den fazla değişince yeniden üretilir), tepe çubuğu için tek RectF kullanılır.
+    private final int TIP_COLOR = Color.parseColor("#B33D00");
+    private final LinearGradient[] grads = new LinearGradient[colors.length];
+    private final float[] gradTop = new float[colors.length];
 
     public SpectrumView(Context c) { super(c); }
 
@@ -43,15 +49,21 @@ public class SpectrumView extends View {
             if (shown[i] < 0.02f) shown[i] = 0.02f;
             float bh = h * Math.max(0.04f, Math.min(1f, shown[i]));
             float x = i * slot + (slot - bw) / 2f;
-            p.setShader(new LinearGradient(0, h - bh, 0, h,
-                    colors[i % 3], Color.parseColor("#B33D00"), Shader.TileMode.CLAMP));
+            int gi = i % 3;
+            if (grads[gi] == null || Math.abs(gradTop[gi] - (h - bh)) > 6f) {
+                grads[gi] = new LinearGradient(0, h - bh, 0, h, colors[gi], TIP_COLOR,
+                        Shader.TileMode.CLAMP);
+                gradTop[gi] = h - bh;
+            }
+            p.setShader(grads[gi]);
             r.set(x, h - bh, x + bw, h);
             canvas.drawRoundRect(r, bw / 2f, bw / 2f, p);
             p.setShader(null);
             // tepe noktası: canlı yayın hissi
             p.setColor(colors[3]);
             p.setAlpha(180);
-            canvas.drawRoundRect(new RectF(x, h - bh - dp(2), x + bw, h - bh), bw / 2f, bw / 2f, p);
+            tip.set(x, h - bh - dp(2), x + bw, h - bh);
+            canvas.drawRoundRect(tip, bw / 2f, bw / 2f, p);
             p.setAlpha(255);
         }
         // Çalarken akıcı (60 fps), sessizken yavaş (4 fps) yenile: ilk karede ses

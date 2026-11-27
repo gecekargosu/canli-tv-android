@@ -16,7 +16,7 @@ public class Channel {
         this.baseNo = no;
         this.name = name;
         this.group = group;
-        this.country = country == null ? "" : country.toLowerCase();
+        this.country = country == null ? "" : country.toLowerCase(java.util.Locale.ROOT);
         this.logo = logo;
         this.url = url;
     }

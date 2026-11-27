@@ -34,7 +34,7 @@ public class AdsTest {
     /** AdMob'un setTestDeviceIds için beklediği MD5 (büyük harf) özet. */
     public static String hashed(Context c) {
         String id = gaid(c);
-        return id == null ? null : md5(id.toUpperCase());
+        return id == null ? null : md5(id.toUpperCase(java.util.Locale.ROOT));
     }
 
     public static String md5(String s) {

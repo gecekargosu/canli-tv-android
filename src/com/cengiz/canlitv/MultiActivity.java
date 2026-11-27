@@ -528,7 +528,7 @@ public class MultiActivity extends android.app.Activity {
         final EditText et = new EditText(this);
         et.setHint("Set adı (örn: Spor + Haber)");
         new AlertDialog.Builder(this).setTitle("Bu seti favori yap").setView(et)
-                .setPositiveButton("Kaydet", new DialogInterface.OnClickListener() {
+                .setPositiveButton(I18n.t(this, "Kaydet"), new DialogInterface.OnClickListener() {
                     @Override public void onClick(DialogInterface d, int w) {
                         String name = et.getText().toString().trim();
                         if (name.length() == 0) name = "Set";
@@ -951,13 +951,13 @@ public class MultiActivity extends android.app.Activity {
 
         final Runnable fill = new Runnable() {
             @Override public void run() {
-                String q = filter.getText().toString().trim().toLowerCase();
+                String q = Lang.fold(filter.getText().toString().trim());
                 rows.clear(); idxx.clear();
                 for (int i = 0; i < list.size(); i++) {
                     Channel c = list.get(i);
                     if (q.length() > 0
-                            && !c.name.toLowerCase().contains(q)
-                            && !c.group.toLowerCase().contains(q)
+                            && !Lang.fold(c.name).contains(q)
+                            && !Lang.fold(c.group).contains(q)
                             && !String.valueOf(c.no).equals(q)) continue;
                                                 rows.add("№" + c.no + "  " + c.name + "   ·  " + Lang.group(MultiActivity.this, c.group));
                     idxx.add(i);
