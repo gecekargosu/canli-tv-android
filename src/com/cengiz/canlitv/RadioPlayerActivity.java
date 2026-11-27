@@ -68,7 +68,7 @@ public class RadioPlayerActivity extends Activity {
         load();
         // HATA (tur 1): ülkenin radyo listesi henüz inmemişse names.get(0) çöküyordu.
         if (names.isEmpty()) {
-            Toast.makeText(this, "Radyo listesi hazır değil. Radyo ekranından yeniden dene.",
+            Toast.makeText(this, I18n.t(this, "Radyo listesi hazır değil. Radyo ekranından yeniden dene."),
                     Toast.LENGTH_LONG).show();
             finish();
             return;
@@ -128,7 +128,7 @@ public class RadioPlayerActivity extends Activity {
         stopBtn.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View v) {
                 AudioService.stop(RadioPlayerActivity.this);
-                statusView.setText("durduruldu");
+                statusView.setText(I18n.t(RadioPlayerActivity.this, "durduruldu"));
                 playing = false;
             }
         });
@@ -368,21 +368,22 @@ public class RadioPlayerActivity extends Activity {
 
     /** Uyku zamanlayici: 15/30/60/90 dakika sonra radyoyu durdurur (servis tarafında). */
     private void sleepDialog() {
-        final String[] opts = {"15 dakika", "30 dakika", "60 dakika", "90 dakika", "Kapat"};
+        final String[] opts = {I18n.t(this, "15 dakika"), I18n.t(this, "30 dakika"),
+                I18n.t(this, "60 dakika"), I18n.t(this, "90 dakika"), I18n.t(this, "Kapat")};
         new android.app.AlertDialog.Builder(this)
-                .setTitle("Uyku zamanlayıcı")
+                .setTitle(I18n.t(this, "Uyku zamanlayıcı"))
                 .setItems(opts, new android.content.DialogInterface.OnClickListener() {
                     @Override public void onClick(android.content.DialogInterface d, int w) {
                         if (w == 4) {
                             AudioService.sleepIn(RadioPlayerActivity.this, 0);
-                            Toast.makeText(RadioPlayerActivity.this, "Zamanlayıcı kapalı",
+                            Toast.makeText(RadioPlayerActivity.this, I18n.t(RadioPlayerActivity.this, "Zamanlayıcı kapalı"),
                                     Toast.LENGTH_SHORT).show();
                             return;
                         }
                         int min = new int[]{15, 30, 60, 90}[w];
                         AudioService.sleepIn(RadioPlayerActivity.this, min * 60000L);
-                        Toast.makeText(RadioPlayerActivity.this,
-                                min + " dakika sonra radyo duracak", Toast.LENGTH_LONG).show();
+                        Toast.makeText(RadioPlayerActivity.this, String.format(java.util.Locale.ROOT,
+                                I18n.t(RadioPlayerActivity.this, "%d dakika sonra radyo duracak"), min), Toast.LENGTH_LONG).show();
                     }
                 }).show();
     }
@@ -391,27 +392,28 @@ public class RadioPlayerActivity extends Activity {
     private void offerAdFree() {
         if (isFinishing() || AdManager.isAdFreeFor(this, urls.get(index))) return;
         new android.app.AlertDialog.Builder(this)
-                .setTitle("Reklamsız devam?")
-                .setMessage("Uzun süredir dinliyorsun. İstersen kısa bir video izle, "
-                        + Ads.REWARD_MINUTES + " dakika boyunca hiç reklam görme. İstemezsen dokunma, "
-                        + "dinlemeye aynen devam eder.")
-                .setPositiveButton("🎬 Video izle", new android.content.DialogInterface.OnClickListener() {
+                .setTitle(I18n.t(this, "Reklamsız devam?"))
+                .setMessage(String.format(java.util.Locale.ROOT,
+                        I18n.t(this, "Uzun süredir dinliyorsun. İstersen kısa bir video izle, %d dakika boyunca hiç reklam görme. İstemezsen dokunma, dinlemeye aynen devam eder."),
+                        Ads.REWARD_MINUTES))
+                .setPositiveButton(I18n.t(this, "🎬 Video izle"), new android.content.DialogInterface.OnClickListener() {
                     @Override public void onClick(android.content.DialogInterface d, int w) {
                         AdManager.showRewarded(RadioPlayerActivity.this, urls.get(index), new Runnable() {
                             @Override public void run() {
-                                Toast.makeText(RadioPlayerActivity.this, "Teşekkürler! "
-                                        + Ads.REWARD_MINUTES + " dakika reklamsız.", Toast.LENGTH_LONG).show();
+                                Toast.makeText(RadioPlayerActivity.this, String.format(java.util.Locale.ROOT,
+                                        I18n.t(RadioPlayerActivity.this, "Teşekkürler! %d dakika reklamsız."),
+                                        Ads.REWARD_MINUTES), Toast.LENGTH_LONG).show();
                             }
                         }, new Runnable() {
                             @Override public void run() {
                                 Toast.makeText(RadioPlayerActivity.this,
-                                        "Reklam henüz hazır değil, biraz sonra tekrar dene.",
+                                        I18n.t(RadioPlayerActivity.this, "Reklam henüz hazır değil, biraz sonra tekrar dene."),
                                         Toast.LENGTH_SHORT).show();
                             }
                         });
                     }
                 })
-                .setNegativeButton("Şimdi değil", null)
+                .setNegativeButton(I18n.t(this, "Şimdi değil"), null)
                 .show();
     }
 
@@ -429,7 +431,7 @@ public class RadioPlayerActivity extends Activity {
             if (bars[i] != null) bars[i].setLevel(lv);
             AudioService.eqSet(i, lv);
         }
-        Toast.makeText(this, "Ekolayzır ayarı uygulandı", Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, I18n.t(this, "Ekolayzır ayarı uygulandı"), Toast.LENGTH_SHORT).show();
     }
 
     private void changeStation(int d) {
@@ -451,13 +453,13 @@ public class RadioPlayerActivity extends Activity {
         }
         nameView.setText(names.get(index));
         metaView.setText(metas.get(index));
-        statusView.setText("bağlanıyor…");
+        statusView.setText(I18n.t(this, "bağlanıyor…"));
         AudioService.start(this, urls.get(index), names.get(index));
         playing = true;
         stationRetries = 0;
         customStatus = false;
         if (sleepLabel != null)
-            sleepLabel.setText(AudioService.sleepLeft() > 0 ? "Uyku ✓" : "Uyku");
+            sleepLabel.setText(AudioService.sleepLeft() > 0 ? I18n.t(this, "Uyku ✓") : I18n.t(this, "Uyku"));
         // ilk denemede ses gelince durum yazisi "bağlanıyor…" da kalıyordu (9.83)
         ui.removeCallbacks(statusSync);
         ui.post(statusSync);
@@ -477,7 +479,7 @@ public class RadioPlayerActivity extends Activity {
         @Override public void run() {
             if (!playing) return;
             if (!customStatus && AudioService.isAudibleStatic()) {
-                statusView.setText("● Canlı yayın");
+                statusView.setText(I18n.t(RadioPlayerActivity.this, "● Canlı yayın"));
                 return; // caliyor: izlemeyi birak
             }
             if (!customStatus && stationRetries == 0)
@@ -492,7 +494,7 @@ public class RadioPlayerActivity extends Activity {
                 radioSkips = 0;
                 if (stationRetries > 0) {
                     customStatus = true;
-                    statusView.setText("✅ Bağlantı iyi · çalıyor");
+                    statusView.setText(I18n.t(RadioPlayerActivity.this, "✅ Bağlantı iyi · çalıyor"));
                     ui.postDelayed(new Runnable() {
                         @Override public void run() { customStatus = false; stationRetries = 0; }
                     }, 4000);
@@ -506,7 +508,7 @@ public class RadioPlayerActivity extends Activity {
             // yeniden bağlanır, ekran yalnız durumu yazar.
             stationRetries++;
             customStatus = true;
-            statusView.setText("⏳ Yayın bekleniyor · otomatik yeniden bağlanıyor");
+            statusView.setText(I18n.t(RadioPlayerActivity.this, "⏳ Yayın bekleniyor · otomatik yeniden bağlanıyor"));
             if (stationRetries == 1 || stationRetries % 10 == 0) {
                 CrashLog.event(RadioPlayerActivity.this, "radio",
                         "bekleme " + stationRetries + ": " + urls.get(index));
@@ -521,11 +523,11 @@ public class RadioPlayerActivity extends Activity {
             if (ringGauge != null) ringGauge.setLive(playing);
             if (statusView != null && !customStatus) {
                 if (AudioService.stateStatic() == AudioService.S_PAUSED) {
-                    statusView.setText("⏸ Başka uygulama ses çalıyor · kapanınca devam eder");
+                    statusView.setText(I18n.t(RadioPlayerActivity.this, "⏸ Başka uygulama ses çalıyor · kapanınca devam eder"));
                 } else if (playing && AudioService.isPlayingStatic()) {
-                    statusView.setText("✅ Bağlantı iyi · çalıyor");
+                    statusView.setText(I18n.t(RadioPlayerActivity.this, "✅ Bağlantı iyi · çalıyor"));
                 } else if (playing) {
-                    statusView.setText("⏳ Bağlanıyor…");
+                    statusView.setText(I18n.t(RadioPlayerActivity.this, "⏳ Bağlanıyor…"));
                 }
             }
             ui.postDelayed(this, 150);

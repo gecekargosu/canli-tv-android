@@ -61,6 +61,7 @@ public final class CrashLog {
     }
 
     private static final String EVENTS = "events.txt";
+    private static final String TAG_EVENT = "UmayEvent";
 
     /**
      * Ölümcül olmayan olayları da yaz (bağlantı hatası, yeniden bağlanma...).
@@ -80,6 +81,9 @@ public final class CrashLog {
             FileOutputStream fos = new FileOutputStream(f, true);
             fos.write(line.getBytes("UTF-8"));
             fos.close();
+            // v10.09: aynı satır logcat'e de düşsün (cihazda teşhis: adb logcat -s UmayEvent).
+            // Dosya tabanlı günlük yalnız Ayarlar → Hata günlüğü'nden okunabiliyordu.
+            Log.i(TAG_EVENT, tag + " · " + msg);
         } catch (Throwable ignored) { }
     }
 

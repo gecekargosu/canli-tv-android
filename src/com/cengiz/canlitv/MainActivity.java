@@ -32,14 +32,17 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-public class MainActivity extends android.app.Activity {
+public class MainActivity extends android.app.Activity
+        implements MainHeader.Host, ChannelRow.Host {
 
-    private static final int BG = Color.parseColor("#11151C");
-    private static final int CARD = Color.parseColor("#1B2230");
-    private static final int ACCENT = Color.parseColor("#FF7A18");
-    private static final int TEXT = Color.parseColor("#F5F7FA");
-    private static final int MUTED = Color.parseColor("#9AA4B2");
-    private static final int SOFT = Color.parseColor("#2A3444");
+    // v10.08: renkler ve kutu yardımcıları MainUi'de (MainActivity bölündü).
+    private static final int BG = MainUi.BG;
+    private static final int CARD = MainUi.CARD;
+    private static final int ACCENT = MainUi.ACCENT;
+    private static final int TEXT = MainUi.TEXT;
+    private static final int MUTED = MainUi.MUTED;
+    private static final int SOFT = MainUi.SOFT;
+    private final MainUi ui = new MainUi(this);
 
     private final List<Channel> shown = new ArrayList<Channel>();
     private List<Channel> all;
@@ -79,6 +82,7 @@ public class MainActivity extends android.app.Activity {
                 android.view.WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING);
         CrashLog.install(this);   // cokme olursa cihaza log yaz (Ayarlar -> Hata günlüğü)
         CrashLog.uploadIfDue(this);   // kullanıcı izin verdiyse günde bir kez sunucuya gönder
+        ChannelReport.flush(this);    // v10.09: internet yokken kuyrukta kalan kanal bildirimleri
         // Hata günlüğü: hangi sürüm, hangi ülke, hangi mod ile açıldı.
         CrashLog.event(this, "app", "açılış " + BuildConfig.VERSION_NAME
                 + " · ülke=" + Prefs.country(this)
@@ -89,10 +93,8 @@ public class MainActivity extends android.app.Activity {
         // imzalanmamış APK'lar engellenir.
         if (!Guard.official(this)) {
             new android.app.AlertDialog.Builder(this)
-                    .setTitle("Resmi olmayan sürüm")
-                    .setMessage("Bu kopya UMAY Multi TV'nin resmi sürümü değil.\n\n"
-                            + "Uygulama değiştirilmiş olabilir; güvenliğin için çalıştırılmıyor.\n"
-                            + "Resmi sürümü Google Play'den veya umay-multi-tv-gq3zer.freebuff.site adresinden yükle.")
+                    .setTitle(I18n.t(this, "Resmi olmayan sürüm"))
+                    .setMessage(I18n.t(this, "Bu kopya UMAY Multi TV'nin resmi sürümü değil.\n\nUygulama değiştirilmiş olabilir; güvenliğin için çalıştırılmıyor.\nResmi sürümü Google Play'den veya umay-multi-tv-gq3zer.freebuff.site adresinden yükle."))
                     .setCancelable(false)
                     .setPositiveButton(I18n.t(this, "Kapat"), new android.content.DialogInterface.OnClickListener() {
                         @Override public void onClick(android.content.DialogInterface d, int w) { finish(); }
@@ -129,190 +131,8 @@ public class MainActivity extends android.app.Activity {
             }
         } catch (Throwable ignored) { }
 
-        // --- baslik: 3 sabit satir, hepsi ayni 12dp kenardan baslar/biter ---
-        LinearLayout head = new LinearLayout(this);
-        head.setOrientation(LinearLayout.VERTICAL);
-        head.setPadding(dp(12) + sidePad, dp(8), dp(12) + sidePad, dp(0));
-
-        // 1. satir: marka TEK kutunun icinde. Logo 40dp ve hep tam parlak; solmuyor.
-        // Arkasindaki turuncu isik nabiz gibi atiyor, parlayan logo gibi duruyor.
-        LinearLayout brandCard = new LinearLayout(this);
-        brandCard.setOrientation(LinearLayout.HORIZONTAL);
-        brandCard.setGravity(Gravity.CENTER_VERTICAL);
-        brandCard.setPadding(dp(8), dp(6), dp(12), dp(6));
-        brandCard.setBackground(rounded(CARD, 18));
-        brandCard.setLayoutParams(new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, dp(56)));
-        head.addView(brandCard);
-
-        // Logo kutusu 48dp: turuncu ışık logonun çevresinden 5dp taşar, böylece
-        // "parlıyor" net görünür (önce ışık logonun tam arkasında kalıp kayboluyordu).
-        FrameLayout brandBox = new FrameLayout(this);
-        LinearLayout.LayoutParams bbp = new LinearLayout.LayoutParams(dp(48), dp(48));
-        bbp.setMargins(0, 0, dp(10), 0);
-        brandBox.setLayoutParams(bbp);
-
-        // Halka: içi boş, 2dp parlak turuncu çerçeve. Dolu hâli logonun arkasında
-        // kahverengi leke gibi duruyordu; halka gerçek bir ışık gibi görünüyor.
-        final View halo = new View(this);
-        GradientDrawable ringBg = new GradientDrawable();
-        ringBg.setCornerRadius(dp(16));
-        ringBg.setColor(Color.TRANSPARENT);
-        ringBg.setStroke(dp(2), Color.parseColor("#FF9A3C"));
-        halo.setBackground(ringBg);
-        halo.setAlpha(0.95f);
-        brandBox.addView(halo, new FrameLayout.LayoutParams(dp(46), dp(46), Gravity.CENTER));
-
-        ImageView brand = new ImageView(this);
-        brand.setLayoutParams(new FrameLayout.LayoutParams(dp(38), dp(38), Gravity.CENTER));
-        brand.setScaleType(ImageView.ScaleType.FIT_CENTER);
-        try { brand.setImageDrawable(getPackageManager().getApplicationIcon(getPackageName())); }
-        catch (Exception ignored) { }
-        brandBox.addView(brand);
-        brandCard.addView(brandBox);
-
-        // Sadece isik nabiz atiyor: alfa 0,50 ↔ 0,14 ve hafif buyuyup kuculuyor.
-        // Logonun kendisi hep tam parlak (eskiden soluyordu, gri gorunuyordu).
-        try {
-            android.animation.ObjectAnimator glow = android.animation.ObjectAnimator
-                    .ofFloat(halo, "alpha", 0.95f, 0.3f);
-            glow.setDuration(1300);
-            glow.setRepeatMode(android.animation.ValueAnimator.REVERSE);
-            glow.setRepeatCount(android.animation.ValueAnimator.INFINITE);
-            glow.start();
-            android.animation.ObjectAnimator gx = android.animation.ObjectAnimator
-                    .ofFloat(halo, "scaleX", 1.02f, 0.96f);
-            gx.setDuration(1400);
-            gx.setRepeatMode(android.animation.ValueAnimator.REVERSE);
-            gx.setRepeatCount(android.animation.ValueAnimator.INFINITE);
-            gx.start();
-            android.animation.ObjectAnimator gy = android.animation.ObjectAnimator
-                    .ofFloat(halo, "scaleY", 1.02f, 0.96f);
-            gy.setDuration(1400);
-            gy.setRepeatMode(android.animation.ValueAnimator.REVERSE);
-            gy.setRepeatCount(android.animation.ValueAnimator.INFINITE);
-            gy.start();
-        } catch (Throwable ignored) { }
-
-        TextView title = new TextView(this);
-        // 9.81: iki nokta kaldırıldı; başlık "UMAY CANLI MULTI TV VE RADYO".
-        // Yazı, kutuya sığan en büyük puntoya kendisi büyür (12–22sp).
-        title.setText("UMAY CANLI MULTI TV VE RADYO");
-        title.setTextColor(TEXT);
-        // 18sp büyük harf: kart genişliğine tam sığıyor (autosize bu cihazda küçültmüyordu).
-        title.setTextSize(18);
-        title.setSingleLine(true);
-        title.setEllipsize(android.text.TextUtils.TruncateAt.END);
-        title.setGravity(Gravity.CENTER_VERTICAL);
-        title.setTypeface(title.getTypeface(), android.graphics.Typeface.BOLD);
-        brandCard.addView(title, new LinearLayout.LayoutParams(0,
-                ViewGroup.LayoutParams.MATCH_PARENT, 1f));
-
-        // 2. satir: 5 ikon kutusu, 44dp. 3. satirla ayni kenarlardan baslar/biter.
-        LinearLayout actionRow = new LinearLayout(this);
-        actionRow.setOrientation(LinearLayout.HORIZONTAL);
-        actionRow.setGravity(Gravity.CENTER_VERTICAL);
-        LinearLayout.LayoutParams arlp = new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, dp(44));
-        arlp.topMargin = dp(6);
-        actionRow.setLayoutParams(arlp);
-        head.addView(actionRow);
-
-        // 9.80: yazı yerine ikon — kutular 44dp, ikon 28sp (istedigi gibi).
-        // 9.82: buton seçili değil — turuncu "seçili" gibi duruyordu, diğerleriyle aynı renk.
-        TextView multi = pill("▦", SOFT);
-        multi.setContentDescription("3'lü izle");
-        multi.setOnClickListener(new View.OnClickListener() {
-            @Override public void onClick(View v) {
-                startActivity(new Intent(MainActivity.this, MultiActivity.class));
-            }
-        });
-        multi.setOnLongClickListener(new View.OnLongClickListener() {
-            @Override public boolean onLongClick(View v) {
-                savedSets();
-                return true;
-            }
-        });
-        actionRow.addView(multi, slot(0));
-
-        TextView radio = pill("📻", SOFT);
-        radio.setContentDescription("Radyo");
-        radio.setOnClickListener(new View.OnClickListener() {
-            @Override public void onClick(View v) {
-                startActivity(new Intent(MainActivity.this, RadioActivity.class));
-            }
-        });
-        actionRow.addView(radio, slot(1));
-
-        // --- ulke secimi: secilen ulkenin kanallari listeye gelir ---
-        TextView countryBtn = pill(Countries.flag(shownCountry), SOFT);
-        // Bayrak emojisi aynı punto ile daha küçük çiziliyor; diğer ikonlarla eşitlensin.
-        countryBtn.setTextSize(40);
-        countryBtn.setContentDescription("Ülke seç");
-        countryBtn.setOnClickListener(new View.OnClickListener() {
-            @Override public void onClick(View v) {
-                startActivity(new Intent(MainActivity.this, CountryActivity.class));
-            }
-        });
-        actionRow.addView(countryBtn, slot(2));
-
-        // 9.78: kayıt düğmesi eksikti (alt başlıkta "kayıt" yazıyor ama giriş yoktu).
-        TextView recordings = pill("⏺", SOFT);
-        recordings.setContentDescription("Kayıtlarım");
-        recordings.setOnClickListener(new View.OnClickListener() {
-            @Override public void onClick(View v) {
-                startActivity(new Intent(MainActivity.this, RecordingsActivity.class));
-            }
-        });
-        actionRow.addView(recordings, slot(3));
-
-        TextView settings = pill("⚙", SOFT);
-        settings.setContentDescription("Ayarlar");
-        settings.setOnClickListener(new View.OnClickListener() {
-            @Override public void onClick(View v) {
-                startActivity(new Intent(MainActivity.this, SettingsActivity.class));
-            }
-        });
-        actionRow.addView(settings, slot(4));
-
-        // Ödüllü reklam her zaman görünür bir giriş: 15 dk reklamsız.
-        // Eskiden yalnız banner dolmadığında alt şeritte çıkıyordu; kullanıcı bulamıyordu.
-        TextView gift = pill("🎁", SOFT);
-        gift.setContentDescription(I18n.t(this, "Ödüllü reklam: 15 dakika reklamsız"));
-        gift.setOnClickListener(new View.OnClickListener() {
-            @Override public void onClick(View v) {
-                if (Prefs.subActive(MainActivity.this)) {
-                    android.widget.Toast.makeText(MainActivity.this,
-                            I18n.t(MainActivity.this, "Aboneliğin zaten reklamsız"), android.widget.Toast.LENGTH_SHORT).show();
-                    return;
-                }
-                int left = AdManager.adFreeMinutesLeft(MainActivity.this);
-                if (left > 0) {
-                    android.widget.Toast.makeText(MainActivity.this,
-                            I18n.t(MainActivity.this, "Reklamsız süren") + ": " + left + " "
-                                    + I18n.t(MainActivity.this, "dk"),
-                            android.widget.Toast.LENGTH_SHORT).show();
-                    return;
-                }
-                AdManager.showRewarded(MainActivity.this, new Runnable() {
-                    @Override public void run() {
-                        android.widget.Toast.makeText(MainActivity.this,
-                                I18n.t(MainActivity.this, "Teşekkürler!") + " " + Ads.REWARD_MINUTES
-                                        + " " + I18n.t(MainActivity.this, "dakika reklamsız."),
-                                android.widget.Toast.LENGTH_LONG).show();
-                    }
-                }, new Runnable() {
-                    @Override public void run() {
-                        android.widget.Toast.makeText(MainActivity.this,
-                                I18n.t(MainActivity.this, "Reklam şu an hazır değil, biraz sonra tekrar dene"),
-                                android.widget.Toast.LENGTH_SHORT).show();
-                    }
-                });
-            }
-        });
-        actionRow.addView(gift, slot(5));
-
-        root.addView(head);
+        // v10.08: üst çubuk (marka + 6 ikon) MainHeader sınıfında kurulur.
+        root.addView(MainHeader.build(this, ui, Countries.flag(shownCountry), sidePad, this));
 
         // --- radyo çalarken her zaman görünen kapatma şeridi ---
         radioNow = new LinearLayout(this);
@@ -333,7 +153,7 @@ public class MainActivity extends android.app.Activity {
                 0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
 
         TextView radioStop = new TextView(this);
-        radioStop.setText("⏹ Kapat");
+        radioStop.setText(I18n.t(this, "⏹ Kapat"));
         radioStop.setTextSize(12);
         radioStop.setTextColor(Color.parseColor("#111111"));
         radioStop.setTypeface(radioStop.getTypeface(), android.graphics.Typeface.BOLD);
@@ -681,29 +501,7 @@ public class MainActivity extends android.app.Activity {
 
     /** Sekme kutusu: üstte ikon, altında küçük yazı. Kutu 44dp (satır yüksekliği). */
     private LinearLayout tabBox(String icon, String label, TextView[] labelOut) {
-        LinearLayout box = new LinearLayout(this);
-        box.setOrientation(LinearLayout.VERTICAL);
-        box.setGravity(Gravity.CENTER);
-        box.setPadding(0, dp(1), 0, dp(1));
-        TextView ic = new TextView(this);
-        ic.setText(icon);
-        ic.setTextSize(15);
-        ic.setTextColor(MUTED);
-        ic.setGravity(Gravity.CENTER);
-        ic.setIncludeFontPadding(false);
-        ic.setSingleLine(true);
-        TextView lb = new TextView(this);
-        lb.setText(label);
-        lb.setTextSize(8.5f);
-        lb.setTextColor(MUTED);
-        lb.setGravity(Gravity.CENTER);
-        lb.setSingleLine(true);
-        lb.setEllipsize(android.text.TextUtils.TruncateAt.END);
-        lb.setIncludeFontPadding(false);
-        box.addView(ic);
-        box.addView(lb);
-        if (labelOut != null) labelOut[0] = lb;
-        return box;
+        return ui.tabBox(icon, label, labelOut);
     }
 
     private void styleChips() {
@@ -753,7 +551,7 @@ public class MainActivity extends android.app.Activity {
             labels[i] = v.startsWith("ad:") && bar > 3 ? v.substring(3, bar) : v;
         }
         new AlertDialog.Builder(this)
-                .setTitle("3'lü izleme setleri")
+                .setTitle(I18n.t(this, "3'lü izleme setleri"))
                 .setItems(labels, new DialogInterface.OnClickListener() {
                     @Override public void onClick(DialogInterface d, int which) {
                         Intent i = new Intent(MainActivity.this, MultiActivity.class);
@@ -761,7 +559,7 @@ public class MainActivity extends android.app.Activity {
                         startActivity(i);
                     }
                 })
-                .setNeutralButton("Set sil", new DialogInterface.OnClickListener() {
+                .setNeutralButton(I18n.t(this, "Set sil"), new DialogInterface.OnClickListener() {
                     @Override public void onClick(DialogInterface d, int w) { deleteSetDialog(); }
                 })
                 .show();
@@ -778,7 +576,7 @@ public class MainActivity extends android.app.Activity {
             String s = sets.get(i);
             labels[i] = s.startsWith("ad:") ? s.substring(3, Math.max(3, s.indexOf('|'))) : s;
         }
-        new AlertDialog.Builder(this).setTitle("Hangi set silinsin?").setItems(labels,
+        new AlertDialog.Builder(this).setTitle(I18n.t(this, "Hangi set silinsin?")).setItems(labels,
                 new DialogInterface.OnClickListener() {
                     @Override public void onClick(DialogInterface d, int which) {
                         Prefs.removeMultiSet(MainActivity.this, sets.get(which));
@@ -920,8 +718,8 @@ public class MainActivity extends android.app.Activity {
         et.setInputType(InputType.TYPE_CLASS_NUMBER);
         et.setText(String.valueOf(c.no));
         new AlertDialog.Builder(this)
-                .setTitle("Kumanda numarası")
-                .setMessage("Yeni numara hem kumanda numarasını hem listedeki sırasını değiştirir.\n\nDolu bir numara yazarsan o kanalla numaralar yer değiştirir.")
+                .setTitle(I18n.t(this, "Kumanda numarası"))
+                .setMessage(I18n.t(this, "Yeni numara hem kumanda numarasını hem listedeki sırasını değiştirir.\n\nDolu bir numara yazarsan o kanalla numaralar yer değiştirir."))
                 .setView(et)
                 .setPositiveButton(I18n.t(this, "Kaydet"), new DialogInterface.OnClickListener() {
                     @Override public void onClick(DialogInterface d, int w) {
@@ -963,15 +761,16 @@ public class MainActivity extends android.app.Activity {
     private void sortDialog() {
         if (!canReorder()) return;
         final String[] items = {
-                "🕘 Çok izlediklerim en üstte",
-                "🆕 Hiç izlemediklerim en üstte",
-                "🔤 Ada göre A → Z",
-                "🔢 Kanal numarasına göre",
-                "↩️ Varsayılan sıraya dön"
+                I18n.t(this, "🕘 Çok izlediklerim en üstte"),
+                I18n.t(this, "🆕 Hiç izlemediklerim en üstte"),
+                I18n.t(this, "🔤 Ada göre A → Z"),
+                I18n.t(this, "🔢 Kanal numarasına göre"),
+                I18n.t(this, "↩️ Varsayılan sıraya dön")
         };
         new AlertDialog.Builder(this)
-                .setTitle("Bu sekme nasıl sıralansın?")
-                .setMessage(group + " · " + shown.size() + " kanal")
+                .setTitle(I18n.t(this, "Bu sekme nasıl sıralansın?"))
+                .setMessage(String.format(java.util.Locale.ROOT,
+                        I18n.t(this, "%s · %d kanal"), group, shown.size()))
                 .setItems(items, new DialogInterface.OnClickListener() {
                     @Override public void onClick(DialogInterface d, int which) {
                         if (which == 4) {
@@ -1030,6 +829,7 @@ public class MainActivity extends android.app.Activity {
         items.add("🔢  Numarayı değiştir (№" + c.no + ")");
         items.add("☑  Seçim / sıralama modu");
         items.add(hidden ? "➕  Listeye geri ekle" : "🗑  Listeden sil");
+        items.add(I18n.t(this, "📣  Çalışmıyor mu? Bildir"));
         new AlertDialog.Builder(this)
                 .setTitle("№" + c.no + "  " + c.name)
                 .setItems(items.toArray(new String[0]), new DialogInterface.OnClickListener() {
@@ -1042,6 +842,8 @@ public class MainActivity extends android.app.Activity {
                             toggleSelect(c);
                             return;
                         }
+                        // Menü sırası: 0 Aç · 1 Favori · 2 Numara · 3 Seçim · 4 Sil/ekle · 5 Bildir
+                        if (which == 5) { reportChannel(c); return; }
                         if (hidden) {
                             Prefs.unhideChannel(MainActivity.this, c.url);
                             refresh();
@@ -1055,6 +857,34 @@ public class MainActivity extends android.app.Activity {
                         }
                     }
                 }).show();
+    }
+
+    /**
+     * v10.09: "Çalışmıyor mu? Bildir" — listeden, kanalı açmadan bildirme.
+     * Aynı kanal 10 dakika içinde ikinci kez bildirilemez (kazara çift dokunma).
+     */
+    private void reportChannel(final Channel c) {
+        CrashLog.event(this, "report", "menüden bildir: " + c.name);
+        if (ChannelReport.tooSoon(this, c.url)) {
+            CrashLog.event(this, "report", "atlandı: 10 dk içinde bildirilmişti · " + c.name);
+            Toast.makeText(this, I18n.t(this, "Bu kanalı az önce bildirdin"),
+                    Toast.LENGTH_SHORT).show();
+            return;
+        }
+        ChannelReport.send(this, c.name, c.url, StreamDiag.UNKNOWN,
+                "listedeki menüden bildirildi", new ChannelReport.Done() {
+                    @Override public void onResult(final boolean ok, final boolean queued) {
+                        runOnUiThread(new Runnable() {
+                            @Override public void run() {
+                                Toast.makeText(MainActivity.this,
+                                        ok ? I18n.t(MainActivity.this, "Bildirimin alındı, teşekkürler")
+                                                : I18n.t(MainActivity.this,
+                                                        "Bildirim kaydedildi · internet gelince gönderilecek"),
+                                        Toast.LENGTH_LONG).show();
+                            }
+                        });
+                    }
+                });
     }
 
     private void open(final Channel c) {
@@ -1200,6 +1030,7 @@ public class MainActivity extends android.app.Activity {
             if (listView != null) listView.setVisibility(View.VISIBLE);
         }
         updateDataBar();
+        focusFirstRowIfTv();   // v10.08: kumanda ile açılışta ilk kanal odaklanır
     }
 
     private void updateDataBar() {
@@ -1266,67 +1097,18 @@ public class MainActivity extends android.app.Activity {
         refresh();
     }
 
-    private GradientDrawable rounded(int color, int radius) {
-        GradientDrawable d = new GradientDrawable();
-        d.setColor(color);
-        d.setCornerRadius(dp(radius));
-        return d;
-    }
+    private GradientDrawable rounded(int color, int radius) { return ui.rounded(color, radius); }
 
     /** Satır içinde eşit genişlikte kutu: ilk kutu kenara yapışık, aralarında 4dp boşluk. */
-    private LinearLayout.LayoutParams slot(int index) {
-        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0,
-                ViewGroup.LayoutParams.MATCH_PARENT, 1f);
-        if (index > 0) lp.setMargins(dp(4), 0, 0, 0);
-        return lp;
-    }
+    private LinearLayout.LayoutParams slot(int index) { return ui.slot(index); }
 
-    private TextView pill(String s, int color) {
-        TextView t = new TextView(this);
-        t.setText(s);
-        t.setTextColor(Color.WHITE);
-        // 9.80: kutu 44dp sabit, içindeki ikon 28sp (28dp). Yazı yok — sadece ikon.
-        t.setTextSize(s.codePointCount(0, s.length()) <= 1 ? 28 : 13);
-        t.setGravity(Gravity.CENTER);
-        t.setIncludeFontPadding(false);
-        t.setPadding(0, 0, 0, 0);
-        t.setBackground(rounded(color, 16));
-        t.setMinHeight(dp(44));
-        t.setMinWidth(0);
-        return t;
-    }
+    private TextView pill(String s, int color) { return ui.pill(s, color); }
 
-    private TextView mini(String s) {
-        TextView t = new TextView(this);
-        t.setText(s);
-        t.setTextColor(Color.WHITE);
-        t.setTextSize(11);
-        t.setGravity(Gravity.CENTER);
-        t.setPadding(dp(6), dp(6), dp(6), dp(6));
-        t.setBackground(rounded(SOFT, 12));
-        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.WRAP_CONTENT, dp(32));
-        lp.setMargins(dp(4), 0, 0, 0);
-        t.setLayoutParams(lp);
-        return t;
-    }
+    private TextView mini(String s) { return ui.mini(s); }
 
-    private TextView arrow(String s) {
-        TextView t = new TextView(this);
-        t.setText(s);
-        t.setTextColor(Color.WHITE);
-        t.setTextSize(12);
-        t.setGravity(Gravity.CENTER);
-        t.setBackground(rounded(SOFT, 9));
-        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(dp(30), dp(30));
-        lp.setMargins(dp(3), 0, 0, 0);
-        t.setLayoutParams(lp);
-        return t;
-    }
+    private TextView arrow(String s) { return ui.arrow(s); }
 
-    private int dp(int v) {
-        return (int) (v * getResources().getDisplayMetrics().density);
-    }
+    private int dp(int v) { return ui.dp(v); }
 
     /** K-16: RecyclerView ViewHolder'ı — her satır bir FrameLayout kabı. */
     private static class RowVH extends RecyclerView.ViewHolder {
@@ -1369,93 +1151,122 @@ public class MainActivity extends android.app.Activity {
     }
 
     /** L-16: satırın görselini kurar (eski getView gövdesi). */
+    /** v10.08: satır görünümü ChannelRow'da (MainActivity bölündü). */
     private LinearLayout buildRow(int i) {
-            LinearLayout row = new LinearLayout(MainActivity.this);
-            row.setOrientation(LinearLayout.HORIZONTAL);
-            row.setGravity(Gravity.CENTER_VERTICAL);
-            row.setPadding(dp(8), dp(8), dp(10), dp(8));
+        Channel c = shown.get(i);
+        return ChannelRow.build(this, ui, c, i, editMode, selected.contains(c.url), this);
+    }
 
-            final Channel c = shown.get(i);
-            final int pos = i;
-            boolean sel = selected.contains(c.url);
-            row.setBackground(rounded(sel ? Color.parseColor("#33405A") : CARD, 14));
+    // ---------- v10.08: MainHeader.Host (üst çubuk düğmeleri) ----------
+    @Override public void headerMulti() {
+        startActivity(new Intent(MainActivity.this, MultiActivity.class));
+    }
 
-            if (editMode) {
-                TextView check = new TextView(MainActivity.this);
-                check.setText(sel ? "☑" : "☐");
-                check.setTextColor(sel ? ACCENT : MUTED);
-                check.setTextSize(18);
-                check.setGravity(Gravity.CENTER);
-                LinearLayout.LayoutParams clp = new LinearLayout.LayoutParams(dp(28), dp(28));
-                clp.setMargins(0, 0, dp(4), 0);
-                check.setLayoutParams(clp);
-                row.addView(check);
+    @Override public void headerMultiLong() { savedSets(); }
+
+    @Override public void headerRadio() {
+        startActivity(new Intent(MainActivity.this, RadioActivity.class));
+    }
+
+    @Override public void headerCountry() {
+        startActivity(new Intent(MainActivity.this, CountryActivity.class));
+    }
+
+    @Override public void headerRecordings() {
+        startActivity(new Intent(MainActivity.this, RecordingsActivity.class));
+    }
+
+    @Override public void headerSettings() {
+        startActivity(new Intent(MainActivity.this, SettingsActivity.class));
+    }
+
+    /** 🎁 15 dakika reklamsız (ödüllü reklam) — kutunun eski gövdesi. */
+    @Override public void headerGift() {
+        if (Prefs.subActive(this)) {
+            Toast.makeText(this, I18n.t(this, "Aboneliğin zaten reklamsız"), Toast.LENGTH_SHORT).show();
+            return;
+        }
+        int left = AdManager.adFreeMinutesLeft(this);
+        if (left > 0) {
+            Toast.makeText(this, I18n.t(this, "Reklamsız süren") + ": " + left + " "
+                    + I18n.t(this, "dk"), Toast.LENGTH_SHORT).show();
+            return;
+        }
+        AdManager.showRewarded(this, new Runnable() {
+            @Override public void run() {
+                Toast.makeText(MainActivity.this, I18n.t(MainActivity.this, "Teşekkürler!") + " "
+                        + Ads.REWARD_MINUTES + " " + I18n.t(MainActivity.this, "dakika reklamsız."),
+                        Toast.LENGTH_LONG).show();
             }
-
-            TextView no = new TextView(MainActivity.this);
-            no.setText(String.valueOf(c.no));
-            no.setTextColor(Color.WHITE);
-            no.setTextSize(11);
-            no.setGravity(Gravity.CENTER);
-            no.setBackground(rounded(SOFT, 10));
-            LinearLayout.LayoutParams nlp = new LinearLayout.LayoutParams(dp(34), dp(28));
-            nlp.setMargins(0, 0, dp(8), 0);
-            no.setLayoutParams(nlp);
-            row.addView(no);
-
-            // 9.89: logo alanı kaldırıldı. Harici logolar (P0-5) ve yer tutucu harf
-            // rozetleri kullanıcıya bilgi vermiyordu; satır numara + kanal adıyla kalıyor.
-
-            LinearLayout texts = new LinearLayout(MainActivity.this);
-            texts.setOrientation(LinearLayout.VERTICAL);
-            texts.setLayoutParams(new LinearLayout.LayoutParams(0,
-                    ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
-
-            TextView name = new TextView(MainActivity.this);
-            name.setText(c.name);
-            name.setTextColor(TEXT);
-            name.setTextSize(14);
-            name.setTypeface(name.getTypeface(), android.graphics.Typeface.BOLD);
-            texts.addView(name);
-
-            TextView meta = new TextView(MainActivity.this);
-            boolean fav = Prefs.favs(MainActivity.this).contains(c.url);
-            String use = "";
-            long ub = Prefs.usage(MainActivity.this, c.url);
-            if (ub > 0) {
-                int us = Prefs.secs(MainActivity.this, c.url);
-                use = "  ·  " + Net.mb(ub) + (us > 0 ? " (" + us / 60 + " dk)" : "");
+        }, new Runnable() {
+            @Override public void run() {
+                Toast.makeText(MainActivity.this,
+                        I18n.t(MainActivity.this, "Reklam şu an hazır değil, biraz sonra tekrar dene"),
+                        Toast.LENGTH_SHORT).show();
             }
-            meta.setText(Lang.group(MainActivity.this, c.group) + (fav ? "  ★" : "")
-                    + (Prefs.fails(MainActivity.this, c.url) > 0 ? "  ⚠" : "") + use);
-            meta.setTextColor(MUTED);
-            meta.setTextSize(11);
-            texts.addView(meta);
-            row.addView(texts);
+        });
+    }
 
-            if (editMode) {
-                TextView up = arrow("▲");
-                up.setOnClickListener(new View.OnClickListener() {
-                    @Override public void onClick(View v) { moveItem(pos, -1); }
-                });
-                row.addView(up);
+    // ---------- v10.08: ChannelRow.Host (satırdaki ▲▼ okları) ----------
+    @Override public void moveChannel(int pos, int delta) { moveItem(pos, delta); }
 
-                TextView down = arrow("▼");
-                down.setOnClickListener(new View.OnClickListener() {
-                    @Override public void onClick(View v) { moveItem(pos, 1); }
-                });
-                row.addView(down);
-            } else {
-                TextView play = new TextView(MainActivity.this);
-                play.setText("▶");
-                play.setTextColor(Color.WHITE);
-                play.setTextSize(13);
-                play.setGravity(Gravity.CENTER);
-                play.setBackground(rounded(ACCENT, 18));
-                play.setLayoutParams(new LinearLayout.LayoutParams(dp(32), dp(32)));
-                row.addView(play);
+    // ---------- v10.08: kumanda (D-pad) desteği ----------
+    private final StringBuilder digits = new StringBuilder();
+    private final android.os.Handler digitHandler =
+            new android.os.Handler(android.os.Looper.getMainLooper());
+    private final Runnable digitOpen = new Runnable() {
+        @Override public void run() {
+            int no = 0;
+            try { no = Integer.parseInt(digits.toString()); } catch (Exception ignored) { }
+            digits.setLength(0);
+            if (no > 0) openByNumber(no);
+        }
+    };
+
+    /**
+     * Harici kumanda / klavye ile rakam yazınca kanal doğrudan açılır
+     * (1,2 sn içinde ikinci rakam gelmezse). Arama kutusu odaklıyken karışmaz.
+     */
+    @Override
+    public boolean onKeyDown(int keyCode, android.view.KeyEvent e) {
+        if (keyCode >= android.view.KeyEvent.KEYCODE_0 && keyCode <= android.view.KeyEvent.KEYCODE_9
+                && !(getCurrentFocus() instanceof EditText)) {
+            digits.append((char) ('0' + (keyCode - android.view.KeyEvent.KEYCODE_0)));
+            if (digits.length() > 3) digits.deleteCharAt(0);
+            Toast.makeText(this, "№" + digits, Toast.LENGTH_SHORT).show();
+            digitHandler.removeCallbacks(digitOpen);
+            digitHandler.postDelayed(digitOpen, 1200);
+            return true;
+        }
+        return super.onKeyDown(keyCode, e);
+    }
+
+    /** Kanal numarasından doğrudan aç (kumanda rakamları için, onay sorulmaz). */
+    private void openByNumber(int no) {
+        Channel c = ChannelRepo.byNumber(this, no);
+        if (c == null) {
+            Toast.makeText(this, "№" + no + " " + I18n.t(this, "diye kanal yok")
+                    + " (1-" + all.size() + ")", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        open(c);
+    }
+
+    @Override
+    protected void onDestroy() {
+        digitHandler.removeCallbacks(digitOpen);
+        super.onDestroy();
+    }
+
+    /** İlk kanal odaklansın (kumanda ile açılışta OK hemen çalışsın). */
+    private void focusFirstRowIfTv() {
+        if (!TvFocus.isTv(this) || listView == null || shown.isEmpty()) return;
+        if (getCurrentFocus() != null) return;
+        listView.post(new Runnable() {
+            @Override public void run() {
+                View v = listView.getChildAt(0);
+                if (v != null) v.requestFocus();
             }
-
-            return row;
+        });
     }
 }

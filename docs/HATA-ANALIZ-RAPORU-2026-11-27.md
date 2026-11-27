@@ -52,7 +52,7 @@ Renkler `static final`, gradyan yalnız boyut değişince üretiliyor, iç halka
 
 | No | Önem | Bulgu | Kanıt | Plan |
 |---|---|---|---|---|
-| B-09 | P2 | **126 görünür metin çevrilmemiş**: MultiActivity 22, RadioPlayerActivity 16, PlayerActivity 15, MainActivity 13, QualityDialog 6, AboutActivity 1, AdManager 1 | `tools/i18n-kapsam.py` | Tabloya satır ekle + `I18n.t` sarması (mekanik, 2 oturum) |
+| B-09 | P2 | **126 görünür metin çevrilmemiş** → **49'a indi** (10.06): MultiActivity 11, RadioPlayerActivity 2, PlayerActivity 5, MainActivity 2, QualityDialog 6, AboutActivity 1, AdManager 1 kapatıldı; tabloya **72 yeni anahtar** eklendi (425 → 491). Kalan: **SettingsActivity 42** (diyaloglar) + 7 dinamik parça/marka adı (yanlış pozitif) | `tools/i18n-kapsam.py` | Kalan Settings diyaloglarını `de(...)`/`I18n.t(...)` ile sarmak (1 oturum) |
 | B-10 | P2 | `EqFader.onDraw` gradyanı knob konumuna bağlı → her karede allocation | lint `DrawAllocation` | Kabul edildi (küçük nesne); istenirse Path tabanlı çizime geçilir |
 | B-11 | P3 | Lint `SetTextI18n` 54, `NotifyDataSetChanged` 6, `ObsoleteSdkInt` 7 | lint | B-09 ile birlikte temizlenir |
 | B-12 | P3 | `onBackPressed` (GestureBackNavigation), sabit yön (Android 16'da yok sayılır), `ANDROID_ID` (HardwareIds), `navigation_bar_height` internal resource | lint | AndroidX back dispatcher + WindowInsets |

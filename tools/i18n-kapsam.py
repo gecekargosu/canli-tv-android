@@ -73,7 +73,7 @@ def main():
         s = io.open(path, encoding='utf-8').read()
         wrapped = set()
         # I18n.t(...) / I18n.s(...) içindeki sabitler çevrilmiş sayılır
-        for m in re.finditer(r'I18n\.(?:t|s)\([^;]{0,400}?\)', s, re.S):
+        for m in re.finditer(r'(?:I18n\.(?:t|s)|Lang\.t|de)\([^;]{0,400}?\)', s, re.S):
             for _, lit in java_literals(m.group(0)):
                 wrapped.add(lit)
         for pos, lit in java_literals(s):
@@ -89,7 +89,7 @@ def main():
         for ln, line in enumerate(io.open(path, encoding='utf-8').read().split('\n'), 1):
             if not UI_CALL.search(line):
                 continue
-            if 'I18n.' in line or 'Lang.' in line or 'Countries.' in line:
+            if 'I18n.' in line or 'Lang.' in line or 'Countries.' in line or 'de(' in line:
                 continue
             for _, lit in java_literals(line):
                 if any(ch in lit for ch in TR_CHARS) or (' ' in lit and len(lit) > 6):
@@ -101,7 +101,7 @@ def main():
         if not items:
             continue
         print(u' -- %s (%d)' % (f, len(items)))
-        for ln, lit in sorted(items)[:12]:
+        for ln, lit in sorted(items):
             print(u'    %4d  %s' % (ln, lit[:100]))
         total += len(items)
     print(u'   TOPLAM: %d' % total)

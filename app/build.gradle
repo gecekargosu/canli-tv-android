@@ -23,8 +23,8 @@ android {
         applicationId 'com.cengiz.canlitv'
         minSdk 26
         targetSdk 36
-        versionCode 115
-        versionName '10.06'
+        versionCode 118
+        versionName '10.09'
     }
 
     signingConfigs {
@@ -97,7 +97,7 @@ android {
 }
 
 dependencies {
-    implementation 'com.google.android.gms:play-services-ads:24.4.0'
+    implementation 'com.google.android.gms:play-services-ads:25.5.0'
     // P0-3: AB/UK rıza ekranı (UMP)
     implementation 'com.google.android.ump:user-messaging-platform:3.0.1'
     // #107: MediaPlayer yerine ExoPlayer (media3) — HLS + otomatik kalite

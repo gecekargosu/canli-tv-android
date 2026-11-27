@@ -8,6 +8,7 @@ import android.content.DialogInterface;
 /**
  * Tum ekranlarda ayni kalite secimi: Otomatik / 360p / 480p / 720p / 1080p / en dusuk.
  * Secim tüm kanallarda gecerlidir ve internet harcamasini dogrudan belirler.
+ * v10.06: butun metinler I18n ile 8 dilde.
  */
 public class QualityDialog {
 
@@ -20,23 +21,29 @@ public class QualityDialog {
         return h + "p";
     }
 
-    private static String gb(int height) {
+    private static String gb(Context c, int height) {
         int mb = Quality.hourlyMb(height);
-        return "≈" + String.format(java.util.Locale.getDefault(), "%.1f", mb / 1000.0) + " GB/saat";
+        return "≈" + String.format(java.util.Locale.getDefault(), "%.1f", mb / 1000.0)
+                + I18n.t(c, " GB/saat");
     }
 
     public static void show(final Activity a, final Runnable after) {
         final int cur = Prefs.maxHeight(a);
         final String[] items = new String[HEIGHTS.length];
-        items[0] = mark(cur, 0) + "Otomatik · kanalın en iyi kalitesi";
-        items[1] = mark(cur, 1) + "360p · " + gb(360) + " · en tasarruflu";
-        items[2] = mark(cur, 2) + "480p · " + gb(480) + " · dengeli";
-        items[3] = mark(cur, 3) + "720p · " + gb(720) + " · net görüntü";
-        items[4] = mark(cur, 4) + "1080p · " + gb(1080) + " · en çok veri";
-        items[5] = mark(cur, 5) + "En düşük kalite · veri tasarrufu";
+        items[0] = mark(cur, 0) + I18n.t(a, "Otomatik · kanalın en iyi kalitesi");
+        items[1] = mark(cur, 1) + String.format(java.util.Locale.ROOT,
+                I18n.t(a, "360p · %s · en tasarruflu"), gb(a, 360));
+        items[2] = mark(cur, 2) + String.format(java.util.Locale.ROOT,
+                I18n.t(a, "480p · %s · dengeli"), gb(a, 480));
+        items[3] = mark(cur, 3) + String.format(java.util.Locale.ROOT,
+                I18n.t(a, "720p · %s · net görüntü"), gb(a, 720));
+        items[4] = mark(cur, 4) + String.format(java.util.Locale.ROOT,
+                I18n.t(a, "1080p · %s · en çok veri"), gb(a, 1080));
+        items[5] = mark(cur, 5) + I18n.t(a, "En düşük kalite · veri tasarrufu");
 
         new AlertDialog.Builder(a)
-                .setTitle("Yayın kalitesi · " + label(a) + " (az veri → çok veri)")
+                .setTitle(String.format(java.util.Locale.ROOT,
+                        I18n.t(a, "Yayın kalitesi · %s (az veri → çok veri)"), label(a)))
                 .setItems(items, new DialogInterface.OnClickListener() {
                     @Override public void onClick(DialogInterface d, int which) {
                         final int h = HEIGHTS[which];
@@ -44,17 +51,17 @@ public class QualityDialog {
                         // 360p üstü = daha fazla veri: kullanıcıdan onay al
                         if (h > 360) {
                             new AlertDialog.Builder(a)
-                                    .setTitle("Daha yüksek kalite · daha çok veri")
-                                    .setMessage(h + "p yayın yaklaşık " + gb(h)
-                                            + " harcar ve mobil veride kotanı hızlı tüketebilir.\n\n"
-                                            + "Mobil verideysen 360p önerilir; Wi-Fi'de yükseltmek mantıklı.")
-                                    .setPositiveButton("Yükselt", new DialogInterface.OnClickListener() {
+                                    .setTitle(I18n.t(a, "Daha yüksek kalite · daha çok veri"))
+                                    .setMessage(String.format(java.util.Locale.ROOT,
+                                            I18n.t(a, "%dp yayın yaklaşık %s harcar ve mobil veride kotanı hızlı tüketebilir.\n\nMobil verideysen 360p önerilir; Wi-Fi'de yükseltmek mantıklı."),
+                                            h, gb(a, h)))
+                                    .setPositiveButton(I18n.t(a, "Yükselt"), new DialogInterface.OnClickListener() {
                                         @Override public void onClick(DialogInterface dd, int w) {
                                             Prefs.setMaxHeight(a, h);
                                             if (after != null) after.run();
                                         }
                                     })
-                                    .setNegativeButton("360p'de kal", new DialogInterface.OnClickListener() {
+                                    .setNegativeButton(I18n.t(a, "360p'de kal"), new DialogInterface.OnClickListener() {
                                         @Override public void onClick(DialogInterface dd, int w) {
                                             Prefs.setMaxHeight(a, 360);
                                             if (after != null) after.run();
@@ -67,7 +74,7 @@ public class QualityDialog {
                         if (after != null) after.run();
                     }
                 })
-                .setNegativeButton("Kapat", null)
+                .setNegativeButton(I18n.t(a, "Kapat"), null)
                 .show();
     }
 

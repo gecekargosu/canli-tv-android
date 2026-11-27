@@ -413,7 +413,7 @@ public class SettingsActivity extends Activity {
                             Prefs.setOwnerMode(SettingsActivity.this, false);
                             AdManager.setAdsOff(SettingsActivity.this, false);
                             render();
-                            toast("Geliştirici modu kapatıldı · reklamlar açık");
+                            toast(de("Geliştirici modu kapatıldı · reklamlar açık"));
                         }
                     });
         }
@@ -457,10 +457,8 @@ public class SettingsActivity extends Activity {
                 "Movies/TV-Kayitlari", new View.OnClickListener() {
                     @Override public void onClick(View v) {
                         new AlertDialog.Builder(SettingsActivity.this)
-                                .setTitle("Kayıtlar nereye gidiyor?")
-                                .setMessage("Kayıtlar galeride:\n\nMovies / TV-Kayitlari\n\n"
-                                        + "Dosya biçimi .ts (ses + görüntü birlikte).\n"
-                                        + "Uygulama içinden: Ayarlar → Kayıtlarım")
+                                .setTitle(de("Kayıtlar nereye gidiyor?"))
+                                .setMessage(de("Kayıtlar galeride:\n\nMovies / TV-Kayitlari\n\nDosya biçimi .ts (ses + görüntü birlikte).\nUygulama içinden: Ayarlar → Kayıtlarım"))
                                 .setPositiveButton("Tamam", null).show();
                     }
                 });
@@ -499,11 +497,12 @@ public class SettingsActivity extends Activity {
                 new View.OnClickListener() {
             @Override public void onClick(View v) {
                 new AlertDialog.Builder(SettingsActivity.this)
-                        .setTitle("UMAY Multi TV")
-                        .setMessage("Sürüm " + version() + "\n\nCanlı TV + radyo.\n"
-                                + "Yayınlar halka açık kaynaklardan gelir; kanallar zaman zaman yayınını kaldırabilir."
+                        .setTitle(de("UMAY Multi TV"))
+                        .setMessage(String.format(java.util.Locale.ROOT,
+                                de("Sürüm %s\n\nCanlı TV + radyo.\nYayınlar halka açık kaynaklardan gelir; kanallar zaman zaman yayınını kaldırabilir."),
+                                version())
                                 + (Prefs.ownerMode(SettingsActivity.this)
-                                        ? "\n\nGeliştirici modu: AÇIK (kapatmak için bu satıra uzun bas)"
+                                        ? "\n\n" + de("Geliştirici modu: AÇIK (kapatmak için bu satıra uzun bas)")
                                         : ""))
                         .setPositiveButton("Tamam", null).show();
             }
@@ -567,7 +566,7 @@ public class SettingsActivity extends Activity {
         auto.setText(autoLogLabel());
 
         final AlertDialog dlg = new AlertDialog.Builder(this)
-                .setTitle("Hata günlüğü")
+                .setTitle(de("Hata günlüğü"))
                 .setView(box)
                 .setNegativeButton("Kapat", null)
                 .create();
@@ -579,9 +578,9 @@ public class SettingsActivity extends Activity {
                 if (yeni) {
                     Prefs.setLastLogUpload(SettingsActivity.this, 0L);
                     CrashLog.uploadIfDue(SettingsActivity.this);
-                    toast("Açık · günde bir kez hata günlüğü sunucuya gönderilecek");
+                    toast(de("Açık · günde bir kez hata günlüğü sunucuya gönderilecek"));
                 } else {
-                    toast("Kapalı · günlük yalnız bu telefonda kalır");
+                    toast(de("Kapalı · günlük yalnız bu telefonda kalır"));
                 }
             }
         });
@@ -600,7 +599,7 @@ public class SettingsActivity extends Activity {
             @Override public void onClick(View v) {
                 CrashLog.clear(SettingsActivity.this);
                 CrashLog.clearEvents(SettingsActivity.this);
-                toast("Hata günlüğü temizlendi");
+                toast(de("Hata günlüğü temizlendi"));
                 dlg.dismiss();
             }
         });
@@ -615,14 +614,14 @@ public class SettingsActivity extends Activity {
     private void shareCrash() {
         final String log = CrashLog.report(this);
         new AlertDialog.Builder(this)
-                .setTitle("Hata kaydı")
-                .setMessage("Uygulama sürümü, cihaz bilgisi ve son bağlantı hataları hazır.\n\n"
-                        + "E-posta ile gönderirsen doğrudan bana ulaşır; istersen WhatsApp/mesajla da "
-                        + "paylaşabilirsin.\n\nKayıt: " + Math.min(log.length(), 6000) + " karakter")
-                .setPositiveButton("📧 E-posta", new DialogInterface.OnClickListener() {
+                .setTitle(de("Hata kaydı"))
+                .setMessage(String.format(java.util.Locale.ROOT,
+                        de("Uygulama sürümü, cihaz bilgisi ve son bağlantı hataları hazır.\n\nE-posta ile gönderirsen doğrudan bana ulaşır; istersen WhatsApp/mesajla da paylaşabilirsin.\n\nKayıt: %d karakter"),
+                        Math.min(log.length(), 6000)))
+                .setPositiveButton(de("📧 E-posta"), new DialogInterface.OnClickListener() {
                     @Override public void onClick(DialogInterface d, int w) { mailCrash(log); }
                 })
-                .setNeutralButton("Paylaş", new DialogInterface.OnClickListener() {
+                .setNeutralButton(de("Paylaş"), new DialogInterface.OnClickListener() {
                     @Override public void onClick(DialogInterface d, int w) { shareText(log); }
                 })
                 .setNegativeButton("Kapat", null).show();
@@ -660,9 +659,9 @@ public class SettingsActivity extends Activity {
                 + " dakika reklamsız izleyebilirsin.\n\n"
                 + "Üyelik gerekmez: hiçbir özellik için giriş istemiyoruz.";
         new AlertDialog.Builder(this)
-                .setTitle("Reklamlar ve üyelik")
+                .setTitle(de("Reklamlar ve üyelik"))
                 .setMessage(msg)
-                .setPositiveButton("🎬 " + Ads.REWARD_MINUTES + " dk reklamsız",
+                .setPositiveButton(String.format(java.util.Locale.ROOT, de("🎬 %d dk reklamsız"), Ads.REWARD_MINUTES),
                         new DialogInterface.OnClickListener() {
                             @Override public void onClick(DialogInterface d, int w) { watchRewarded(); }
                         })
@@ -681,7 +680,7 @@ public class SettingsActivity extends Activity {
             }
         }, new Runnable() {
             @Override public void run() {
-                toast("Reklam henüz hazır değil, birkaç saniye sonra tekrar dene.");
+                toast(de("Reklam henüz hazır değil, birkaç saniye sonra tekrar dene."));
             }
         });
     }
@@ -689,17 +688,14 @@ public class SettingsActivity extends Activity {
     /** #100: telif / içerik kaldırma bildirimi (24-48 saat süreç). */
     private void copyrightDialog() {
         new AlertDialog.Builder(this)
-                .setTitle("Telif / içerik bildirimi")
-                .setMessage("Bir kanalın yayın haklarına sahipsen ve listeden kaldırılmasını\n"
-                        + "istiyorsan bize yaz.\n\n"
-                        + "• Kanallar halka açık yayın adreslerinden listelenir; uygulama yayını barındırmaz.\n"
-                        + "• Bildirimden sonra en geç 24-48 saat içinde ilgili kanal listeden kaldırılır.\n"
-                        + "• E-postaya kanal adı + yayın adresi + hak sahipliği bilgisini ekle.\n\n"
-                        + LEGAL_MAIL)
-                .setPositiveButton("E-posta gönder", new DialogInterface.OnClickListener() {
+                .setTitle(de("Telif / içerik bildirimi"))
+                .setMessage(String.format(java.util.Locale.ROOT,
+                        de("Bir kanalın yayın haklarına sahipsen ve listeden kaldırılmasını\nistiyorsan bize yaz.\n\n• Kanallar halka açık yayın adreslerinden listelenir; uygulama yayını barındırmaz.\n• Bildirimden sonra en geç 24-48 saat içinde ilgili kanal listeden kaldırılır.\n• E-postaya kanal adı + yayın adresi + hak sahipliği bilgisini ekle.\n\n%s"),
+                        LEGAL_MAIL))
+                .setPositiveButton(de("E-posta gönder"), new DialogInterface.OnClickListener() {
                     @Override public void onClick(DialogInterface d, int w) { mailLegal(); }
                 })
-                .setNeutralButton("Adresi kopyala", new DialogInterface.OnClickListener() {
+                .setNeutralButton(de("Adresi kopyala"), new DialogInterface.OnClickListener() {
                     @Override public void onClick(DialogInterface d, int w) {
                         android.content.ClipboardManager cm = (android.content.ClipboardManager)
                                 getSystemService(CLIPBOARD_SERVICE);
@@ -732,42 +728,40 @@ public class SettingsActivity extends Activity {
         box.setPadding(dp(16), dp(8), dp(16), 0);
 
         final EditText name = new EditText(this);
-        name.setHint("Kanal adı (örn: Kendi kanalım)");
+        name.setHint(de("Kanal adı (örn: Kendi kanalım)"));
         name.setSingleLine(true);
         box.addView(name);
 
         final EditText url = new EditText(this);
-        url.setHint("https://... .m3u8");
+        url.setHint(de("https://... .m3u8"));
         url.setInputType(InputType.TYPE_TEXT_VARIATION_URI);
         url.setSingleLine(true);
         box.addView(url);
 
         TextView note = new TextView(this);
-        note.setText("Adres .m3u/.m3u8 listesi veya tek bir yayın linki olabilir. "
-                + "Eklediğin kanal listenin en başında görünür. Kaldırmak için:\n"
-                + "Ayarlar → Eklediğim yayınlar.");
+        note.setText(de("Adres .m3u/.m3u8 listesi veya tek bir yayın linki olabilir. Eklediğin kanal listenin en başında görünür. Kaldırmak için:\nAyarlar → Eklediğim yayınlar."));
         note.setTextColor(MUTED);
         note.setTextSize(10);
         note.setPadding(0, dp(6), 0, 0);
         box.addView(note);
 
         new AlertDialog.Builder(this)
-                .setTitle("Kendi yayın adresimi ekle")
+                .setTitle(de("Kendi yayın adresimi ekle"))
                 .setView(box)
                 .setPositiveButton("Ekle", new DialogInterface.OnClickListener() {
                     @Override public void onClick(DialogInterface d, int w) {
                         String u = url.getText().toString().trim();
                         if (!u.startsWith("http")) {
-                            toast("Adres http:// veya https:// ile başlamalı");
+                            toast(de("Adres http:// veya https:// ile başlamalı"));
                             return;
                         }
                         Prefs.addCustomTv(SettingsActivity.this,
                                 name.getText().toString().trim(), u);
                         ChannelRepo.reload(SettingsActivity.this);
-                        toast("Kanal eklendi · listenin başında");
+                        toast(de("Kanal eklendi · listenin başında"));
                     }
                 })
-                .setNegativeButton("Vazgeç", null)
+                .setNegativeButton(de("Vazgeç"), null)
                 .show();
     }
 
@@ -775,27 +769,27 @@ public class SettingsActivity extends Activity {
     private void manageCustom() {
         final java.util.List<String[]> mine = Prefs.customTv(this);
         if (mine.isEmpty()) {
-            toast("Henüz kendi kanalın yok. \"Kendi yayın adresimi ekle\" ile başla.");
+            toast(de("Henüz kendi kanalın yok. \"Kendi yayın adresimi ekle\" ile başla."));
             return;
         }
         final String[] names = new String[mine.size()];
         for (int i = 0; i < mine.size(); i++) names[i] = mine.get(i)[0] + "\n" + mine.get(i)[1];
         new AlertDialog.Builder(this)
-                .setTitle("Eklediğim yayınlar (" + mine.size() + ")")
+                .setTitle(String.format(java.util.Locale.ROOT, de("Eklediğim yayınlar (%d)"), mine.size()))
                 .setItems(names, new DialogInterface.OnClickListener() {
                     @Override public void onClick(DialogInterface d, final int which) {
                         new AlertDialog.Builder(SettingsActivity.this)
                                 .setTitle(mine.get(which)[0])
-                                .setMessage("Bu kanalı kendi listenden kaldıralım mı?")
-                                .setPositiveButton("Kaldır", new DialogInterface.OnClickListener() {
+                                .setMessage(de("Bu kanalı kendi listenden kaldıralım mı?"))
+                                .setPositiveButton(de("Kaldır"), new DialogInterface.OnClickListener() {
                                     @Override public void onClick(DialogInterface dd, int w) {
                                         Prefs.removeCustomTv(SettingsActivity.this, mine.get(which)[1]);
                                         ChannelRepo.reload(SettingsActivity.this);
                                         render();
-                                        toast("Kaldırıldı");
+                                        toast(de("Kaldırıldı"));
                                     }
                                 })
-                                .setNegativeButton("Vazgeç", null).show();
+                                .setNegativeButton(de("Vazgeç"), null).show();
                     }
                 })
                 .setNegativeButton("Kapat", null)
@@ -810,7 +804,7 @@ public class SettingsActivity extends Activity {
         try {
             startActivityForResult(i, REQ_M3U);
         } catch (Exception e) {
-            toast("Dosya seçici açılamadı");
+            toast(de("Dosya seçici açılamadı"));
         }
     }
 
@@ -819,7 +813,7 @@ public class SettingsActivity extends Activity {
         super.onActivityResult(req, res, data);
         if (req != REQ_M3U || res != RESULT_OK || data == null || data.getData() == null) return;
         final android.net.Uri uri = data.getData();
-        toast("Liste okunuyor…");
+        toast(de("Liste okunuyor…"));
         new Thread(new Runnable() {
             @Override public void run() {
                 int added = 0;
@@ -867,7 +861,7 @@ public class SettingsActivity extends Activity {
             if (Lang.CODES[i].equals(Prefs.uiLang(this))) cur = i;
         }
         new AlertDialog.Builder(this)
-                .setTitle("Dil / Language")
+                .setTitle(de("Dil / Language"))
                 .setSingleChoiceItems(names, cur, new DialogInterface.OnClickListener() {
                     @Override public void onClick(DialogInterface d, int which) {
                         Prefs.setUiLang(SettingsActivity.this, Lang.CODES[which]);
@@ -890,7 +884,7 @@ public class SettingsActivity extends Activity {
                         android.net.Uri.parse("https://play.google.com/store/apps/details?id="
                                 + getPackageName())));
             } catch (Exception e2) {
-                Toast.makeText(this, "Play Store açılamadı", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, de("Play Store açılamadı"), Toast.LENGTH_SHORT).show();
             }
         }
     }
@@ -933,11 +927,11 @@ public class SettingsActivity extends Activity {
     private void askLimit() {
         final EditText et = new EditText(this);
         et.setInputType(InputType.TYPE_CLASS_NUMBER);
-        et.setHint("örn: 2000 (0 = sınırsız)");
+        et.setHint(de("örn: 2000 (0 = sınırsız)"));
         et.setText(String.valueOf(Prefs.limitMb(this)));
         new AlertDialog.Builder(this)
-                .setTitle("Günlük mobil veri limiti (MB)")
-                .setMessage("Limit dolunca kanal açmadan önce uyarı verir.")
+                .setTitle(de("Günlük mobil veri limiti (MB)"))
+                .setMessage(de("Limit dolunca kanal açmadan önce uyarı verir."))
                 .setView(et)
                 .setPositiveButton(I18n.t(this, "Kaydet"), new DialogInterface.OnClickListener() {
                     @Override public void onClick(DialogInterface d, int w) {
@@ -949,12 +943,12 @@ public class SettingsActivity extends Activity {
                         }
                         render();
                     }
-                }).setNegativeButton("Vazgeç", null).show();
+                }).setNegativeButton(de("Vazgeç"), null).show();
     }
 
     private void repair() {
         scan = new ProgressDialog(this);
-        scan.setMessage("Ölü kanallar yeniden deneniyor…");
+        scan.setMessage(de("Ölü kanallar yeniden deneniyor…"));
         scan.setCancelable(false);
         scan.show();
         Repair.run(this, new Repair.Callback() {
@@ -975,7 +969,7 @@ public class SettingsActivity extends Activity {
 
     private void adStatsDialog() {
         new AlertDialog.Builder(this)
-                .setTitle("Reklam sayacım (tahmini)")
+                .setTitle(de("Reklam sayacım (tahmini)"))
                 .setMessage(AdStats.summary(this))
                 .setPositiveButton("Kapat", null)
                 .setNeutralButton("Sıfırla", new DialogInterface.OnClickListener() {
@@ -989,18 +983,13 @@ public class SettingsActivity extends Activity {
     /** Reklamsız abonelik: durum + satın alma / yönetme. */
     private void subscriptionDialog() {
         final boolean active = Prefs.subActive(this);
-        String msg = active
-                ? "Reklamsız aboneliğin etkin görünüyor. Bu cihazda reklam gösterilmiyor.\n\n"
-                        + "İptal etmek için: Play Store → Profil → Ödemeler ve abonelikler."
-                : "Reklamları kaldır, aylık 20 ₺ öde.\n\n"
-                        + "• Video (geçiş/ödüllü) reklam yok\n"
-                        + "• Banner yok\n"
-                        + "• İstediğin zaman iptal edebilirsin\n\n"
-                        + "Ödeme Google Play üzerinden yapılır; kart bilgisi uygulamaya girilmez.";
+        String msg = de(active
+                ? "Reklamsız aboneliğin etkin görünüyor. Bu cihazda reklam gösterilmiyor.\n\nİptal etmek için: Play Store → Profil → Ödemeler ve abonelikler."
+                : "Reklamları kaldır, aylık 20 ₺ öde.\n\n• Video (geçiş/ödüllü) reklam yok\n• Banner yok\n• İstediğin zaman iptal edebilirsin\n\nÖdeme Google Play üzerinden yapılır; kart bilgisi uygulamaya girilmez.");
         new AlertDialog.Builder(this)
-                .setTitle(active ? "Reklamsız abonelik" : "Reklamsız abonelik · 20 ₺/ay")
+                .setTitle(de(active ? "Reklamsız abonelik" : "Reklamsız abonelik · 20 ₺/ay"))
                 .setMessage(msg)
-                .setPositiveButton(active ? "Aboneliği yönet" : "Abone ol",
+                .setPositiveButton(de(active ? "Aboneliği yönet" : "Abone ol"),
                         new DialogInterface.OnClickListener() {
                             @Override public void onClick(DialogInterface d, int w) {
                                 if (Prefs.subActive(SettingsActivity.this))
@@ -1019,10 +1008,10 @@ public class SettingsActivity extends Activity {
      */
     private void adTestDialog() {
         final AlertDialog dlg = new AlertDialog.Builder(this)
-                .setTitle("Reklam test modu")
-                .setMessage("Reklam kimliği okunuyor…")
+                .setTitle(de("Reklam test modu"))
+                .setMessage(de("Reklam kimliği okunuyor…"))
                 .setPositiveButton("Kapat", null)
-                .setNegativeButton("Kimliği kopyala", null)
+                .setNegativeButton(de("Kimliği kopyala"), null)
                 .setNeutralButton(Prefs.adTestMode(this) ? "Testi kapat" : "Testi aç", null)
                 .create();
         dlg.show();
@@ -1033,9 +1022,7 @@ public class SettingsActivity extends Activity {
                 runOnUiThread(new Runnable() {
                     @Override public void run() {
                         if (id == null) {
-                            dlg.setMessage("Reklam kimliği okunamadı.\n\n"
-                                    + "Android Ayarlar → Google → Reklamlar bölümünden "
-                                    + "kişiselleştirilmiş reklamları açıp tekrar dene.");
+                            dlg.setMessage(de("Reklam kimliği okunamadı.\n\nAndroid Ayarlar → Google → Reklamlar bölümünden kişiselleştirilmiş reklamları açıp tekrar dene."));
                             dlg.getButton(AlertDialog.BUTTON_NEUTRAL).setEnabled(false);
                             return;
                         }
@@ -1088,7 +1075,7 @@ public class SettingsActivity extends Activity {
 
     private void healthScan() {
         scan = new ProgressDialog(this);
-        scan.setMessage("Kanallar test ediliyor...");
+        scan.setMessage(de("Kanallar test ediliyor..."));
         scan.setCancelable(false);
         scan.show();
         new Thread(new Runnable() {
@@ -1111,8 +1098,8 @@ public class SettingsActivity extends Activity {
                     @Override public void run() {
                         if (scan != null && scan.isShowing()) scan.dismiss();
                         render();
-                        Toast.makeText(SettingsActivity.this, "Tarama bitti: " + fok
-                                + " çalışıyor, " + fbad + " ölü", Toast.LENGTH_LONG).show();
+                        Toast.makeText(SettingsActivity.this, String.format(java.util.Locale.ROOT,
+                                de("Tarama bitti: %d çalışıyor, %d ölü"), fok, fbad), Toast.LENGTH_LONG).show();
                     }
                 });
             }
@@ -1290,7 +1277,7 @@ public class SettingsActivity extends Activity {
     /** Sahip modu: reklam teşhisi penceresi. */
     private void adDiagnosticsDialog() {
         new AlertDialog.Builder(this)
-                .setTitle("Reklam teşhisi")
+                .setTitle(de("Reklam teşhisi"))
                 .setMessage(AdManager.diagnostics(this))
                 .setPositiveButton("Kapat", null)
                 .setNeutralButton("Sayacı aç", new DialogInterface.OnClickListener() {

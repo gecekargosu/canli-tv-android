@@ -1,6 +1,1 @@
-v10.05 (114) - son derlenen surum (27 Kasim 2026)
-APK: releases/v10.05/CanliTV.apk  (3.958.448 bayt)
-AAB: releases/v10.05/CanliTV.aab  (6.752.749 bayt) - Play yuklemesi icin
-Kopya: GUNCELLEMELER/v10.05/
-Onceki: v10.03 (112) - v10.04 numarasi arsivlenmedi (ayni seride C-3 calismasi).
-Not: APK ve AAB ayni yukleme anahtariyla imzali (f3996c67...b8d5).
+v10.09 (118) — Play yuklemesi yapildi

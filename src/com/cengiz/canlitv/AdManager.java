@@ -248,7 +248,7 @@ public final class AdManager {
             com.google.android.ump.UserMessagingPlatform.showPrivacyOptionsForm(a,
                     new com.google.android.ump.ConsentForm.OnConsentFormDismissedListener() {
                         @Override public void onConsentFormDismissed(com.google.android.ump.FormError error) {
-                            Toast.makeText(a, "Tercihler kaydedildi", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(a, I18n.t(a, "Tercihler kaydedildi"), Toast.LENGTH_SHORT).show();
                         }
                     });
         } catch (Throwable t) {

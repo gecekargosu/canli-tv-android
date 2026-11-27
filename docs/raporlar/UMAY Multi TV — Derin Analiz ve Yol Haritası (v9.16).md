@@ -200,7 +200,7 @@ targetSdk 36'da pencere zorunlu olarak kenardan kenara çizilir. Kodda yalnızca
 
 ### P0-7. İmza anahtarı ve depo hijyeni
 
-* `app/build.gradle` içinde `storePassword`/`keyPassword` düz yazı (`UmayMultiTV2026!`), dokümanda "şifresi make-aab.sh içinde" yazıyor, depo **halka açık**. Anahtar dosyası .gitignore'da ama şifre depoda. Şifreyi ortam değişkeni/`keystore.properties`'e taşı, **mevcut şifreyi de değiştir** (upload anahtarı Play App Signing ile sıfırlanabilir; şimdi yap).
+* `app/build.gradle` içinde `storePassword`/`keyPassword` düz yazı (`*** (keystore.properties) ***!`), dokümanda "şifresi make-aab.sh içinde" yazıyor, depo **halka açık**. Anahtar dosyası .gitignore'da ama şifre depoda. Şifreyi ortam değişkeni/`keystore.properties`'e taşı, **mevcut şifreyi de değiştir** (upload anahtarı Play App Signing ile sıfırlanabilir; şimdi yap).
 * `CanliTV.apk` **debug anahtarıyla** imzalı. Kullanıcılar bu APK'yı yan yükleyip sonra Play'den indirirse imza uyuşmazlığı yüzünden güncelleme/kurulum çakışır. Play'e çıkınca sitedeki "APK indir" sayfasını kaldır veya "Play'den indir" yap.
 * Zip'te 5 MB'lık APK'dan iki kopya, 12 MB'lık `ham-kayit.mp4`, `build\_aab/` çıktıları var; depoya girmesin (Git LFS veya Releases).
 * `local.properties` kişisel yol içeriyor; `android:allowBackup` belirtilmemiş (varsayılan açık); `android:supportsRtl` yok. Manifest'te bunları düzelt.

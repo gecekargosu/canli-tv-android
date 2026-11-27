@@ -129,7 +129,7 @@ public class MultiActivity extends android.app.Activity {
         });
         home.setOnLongClickListener(new View.OnLongClickListener() {
             @Override public boolean onLongClick(View v) {
-                Toast.makeText(MultiActivity.this, "Ana sayfa: kanal listesine dön",
+                Toast.makeText(MultiActivity.this, I18n.t(MultiActivity.this, "Ana sayfa: kanal listesine dön"),
                         Toast.LENGTH_SHORT).show();
                 return true;
             }
@@ -142,7 +142,7 @@ public class MultiActivity extends android.app.Activity {
         });
         stopAll.setOnLongClickListener(new View.OnLongClickListener() {
             @Override public boolean onLongClick(View v) {
-                Toast.makeText(MultiActivity.this, "TV'yi kapat: yayını durdurup listeye dön",
+                Toast.makeText(MultiActivity.this, I18n.t(MultiActivity.this, "TV'yi kapat: yayını durdurup listeye dön"),
                         Toast.LENGTH_SHORT).show();
                 return true;
             }
@@ -215,8 +215,9 @@ public class MultiActivity extends android.app.Activity {
             final int n = missingChannels;
             ui.postDelayed(new Runnable() {
                 @Override public void run() {
-                    Toast.makeText(MultiActivity.this, "Kayıtlı setteki " + n
-                            + " kanal bu listede yok (kaldırılmış olabilir)", Toast.LENGTH_LONG).show();
+                    Toast.makeText(MultiActivity.this, String.format(java.util.Locale.ROOT,
+                            I18n.t(MultiActivity.this, "Kayıtlı setteki %d kanal bu listede yok (kaldırılmış olabilir)"), n),
+                            Toast.LENGTH_LONG).show();
                 }
             }, 1200);
         }
@@ -230,15 +231,16 @@ public class MultiActivity extends android.app.Activity {
             requestPermissions(new String[]{"android.permission.POST_NOTIFICATIONS"}, 12);
         }
         if (Net.mobile(this) && !Prefs.mobileOk(this)) {
-            new AlertDialog.Builder(this).setTitle("Mobil veri uyarısı")
-                    .setMessage("Wi-Fi yok. Çoklu ekran mobil veride hızlı tüketir.\n\nBugün: "
-                            + Net.mb(Prefs.todayBytes(this)) + "\n\nDevam edilsin mi?")
-                    .setPositiveButton("Devam", new DialogInterface.OnClickListener() {
+            new AlertDialog.Builder(this).setTitle(I18n.t(this, "Mobil veri uyarısı"))
+                    .setMessage(String.format(java.util.Locale.ROOT,
+                            I18n.t(this, "Wi-Fi yok. Çoklu ekran mobil veride hızlı tüketir.\n\nBugün: %s\n\nDevam edilsin mi?"),
+                            Net.mb(Prefs.todayBytes(this))))
+                    .setPositiveButton(I18n.t(this, "Devam"), new DialogInterface.OnClickListener() {
                         @Override public void onClick(DialogInterface d, int w) {
                             Prefs.setMobileOk(MultiActivity.this, true);
                         }
                     })
-                    .setNegativeButton("1. ekran sadece ses", new DialogInterface.OnClickListener() {
+                    .setNegativeButton(I18n.t(this, "1. ekran sadece ses"), new DialogInterface.OnClickListener() {
                         @Override public void onClick(DialogInterface d, int w) {
                             Prefs.setMobileOk(MultiActivity.this, true);
                             for (int i = 0; i < 4; i++) audible[i] = (i == 0);
@@ -343,8 +345,7 @@ public class MultiActivity extends android.app.Activity {
                 } catch (Throwable ignored) { }
             }
             if (decoders > 0 && decoders < 4) {
-                Toast.makeText(this, "Bu cihazda 4 görüntü aynı anda zorlanabilir; "
-                        + "takılırsa 3'e düşür.", Toast.LENGTH_LONG).show();
+                Toast.makeText(this, I18n.t(this, "Bu cihazda 4 görüntü aynı anda zorlanabilir; takılırsa 3'e düşür."), Toast.LENGTH_LONG).show();
             }
         } catch (Throwable ignored) { }
     }
@@ -433,7 +434,8 @@ public class MultiActivity extends android.app.Activity {
         for (int i = 0; i < 3; i++) {
             final int k = i;
             TextView b = new TextView(this);
-            b.setText((audible[i] ? "🔊 " : "🔇 ") + (i + 1) + ". ekran");
+            b.setText(String.format(java.util.Locale.ROOT, I18n.t(this, "%s %d. ekran"),
+                    audible[i] ? "🔊" : "🔇", i + 1));
             b.setTextColor(Color.WHITE);
             b.setTextSize(12);
             b.setGravity(Gravity.CENTER);
@@ -451,7 +453,7 @@ public class MultiActivity extends android.app.Activity {
                     applyAudio();
                     saveState();
                     for (int j = 0; j < 3; j++) {
-                        btns[j].setText((audible[j] ? "🔊 " : "🔇 ") + (j + 1) + ". ekran");
+                        btns[j].setText(String.format(java.util.Locale.ROOT, I18n.t(MultiActivity.this, "%s %d. ekran"), audible[j] ? "🔊" : "🔇", j + 1));
                     }
                 }
             });
@@ -485,7 +487,7 @@ public class MultiActivity extends android.app.Activity {
     private void toggleRecord(final TextView btn, int slotNo) {
         if (recorder.isRunning()) {
             recorder.stop();
-            btn.setText("⏺ kayıt");
+            btn.setText(I18n.t(this, "⏺ kayıt"));
             return;
         }
         int s = Math.max(0, Math.min(3, slotNo - 1));
@@ -499,13 +501,13 @@ public class MultiActivity extends android.app.Activity {
                     Toast.LENGTH_LONG).show();
             return;
         }
-        btn.setText("⏹ durdur");
+        btn.setText(I18n.t(this, "⏹ durdur"));
         recorder.start(this, c.url, "ekran" + (s + 1) + "_" + c.name, new HlsRecorder.Listener() {
             @Override public void onInfo(String msg) { }
             @Override public void onError(final String msg) {
                 runOnUiThread(new Runnable() {
                     @Override public void run() {
-                        btn.setText("⏺ kayıt");
+                        btn.setText(I18n.t(MultiActivity.this, "⏺ kayıt"));
                         Toast.makeText(MultiActivity.this, msg, Toast.LENGTH_LONG).show();
                     }
                 });
@@ -513,9 +515,10 @@ public class MultiActivity extends android.app.Activity {
             @Override public void onStopped(final String path, final long bytes, final boolean sesli) {
                 runOnUiThread(new Runnable() {
                     @Override public void run() {
-                        btn.setText("⏺ kayıt");
-                        Toast.makeText(MultiActivity.this, "Kayıt bitti: " + (bytes / 1048576)
-                                + " MB (ses dahil) → Movies/TV-Kayitlari", Toast.LENGTH_LONG).show();
+                        btn.setText(I18n.t(MultiActivity.this, "⏺ kayıt"));
+                        Toast.makeText(MultiActivity.this, String.format(java.util.Locale.ROOT,
+                                I18n.t(MultiActivity.this, "Kayıt bitti: %d MB%s\nGaleri → Movies/TV-Kayitlari"),
+                                bytes / 1048576, I18n.t(MultiActivity.this, " (ses dahil)")), Toast.LENGTH_LONG).show();
                     }
                 });
             }
@@ -526,8 +529,8 @@ public class MultiActivity extends android.app.Activity {
 
     private void saveSetDialog() {
         final EditText et = new EditText(this);
-        et.setHint("Set adı (örn: Spor + Haber)");
-        new AlertDialog.Builder(this).setTitle("Bu seti favori yap").setView(et)
+        et.setHint(I18n.t(this, "Set adı (örn: Spor + Haber)"));
+        new AlertDialog.Builder(this).setTitle(I18n.t(this, "Bu seti favori yap")).setView(et)
                 .setPositiveButton(I18n.t(this, "Kaydet"), new DialogInterface.OnClickListener() {
                     @Override public void onClick(DialogInterface d, int w) {
                         String name = et.getText().toString().trim();
@@ -541,7 +544,7 @@ public class MultiActivity extends android.app.Activity {
                         Toast.makeText(MultiActivity.this, I18n.t(MultiActivity.this, "Kaydedildi: ") + name,
                                 Toast.LENGTH_SHORT).show();
                     }
-                }).setNegativeButton("Vazgeç", null).show();
+                }).setNegativeButton(I18n.t(this, "Vazgeç"), null).show();
     }
 
     /**
@@ -935,7 +938,7 @@ public class MultiActivity extends android.app.Activity {
         box.setPadding(dp(12), dp(8), dp(12), 0);
 
         final EditText filter = new EditText(this);
-        filter.setHint("Kanal no veya ad yaz...");
+        filter.setHint(I18n.t(this, "Kanal no veya ad yaz..."));
         filter.setSingleLine(true);
         box.addView(filter);
 
@@ -973,9 +976,9 @@ public class MultiActivity extends android.app.Activity {
         fill.run();
 
         final AlertDialog dlg = new AlertDialog.Builder(this)
-                .setTitle("Kanal seç")
+                .setTitle(I18n.t(this, "Kanal seç"))
                 .setView(box)
-                .setNegativeButton("Kapat", null)
+                .setNegativeButton(I18n.t(this, "Kapat"), null)
                 .create();
 
         lv.setOnItemClickListener(new android.widget.AdapterView.OnItemClickListener() {

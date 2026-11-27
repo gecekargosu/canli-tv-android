@@ -84,6 +84,21 @@ public class PlayerActivity extends android.app.Activity {
     private TextView noticeView;
     private int stallCount = 0;
 
+    // ---------- v10.09: teşhis · "çalışmıyor" bildirimi · ilk kare ölçümü ----------
+    /** "📣 Bu kanal çalışmıyor" düğmesi (yalnız gerektiğinde görünür). */
+    private TextView reportBtn;
+    /** Bu kanal bu oturumda bildirildi mi (aynı kanal için düğme bir kez iş yapar). */
+    private boolean reported = false;
+    /** Son hatanın sınıflandırılmış hali (StreamDiag). */
+    private int diagKind = StreamDiag.UNKNOWN;
+    /** Hatanın ham adı/mesajı — sınıflandırma ve sunucu kaydı için. */
+    private String lastErrName = "", lastErrMsg = "";
+    /** Gelen görüntünün yüksekliği (0 = video izi hiç gelmedi). */
+    private int videoH = 0;
+    /** İlk karenin doğrulandığı an ve kontrolün kapandığı an. */
+    private long frameFirstAt = 0, frameStartAt = 0;
+    private boolean framesOk = false, framesChecked = false;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -366,6 +381,28 @@ public class PlayerActivity extends android.app.Activity {
         root.addView(errorView, new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
 
+        // v10.09: hata ekranının ÜSTÜNDE duran bildirim düğmesi. Yalnız kanal kaynaklı
+        // hatalarda görünür (internet/DNS kanalın suçu değil) ve aynı kanal için bir kez iş yapar.
+        reportBtn = new TextView(this);
+        reportBtn.setText(I18n.t(this, "📣 Bu kanal çalışmıyor · bildir"));
+        reportBtn.setTextColor(Color.parseColor("#111111"));
+        reportBtn.setTextSize(13);
+        reportBtn.setGravity(Gravity.CENTER);
+        reportBtn.setPadding(dp(16), dp(10), dp(16), dp(10));
+        GradientDrawable rbg = new GradientDrawable();
+        rbg.setColor(ACCENT);
+        rbg.setCornerRadius(dp(22));
+        reportBtn.setBackground(rbg);
+        reportBtn.setVisibility(View.GONE);
+        reportBtn.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) { reportNow(); }
+        });
+        FrameLayout.LayoutParams rlp = new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        rlp.gravity = Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL;
+        rlp.setMargins(dp(16), 0, dp(16), dp(120));
+        root.addView(reportBtn, rlp);
+
         video.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View v) {
                 if (locked) {
@@ -384,7 +421,7 @@ public class PlayerActivity extends android.app.Activity {
         });
 
         lockHint = new TextView(this);
-        lockHint.setText("🔒 dokunma kilidi · açmak için uzun bas");
+        lockHint.setText(I18n.t(this, "🔒 dokunma kilidi · açmak için uzun bas"));
         lockHint.setTextColor(Color.parseColor("#CCFFFFFF"));
         lockHint.setTextSize(11);
         lockHint.setPadding(dp(10), dp(4), dp(10), dp(4));
@@ -450,7 +487,9 @@ public class PlayerActivity extends android.app.Activity {
 
             @Override public void onPlayerError(androidx.media3.common.PlaybackException e) {
                 // Hata günlüğü: teknik kod, kullanıcının gördüğü mesajdan bağımsız.
-                lastError = e == null ? "?" : (e.getErrorCodeName() + " · " + e.getMessage());
+                lastErrName = e == null ? "" : safe(e.getErrorCodeName());
+                lastErrMsg = e == null ? "" : safe(e.getMessage());
+                lastError = e == null ? "?" : (lastErrName + " · " + lastErrMsg);
                 CrashLog.event(PlayerActivity.this, "tv", "oynatıcı hatası: " + lastError);
                 // K-07: hatayı sınıflandır — canlı kenar, geçici ağ hatası ve kalıcı hata
                 // aynı muameleyi görmemeli (eskiden hepsi kanalı ölü sayabiliyordu).
@@ -468,6 +507,7 @@ public class PlayerActivity extends android.app.Activity {
                 // Etiket yalnız tercihi gösteriyordu ("360p"); tek varyantlı kanalda yayın
                 // 1080p geliyor ve etiket yalan söylüyordu. Gerçek çözünürlüğü yaz.
                 if (size != null && size.height > 0) {
+                    videoH = size.height;          // v10.09: kare ölçümü için gerçek video izi
                     showRealQuality(size.height);
                     noteVariantGap(size.height);
                 }
@@ -519,6 +559,7 @@ public class PlayerActivity extends android.app.Activity {
                 play();
             }
             checkStall();
+            checkFrames();
             // K-02: izlerken zamanlanmış tam ekran reklam kaldırıldı.
             // Reklam yalnız kanal değişiminde (3. zap / 180 sn) çıkar.
             ui.postDelayed(this, 1000);
@@ -540,7 +581,7 @@ public class PlayerActivity extends android.app.Activity {
         long openMs = tryStartedAt > 0 ? System.currentTimeMillis() - tryStartedAt : 0;
         CrashLog.event(this, "tv", "hazır (" + openMs + " ms): " + list.get(index).name);
         progress.setVisibility(View.GONE);
-        errorView.setVisibility(View.GONE);
+        hideError();
         player.setVolume(muted ? 0f : 1f);
         player.play();
         playButton.setText("⏸");
@@ -733,13 +774,12 @@ public class PlayerActivity extends android.app.Activity {
         }
         // İnternet/DNS sorunu kanalın suçu değil: ölü işaretleme, kullanıcıya doğru mesajı ver.
         if (!Net.online(this) || isDnsError()) {
-            errorView.setText(Lang.t(this, "tv_net_fail"));
-            errorView.setVisibility(View.VISIBLE);
+            showError(isDnsError() ? StreamDiag.DNS : StreamDiag.OFFLINE,
+                    isDnsError() ? "dns" : "offline", Lang.t(this, "tv_net_fail"));
             return;
         }
         Prefs.addFail(this, cur);
-        errorView.setText(Lang.t(this, "tv_channel_fail"));
-        errorView.setVisibility(View.VISIBLE);
+        showError(diag(), lastError, errorText(Lang.t(this, "tv_channel_fail")));
         autoNext();
     }
 
@@ -758,18 +798,19 @@ public class PlayerActivity extends android.app.Activity {
         if (!Net.online(this) || isDnsError()) {
             try {
                 progress.setVisibility(View.GONE);
-                errorView.setText(I18n.t(this, "İnternet bağlantısı kurulamadı.") + "\n\n" + neden
-                        + I18n.t(this, " · Wi-Fi / mobil veriyi kontrol edip dokun → tekrar dene"));
-                errorView.setVisibility(View.VISIBLE);
+                showError(isDnsError() ? StreamDiag.DNS : StreamDiag.OFFLINE,
+                        isDnsError() ? "dns" : "offline",
+                        I18n.t(this, "İnternet bağlantısı kurulamadı.") + "\n\n" + neden
+                                + I18n.t(this, " · Wi-Fi / mobil veriyi kontrol edip dokun → tekrar dene"));
             } catch (Exception ignored) { }
             return;
         }
         try { Prefs.addFail(this, list.get(index).url); } catch (Exception ignored) { }
         try {
             progress.setVisibility(View.GONE);
-            errorView.setText(I18n.t(this, "Bu kanal şu an açılamadı.") + "\n\n" + neden
-                    + I18n.t(this, " · Dokun → tekrar dene\nveya ⏭ ile sonraki kanal"));
-            errorView.setVisibility(View.VISIBLE);
+            showError(diag(), neden + (lastError.length() > 0 ? " · " + lastError : ""),
+                    errorText(I18n.t(this, "Bu kanal şu an açılamadı.") + "\n\n" + neden
+                            + I18n.t(this, " · Dokun → tekrar dene\nveya ⏭ ile sonraki kanal")));
         } catch (Exception ignored) { }
         autoNext();
     }
@@ -892,7 +933,7 @@ public class PlayerActivity extends android.app.Activity {
         final EditText et = new EditText(this);
         et.setHint("23:30");
         et.setInputType(InputType.TYPE_CLASS_DATETIME);
-        new AlertDialog.Builder(this).setTitle("Kapanış saati").setView(et)
+        new AlertDialog.Builder(this).setTitle(I18n.t(this, "Kapanış saati")).setView(et)
                 .setPositiveButton("Tamam", new DialogInterface.OnClickListener() {
                     @Override public void onClick(DialogInterface d, int w) {
                         try {
@@ -907,13 +948,14 @@ public class PlayerActivity extends android.app.Activity {
                                 c.add(java.util.Calendar.DAY_OF_MONTH, 1);
                             sleepUntil = c.getTimeInMillis();
                             Prefs.setSleepUntil(PlayerActivity.this, sleepUntil);
-                            Toast.makeText(PlayerActivity.this, "Saat " + String.format(java.util.Locale.ROOT, "%02d:%02d", h, mi)
-                                    + " de kapanacak", Toast.LENGTH_LONG).show();
+                            Toast.makeText(PlayerActivity.this, String.format(java.util.Locale.ROOT,
+                                    I18n.t(PlayerActivity.this, "Saat %s'de kapanacak"),
+                                    String.format(java.util.Locale.ROOT, "%02d:%02d", h, mi)), Toast.LENGTH_LONG).show();
                         } catch (Exception e) {
-                            Toast.makeText(PlayerActivity.this, "Saat formatı: 23:30", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(PlayerActivity.this, I18n.t(PlayerActivity.this, "Saat formatı: 23:30"), Toast.LENGTH_SHORT).show();
                         }
                     }
-                }).setNegativeButton("Vazgeç", null).show();
+                }).setNegativeButton(I18n.t(this, "Vazgeç"), null).show();
     }
 
     // ---------- kalite ----------
@@ -938,8 +980,9 @@ public class PlayerActivity extends android.app.Activity {
             b.clearOverridesOfType(androidx.media3.common.C.TRACK_TYPE_VIDEO);
             player.setTrackSelectionParameters(b.build());
         } catch (Throwable ignored) { }
-        Toast.makeText(this, "Bu kanalda " + pref + "p yok · en düşük " + h
-                + "p oynatılıyor (veri artabilir)", Toast.LENGTH_LONG).show();
+        Toast.makeText(this, String.format(java.util.Locale.ROOT,
+                I18n.t(this, "Bu kanalda %dp yok · en düşük %dp oynatılıyor (veri artabilir)"),
+                pref, h), Toast.LENGTH_LONG).show();
         CrashLog.event(this, "tv", "varyant yok: tercih " + pref + "p, gelen " + h + "p");
     }
 
@@ -957,13 +1000,12 @@ public class PlayerActivity extends android.app.Activity {
         if (recorder.isRunning()) {
             recorder.stop();
             recButton.setTextColor(TEXT);
-            Toast.makeText(this, "Kayıt durduruluyor...", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, I18n.t(this, "Kayıt durduruluyor..."), Toast.LENGTH_SHORT).show();
             return;
         }
         Channel c = list.get(index);
         if (!ChannelRepo.canRecord(c.name)) {
-            Toast.makeText(this, "Kayıt yalnız kamu kanallarında açık (TRT, TBMM, Diyanet) · "
-                    + "özel kanallarda telif nedeniyle kapalı", Toast.LENGTH_LONG).show();
+            Toast.makeText(this, I18n.t(this, "Kayıt yalnız kamu kanallarında açık (TRT, TBMM, Diyanet) · özel kanallarda telif nedeniyle kapalı"), Toast.LENGTH_LONG).show();
             return;
         }
         recorder.start(this, c.url, c.name, new HlsRecorder.Listener() {
@@ -984,15 +1026,17 @@ public class PlayerActivity extends android.app.Activity {
                 runOnUiThread(new Runnable() {
                     @Override public void run() {
                         recButton.setTextColor(TEXT);
-                        Toast.makeText(PlayerActivity.this, "Kayıt bitti: " + (bytes / 1048576) + " MB"
-                                + (sesli ? " (ses dahil)" : "") + "\nGaleri → Movies/TV-Kayitlari", Toast.LENGTH_LONG).show();
+                        Toast.makeText(PlayerActivity.this, String.format(java.util.Locale.ROOT,
+                                I18n.t(PlayerActivity.this, "Kayıt bitti: %d MB%s\nGaleri → Movies/TV-Kayitlari"),
+                                bytes / 1048576,
+                                sesli ? I18n.t(PlayerActivity.this, " (ses dahil)") : ""), Toast.LENGTH_LONG).show();
                     }
                 });
             }
         });
         // Renk yalnız gerçekten başladığında (onInfo) kırmızıya döner; eskiden istek
         // yutulsa bile düğme kırmızı kalıyordu.
-        Toast.makeText(this, "Kayıt başladı → Movies/TV-Kayitlari", Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, I18n.t(this, "Kayıt başladı → Movies/TV-Kayitlari"), Toast.LENGTH_SHORT).show();
     }
 
     // ---------- arka plan ses ----------
@@ -1007,7 +1051,8 @@ public class PlayerActivity extends android.app.Activity {
         try { player.setVolume(0f); } catch (Exception ignored) { }
         muted = true;
         muteBtn.setText("🔇");
-        Toast.makeText(this, c.name + " arka planda çalıyor. Ekranı kapatabilirsin.", Toast.LENGTH_LONG).show();
+        Toast.makeText(this, String.format(java.util.Locale.ROOT,
+                I18n.t(this, "%s arka planda çalıyor. Ekranı kapatabilirsin."), c.name), Toast.LENGTH_LONG).show();
     }
 
     private void show() {
@@ -1026,8 +1071,7 @@ public class PlayerActivity extends android.app.Activity {
     private void play() {
         final Channel c = list.get(index);
         if (!Net.online(this)) {
-            errorView.setText(Lang.t(this, "tv_no_net"));
-            errorView.setVisibility(View.VISIBLE);
+            showError(StreamDiag.OFFLINE, "internet yok", Lang.t(this, "tv_no_net"));
             progress.setVisibility(View.GONE);
             return;
         }
@@ -1061,7 +1105,7 @@ public class PlayerActivity extends android.app.Activity {
                 .setNeutralButton(I18n.t(this, "Sadece ses 🎧"), new DialogInterface.OnClickListener() {
                     @Override public void onClick(DialogInterface d, int w) { startAudioOnly(c); }
                 })
-                .setNegativeButton("Vazgeç", new DialogInterface.OnClickListener() {
+                .setNegativeButton(I18n.t(this, "Vazgeç"), new DialogInterface.OnClickListener() {
                     @Override public void onClick(DialogInterface d, int w) { finish(); }
                 })
                 .show();
@@ -1131,8 +1175,16 @@ public class PlayerActivity extends android.app.Activity {
 
     private void startVideo(String url) {
         progress.setVisibility(View.VISIBLE);
-        errorView.setVisibility(View.GONE);
+        hideError();
         ready = false;
+        // v10.09: her yeni denemede teşhis ve kare ölçümü sıfırdan başlar.
+        reported = false;
+        videoH = 0;
+        framesOk = false;
+        framesChecked = false;
+        frameFirstAt = 0;
+        frameStartAt = 0;
+        diagKind = StreamDiag.UNKNOWN;
         try { player.stop(); player.clearMediaItems(); } catch (Exception ignored) { }
         // Tarayıcı UA'sı: TV8 gibi CDN'ler aksi hâlde reklam kuşağı klibi döndürüyor.
         try {
@@ -1149,13 +1201,135 @@ public class PlayerActivity extends android.app.Activity {
         ui.postDelayed(watchdog, 15000);
     }
 
+    // ---------- v10.09: hata ekranı · bildirim · kare ölçümü ----------
+
+    /** Son hatanın sınıfı (internet durumu da hesaba katılır). */
+    private int diag() {
+        return StreamDiag.classify(lastErrName, lastErrMsg, Net.online(this));
+    }
+
+    /** Hata ekranı: temel metin + sebep + öneri. */
+    private String errorText(String base) {
+        StringBuilder sb = new StringBuilder(base == null ? "" : base);
+        String t = I18n.t(this, StreamDiag.title(diagKind));
+        String a = I18n.t(this, StreamDiag.advice(diagKind));
+        if (t != null && t.length() > 0) sb.append("\n\n").append(t);
+        if (a != null && a.length() > 0) sb.append("\n").append(a);
+        return sb.toString();
+    }
+
+    /**
+     * Hata ekranını göster. Bildirim düğmesi yalnızca kanal kaynaklı sebeplerde çıkar:
+     * internet yokken ya da DNS çözümlenemezken "kanal çalışmıyor" demek yanlış olur.
+     */
+    private void showError(int kind, String detail, String text) {
+        diagKind = kind;
+        try {
+            errorView.setText(text == null ? "" : text);
+            errorView.setVisibility(View.VISIBLE);
+        } catch (Throwable ignored) { }
+        try {
+            boolean gorunur = StreamDiag.reportable(kind) && !reported;
+            reportBtn.setVisibility(gorunur ? View.VISIBLE : View.GONE);
+            reportBtn.setText(I18n.t(this, "📣 Bu kanal çalışmıyor · bildir"));
+            reportBtn.bringToFront();
+        } catch (Throwable ignored) { }
+        CrashLog.eventThrottled(this, "diag", StreamDiag.code(kind) + "#" + index,
+                "teşhis: " + StreamDiag.code(kind) + " · " + detail, 60000);
+    }
+
+    private void hideError() {
+        try { errorView.setVisibility(View.GONE); } catch (Throwable ignored) { }
+        try { reportBtn.setVisibility(View.GONE); } catch (Throwable ignored) { }
+    }
+
+    /** "Bu kanal çalışmıyor" — kullanıcı düğmeye bastığında. */
+    private void reportNow() {
+        try {
+            if (index < 0 || index >= list.size()) return;
+            final Channel c = list.get(index);
+            if (reported) {
+                Toast.makeText(this, I18n.t(this, "Bu kanalı az önce bildirdin"),
+                        Toast.LENGTH_SHORT).show();
+                return;
+            }
+            if (ChannelReport.tooSoon(this, c.url)) {
+                Toast.makeText(this, I18n.t(this, "Bu kanalı az önce bildirdin"),
+                        Toast.LENGTH_SHORT).show();
+                return;
+            }
+            reported = true;
+            reportBtn.setVisibility(View.GONE);
+            final String detail = StreamDiag.code(diagKind)
+                    + (lastError.length() > 0 ? " · " + lastError : "");
+            ChannelReport.send(this, c.name, c.url, diagKind, detail, new ChannelReport.Done() {
+                @Override public void onResult(final boolean ok, final boolean queued) {
+                    runOnUiThread(new Runnable() {
+                        @Override public void run() {
+                            String msg = ok ? I18n.t(PlayerActivity.this, "Bildirimin alındı, teşekkürler")
+                                    : I18n.t(PlayerActivity.this,
+                                            "Bildirim kaydedildi · internet gelince gönderilecek");
+                            Toast.makeText(PlayerActivity.this, msg, Toast.LENGTH_LONG).show();
+                        }
+                    });
+                }
+            });
+        } catch (Throwable ignored) { }
+    }
+
+    /**
+     * v10.09: "hazır" demek "kare geldi" demek değil. İlk kare ancak READY + video izi
+     * (gerçek yükseklik) + 10 saniye kesintisiz oynatma birlikte görülürse doğrulanır.
+     * Doğrulanamazsa günlüğe düşer ve kullanıcıya bildirim düğmesi açılır; kanal
+     * sessizce ölü kalmaz. Hiçbir durumda kanalı "ölü" işaretlemez (yanlış eleme olmasın).
+     */
+    private void checkFrames() {
+        try {
+            if (framesChecked || !ready || isFinishing()) return;
+            long now = System.currentTimeMillis();
+            if (frameStartAt <= 0) frameStartAt = now;
+            boolean playing = player.isPlaying()
+                    && player.getPlaybackState() == androidx.media3.common.Player.STATE_READY;
+            if (videoH > 0 && playing) {
+                if (frameFirstAt <= 0) {
+                    frameFirstAt = now;
+                } else if (now - frameFirstAt >= 10000) {
+                    framesOk = true;
+                    framesChecked = true;
+                    CrashLog.event(this, "tv", "ilk kare doğrulandı: "
+                            + ((now - frameStartAt) / 1000) + " sn · " + videoH + "p · "
+                            + list.get(index).name);
+                    reportBtn.setVisibility(View.GONE);
+                }
+                return;
+            }
+            if (now - frameStartAt < 15000) return;
+            framesChecked = true;
+            // Sesli yayın olabilir: konum ilerliyorsa "görüntü yok" demek yerine not düşeriz.
+            boolean ilerliyor = player.getCurrentPosition() != lastPos;
+            CrashLog.event(this, "tv", (videoH > 0 ? "kare gelmedi (dondu)" : "video izi yok")
+                    + " · 15 sn · konum " + (ilerliyor ? "ilerliyor" : "durdu")
+                    + (lastError.length() > 0 ? " · son hata=" + lastError : "")
+                    + " · " + list.get(index).name);
+            if (StreamDiag.reportable(diagKind) && !reported) {
+                if (diagKind == StreamDiag.UNKNOWN) diagKind = StreamDiag.BAD_MEDIA;
+                reportBtn.setVisibility(View.VISIBLE);
+                reportBtn.bringToFront();
+            }
+        } catch (Throwable ignored) { }
+    }
+
+    private static String safe(String s) {
+        return s == null ? "" : s;
+    }
+
     private void toggleMute() {
         muted = !muted;
         try { player.setVolume(muted ? 0f : 1f); }
         catch (Exception ignored) { }
         muteBtn.setText(muted ? "🔇" : "🔊");
-        Toast.makeText(this, muted ? "TV sesi kapalı (radyo/müzik dinleyebilirsin)"
-                : "TV sesi açık", Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, muted ? I18n.t(this, "TV sesi kapalı (radyo/müzik dinleyebilirsin)")
+                : I18n.t(this, "TV sesi açık"), Toast.LENGTH_SHORT).show();
     }
 
     /** 13 sn icinde goruntu gelmezse siyah ekran yerine aciklama goster. */
@@ -1467,8 +1641,8 @@ public class PlayerActivity extends android.app.Activity {
             showBars();
             scheduleHide();
         }
-        Toast.makeText(this, v ? "Ekran kilitli: yanlışlıkla dokunmak bir şey bozmaz"
-                : "Kilit açıldı", Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, v ? I18n.t(this, "Ekran kilitli: yanlışlıkla dokunmak bir şey bozmaz")
+                : I18n.t(this, "Kilit açıldı"), Toast.LENGTH_SHORT).show();
     }
 
     @Override

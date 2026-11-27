@@ -42,7 +42,7 @@ Tek sınıf çok iş: MainActivity.java 49 KB, sorumluluklar (UI, veri çekme,
 Hard‑coded stringler: UI metinleri doğrudan Java’da ("Ana Sayfa", "Kalite" vb.) – çoklu dil desteği tam değil, strings.xml dışı kalanlar çeviri hatalarına yol açar.
 Magic numbers: Kalite değerleri (360, 480…) ve veri‑tasarrufu limitleri sabit kod içinde; dışa taşıyarak ayarlanabilir yapılmalı.
 Deprecation: Android android:label vs android:appComponentFactory gibi yeni API‑ler kullanılmamış, hedef SDK 36 olduğu için uyumsuzluk riski var.
-Güvenlik: keystore.properties içinde şifre UmayMultiTV2026! düz metin; CI/CD’de güvenli ortam değişkeni kullanılmalı.
+Güvenlik: keystore.properties içinde şifre *** (keystore.properties) ***! düz metin; CI/CD’de güvenli ortam değişkeni kullanılmalı.
 İzinler: READ_MEDIA_VIDEO kaldırılmış, ancak AndroidManifest.xml hâlâ bu izni talep ediyor – Play incelemesinde permission denial riski.
 B. Performans
 Video akışı: MediaPlayer doğrudan kullanılmış, ExoPlayer gibi modern oynatıcıya geçiş veri tüketimini ölçüp adaptive bitrate sağlayabilir.

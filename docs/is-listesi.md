@@ -147,7 +147,7 @@ doğruysa düzeltildi ya da sıraya alındı, yanlışsa not düşüldü.
 87 | P0-5e/f WakeLock/WifiLock zaman aşımsız | Kontrol edilecek | ⏳ |
 88 | P0-5g https→http düşürme güvenlik zayıflığı | Doğru: `AudioService` https başarısızsa http deniyor | ⏳ (kullanıcı onayıyla kaldırılacak) |
 89 | P0-6 Android 15/16 edge-to-edge: üst bar çentik altında kalabilir | `wrap` yalnız alt inset uyguluyor — doğru | ⏳ (ortak Insets yardımcısı) |
-90 | P0-7 İmza şifresi `app/build.gradle` içinde açık | Doğru: `UmayMultiTV2026!` düz yazı, depo halka açık | ✅ (v9.18) `keystore.properties` + ortam değişkeni (dosya git dışında) — **şifre rotasyonu ayrı iş** |
+90 | P0-7 İmza şifresi `app/build.gradle` içinde açık | Doğru: `*** (keystore.properties) ***!` düz yazı, depo halka açık | ✅ (v9.18) `keystore.properties` + ortam değişkeni (dosya git dışında) — **şifre rotasyonu ayrı iş** |
 91 | P0-7b Halka açık APK debug anahtarıyla imzalı | Doğru (`publicApk` debug ile imzalıyor) | ⏳ Play'e çıkınca sitedeki APK bağlantısı kaldırılacak |
 92 | P0-8 Mağaza başlığı 32 karakter (sınır 30), listede olmayan kanallar yazıyor | Kontrol edilecek (mağaza dokümanı `docs/play/` altında) | ⏳ |
 93 | P1 Çoklu ekran: sessiz pencerelere kalite tavanı, çözücü sınırı, yeniden bağlanma | Doğru: tüm pencereler aynı kalitede, retry yok | ⏳ |
