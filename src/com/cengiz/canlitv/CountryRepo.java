@@ -293,12 +293,42 @@ public class CountryRepo {
                 .compile("^https?://\\d{1,3}(\\.\\d{1,3}){3}(:\\d+)?(/|$)").matcher(url).find();
     }
 
-    /** "[Geo-blocked]", "(1080p)" gibi ekleri temizler. */
+    /** "[Geo-blocked]", "(1080p)" gibi ekleri ve sondaki ülke etiketini temizler. */
     private static String cleanName(String name) {
         if (name == null) return "Kanal";
         String s = name.replaceAll("\\s*\\[[^\\]]*\\]", "")
                 .replaceAll("\\s*\\(\\d{3,4}p\\)", "").trim();
+        s = stripCountry(s);
         return s.length() == 0 ? name : s;
+    }
+
+    /**
+     * v10.05: kanal adının sonundaki ülke etiketi kaldırılır — "ATV (Türkiye)" → "ATV".
+     * Bazı kanallarda etiket var, bazılarında yoktu; liste bu yüzden düzensiz görünüyordu.
+     * Yalnız GERÇEK ülke adları (Countries.LIST) silinir; "(1080p)" gibi ekler başka yerde temizlenir.
+     */
+    static String stripCountry(String s) {
+        String t = s == null ? "" : s.trim();
+        while (t.endsWith(")")) {
+            int open = t.lastIndexOf('(');
+            if (open <= 0) break;
+            String inner = t.substring(open + 1, t.length() - 1).trim();
+            if (!isCountryLabel(inner)) break;
+            String cut = t.substring(0, open).trim();
+            if (cut.length() == 0) break;
+            t = cut;
+        }
+        return t;
+    }
+
+    /** Etiket bir ülke adı mı? (Türkçe veya İngilizce yazım) */
+    private static boolean isCountryLabel(String label) {
+        if (label.length() == 0) return false;
+        String k = Lang.fold(label);
+        for (String[] row : Countries.LIST) {
+            if (k.equals(Lang.fold(row[1])) || k.equals(Lang.fold(row[2]))) return true;
+        }
+        return false;
     }
 
     private static String attr(String line, String key, String def) {

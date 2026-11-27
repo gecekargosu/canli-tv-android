@@ -36,6 +36,118 @@ public class SettingsActivity extends Activity {
     private static final int MUTED = Color.parseColor("#9AA4B2");
     private static final int ICONBG = Color.parseColor("#2A3444");
 
+    /**
+     * v10.04 (Paket C-2): Ayarlar ekranındaki Türkçe metinlerin Almanca karşılığı.
+     * Tek noktadan uygulanır (section/row), böylece 30+ çağrı tek tek değiştirilmez.
+     */
+    private static final java.util.Map<String, String> DE =
+            new java.util.HashMap<String, String>();
+    static {
+        DE.put("Ayarlar", "Einstellungen");
+        DE.put("‹ Geri", "‹ Zurück");
+        // bölüm başlıkları
+        DE.put("Reklamsız izleme", "Werbefreies Ansehen");
+        DE.put("Yayın ve internet", "Streaming und Internet");
+        DE.put("Kanal listesi", "Senderliste");
+        DE.put("Geliştirici", "Entwickler");
+        DE.put("Kayıt", "Aufnahme");
+        DE.put("Radyo", "Radio");
+        DE.put("Hakkında", "Über die App");
+        // satır başlıkları
+        DE.put("Reklamsız abonelik", "Werbefreies Abo");
+        DE.put("Veri göstergesi", "Datenanzeige");
+        DE.put("Yayın kalitesi", "Stream-Qualität");
+        DE.put("Ekonomi modu", "Sparmodus");
+        DE.put("Mobil veride sadece ses", "Nur Ton im Mobilnetz");
+        DE.put("Günlük veri limiti", "Tägliches Datenlimit");
+        DE.put("Bugünkü kullanım", "Heutiger Verbrauch");
+        DE.put("Bugünü sıfırla", "Heute zurücksetzen");
+        DE.put("Listeyi düzenle", "Liste bearbeiten");
+        DE.put("Bu sekmeyi sırala", "Diesen Tab sortieren");
+        DE.put("Silinen / gizlenen kanallar", "Gelöschte / ausgeblendete Sender");
+        DE.put("Ölü kanalları gizle", "Defekte Sender ausblenden");
+        DE.put("Ölü kanalları onar", "Defekte Sender reparieren");
+        DE.put("Tüm kanalları test et", "Alle Sender testen");
+        DE.put("Reklam sayacım", "Mein Werbezähler");
+        DE.put("Reklamları kapat", "Werbung deaktivieren");
+        DE.put("Reklam teşhisi", "Werbe-Diagnose");
+        DE.put("Geliştirici modu", "Entwicklermodus");
+        DE.put("Reklam test modu", "Werbe-Testmodus");
+        DE.put("Kendi yayın adresimi ekle", "Eigene Stream-Adresse");
+        DE.put("M3U dosyasından ekle", "Aus M3U-Datei");
+        DE.put("Eklediğim yayınlar", "Meine Streams");
+        DE.put("Kayıtlarım", "Meine Aufnahmen");
+        DE.put("Kayıt yeri", "Speicherort");
+        DE.put("Program tanıtımı ve özellikleri", "App-Info und Funktionen");
+        DE.put("Ne var, ne yok?", "Was gibt es?");
+        DE.put("Telif / içerik bildir", "Urheberrecht / Inhalt melden");
+        DE.put("Hata günlüğü", "Fehlerprotokoll");
+        DE.put("Bizi değerlendir", "Bewerte uns");
+        DE.put("Uygulamayı paylaş", "App teilen");
+        // satır açıklamaları
+        DE.put("Aylık 20 ₺ · reklam videosu ve banner gösterilmez", "20 ₺/Monat · keine Werbevideos und Banner");
+        DE.put("Her ekranın altında bugün harcanan interneti gösterir", "Zeigt unten auf jedem Bildschirm den heutigen Verbrauch");
+        DE.put("Kanalın çözünürlüğü · veri tüketimini belirler", "Auflösung des Senders · bestimmt den Datenverbrauch");
+        DE.put("Her zaman en düşük kalite + kapakta sadece ses · en az veri", "Immer niedrigste Qualität + nur Ton im Hintergrund · minimaler Verbrauch");
+        DE.put("Wi-Fi yokken görüntü inmez, sadece ses çalar (en az veri)", "Ohne WLAN kein Video, nur Ton (minimaler Verbrauch)");
+        DE.put("Limit dolunca yayın açmadan önce uyarır", "Warnt vor dem Öffnen, wenn das Limit erreicht ist");
+        DE.put("Sayaç her gün otomatik sıfırlanır", "Der Zähler wird täglich automatisch zurückgesetzt");
+        DE.put("Çoklu seç, yukarı/aşağı taşı, numarayı değiştir, sil", "Mehrfachauswahl, verschieben, Nummer ändern, löschen");
+        DE.put("Çok izlediklerini üste al · ada veya numaraya göre diz", "Meistgesehene nach oben · nach Name oder Nummer");
+        DE.put("Sildiklerini buradan listeye geri ekleyebilirsin", "Gelöschte Sender hier zurück in die Liste holen");
+        DE.put("3 kez açılmayan kanallar listede görünmez", "Sender, die 3-mal nicht öffnen, werden ausgeblendet");
+        DE.put("Açılmayanları yeniden dener, yayını döneni listeye geri ekler", "Prüft nicht öffnende Sender erneut und holt zurückkehrende zurück");
+        DE.put("Her yayını dener, açılmayanları işaretler (yavaş sürer)", "Testet jeden Stream und markiert Fehler (dauert lange)");
+        DE.put("Kaç reklam gördün · tahmini kazanç (bu cihaz)", "Gesehene Werbung · geschätzter Umsatz (dieses Gerät)");
+        DE.put("Bu telefonda hiç reklam gösterilmez (yalnız geliştirici cihazı)", "Keine Werbung auf diesem Gerät (nur Entwicklergerät)");
+        DE.put("SDK, rıza, birim kimlikleri, son hata · para yazıyor mu?", "SDK, Einwilligung, Unit-IDs, letzter Fehler · verdient es Geld?");
+        DE.put("Kapatınca bu satırlar gizlenir (reklamlar açılır)", "Beim Ausschalten werden diese Zeilen ausgeblendet (Werbung an)");
+        DE.put("Kendi cihazında test reklamı · para yazmaz, hesap riski olmaz", "Testwerbung auf deinem Gerät · kein Umsatz, kein Kontorisiko");
+        DE.put("M3U adresi veya kanal linki · listenin en başına gelir", "M3U- oder Kanal-Link · erscheint oben in der Liste");
+        DE.put("Telefondaki .m3u listesini içe aktar", ".m3u-Liste vom Gerät importieren");
+        DE.put("Eklediğin kanalları gör, listeden kaldır", "Eigene Sender ansehen und entfernen");
+        DE.put("Telefona kaydettiğin yayınlar", "Auf dem Gerät gespeicherte Aufnahmen");
+        DE.put("Kayıtlar nereye gidiyor?", "Wohin werden Aufnahmen gespeichert?");
+        DE.put("Seçili ülkenin radyoları · ekran kapalıyken de çalar", "Radios des gewählten Landes · spielt auch bei gesperrtem Bildschirm");
+        DE.put("A'dan Z'ye ne yapar, sorun olursa ne yapmalı, iletişim", "Was die App kann, Hilfe bei Problemen, Kontakt");
+        DE.put("İstenen özelliklerin durumu: oldu / olmadı / neden", "Status gewünschter Funktionen: erledigt / offen / warum");
+        DE.put("Yayın hakkı sende olan kanalı bildir · 24-48 saatte kaldırılır", "Sender melden, dessen Rechte du hast · Entfernung in 24-48 Std.");
+        DE.put("Ne zaman ne oldu: bağlantı kopması, açılmayan kanal, çökme", "Was wann passierte: Abbrüche, nicht öffnende Sender, Abstürze");
+        DE.put("Play'de puan ver · uygulama daha çok kişiye ulaşsın", "Bewerte uns im Play Store · hilf der App zu wachsen");
+        DE.put("Arkadaşına gönder · Play bağlantısıyla", "An Freunde senden · mit Play-Link");
+        // değerler / düğmeler
+        DE.put("Açık", "An");
+        DE.put("Kapalı", "Aus");
+        DE.put("Yok", "Keine");
+        DE.put("Etkin ✓", "Aktiv ✓");
+        DE.put("20 ₺ / ay", "20 ₺ / Monat");
+        DE.put("Aç ›", "Öffnen ›");
+        DE.put("Onar ›", "Reparieren ›");
+        DE.put("Başlat ›", "Starten ›");
+        DE.put("Ekle ›", "Hinzufügen ›");
+        DE.put("İçe aktar ›", "Importieren ›");
+        DE.put("Yönet ›", "Verwalten ›");
+        DE.put("Oku ›", "Lesen ›");
+        DE.put("Bildir ›", "Melden ›");
+        DE.put("Paylaş ›", "Teilen ›");
+    }
+
+    /** Almanca seçiliyse metni sözlükten çevirir; yoksa aynen döndürür. */
+    private String de(String s) {
+        if (s == null) return s;
+        String l = Prefs.uiLang(this);
+        if ("tr".equals(l)) return s;
+        // v10.04 (Paket C-3): 8 dilin tamamı assets/i18n.tsv tablosundan gelir.
+        String v = I18n.s(this, s);
+        if (v != null) return v;
+        // Tabloda olmayan metinler için eski Almanca sözlük yedek olarak kalır.
+        if ("de".equals(l)) {
+            String d = DE.get(s);
+            if (d != null) return d;
+        }
+        return s;
+    }
+
     private static final int REQ_M3U = 1001;
     private static final String LEGAL_MAIL = "cengizkilic1980@gmail.com";
 
@@ -55,7 +167,7 @@ public class SettingsActivity extends Activity {
         LinearLayout head = new LinearLayout(this);
         head.setGravity(Gravity.CENTER_VERTICAL);
 
-        TextView back = chip("‹ Geri");
+        TextView back = chip(de("‹ Geri"));
         back.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View v) { finish(); }
         });
@@ -65,12 +177,12 @@ public class SettingsActivity extends Activity {
         titles.setOrientation(LinearLayout.VERTICAL);
         titles.setPadding(dp(12), 0, 0, 0);
         TextView t = new TextView(this);
-        t.setText("Ayarlar");
+        t.setText(de("Ayarlar"));
         t.setTextColor(TEXT);
         t.setTextSize(21);
         t.setTypeface(t.getTypeface(), android.graphics.Typeface.BOLD);
         TextView sub = new TextView(this);
-        sub.setText("Sürüm " + version() + " · dokunduğun satır açılır");
+        sub.setText(de("Sürüm ") + version() + de(" · dokunduğun satır açılır"));
         sub.setTextColor(MUTED);
         sub.setTextSize(10);
         titles.addView(t);
@@ -138,16 +250,16 @@ public class SettingsActivity extends Activity {
         card.setPadding(dp(12), dp(10), dp(12), dp(10));
         card.setBackground(rounded(ICONBG, 14));
         TextView c1 = new TextView(this);
-        c1.setText("Bugün " + Net.mb(used) + " internet harcandı");
+        c1.setText(de("Bugün ") + Net.mb(used) + de(" internet harcandı"));
         c1.setTextColor(TEXT);
         c1.setTextSize(13);
         c1.setTypeface(c1.getTypeface(), android.graphics.Typeface.BOLD);
         card.addView(c1);
         TextView c2 = new TextView(this);
-        c2.setText("Kalite: " + QualityDialog.label(this)
-                + (lim > 0 ? "  ·  Limit: " + lim + " MB/gün" : "  ·  Limit yok")
-                + "\nTahmini tüketim: 360p saatte ~300 MB, 720p saatte ~1,2 GB. "
-                + "Sayaç yalnız yayın verisini ölçer (reklamlar hariç).");
+        c2.setText(de("Kalite: ") + QualityDialog.label(this)
+                + (lim > 0 ? de("  ·  Limit: ") + lim + de(" MB/gün") : de("  ·  Limit yok"))
+                + de("\nTahmini tüketim: 360p saatte ~300 MB, 720p saatte ~1,2 GB. "
+                        + "Sayaç yalnız yayın verisini ölçer (reklamlar hariç)."));
         c2.setTextColor(MUTED);
         c2.setTextSize(10);
         c2.setPadding(0, dp(3), 0, 0);
@@ -194,8 +306,8 @@ public class SettingsActivity extends Activity {
         // MP-14: "Kapalı: kanalın en iyi kalitesi" yanlıştı — kalite 360p olabiliyor.
         // Tasarruf artık doğrudan kalite tercihini gösteriyor.
         row("💾", "Veri tasarrufu", pref < 0
-                        ? "Açık: bütün yayınlar en düşük çözünürlükte açılır"
-                        : "Kapalı: seçili kalite kullanılıyor (" + QualityDialog.label(this) + ")",
+                        ? de("Açık: bütün yayınlar en düşük çözünürlükte açılır")
+                        : de("Kapalı: seçili kalite kullanılıyor (") + QualityDialog.label(this) + ")",
                 pref < 0 ? "Açık" : "Kapalı", new View.OnClickListener() {
                     @Override public void onClick(View v) {
                         Prefs.setDataSaver(SettingsActivity.this, !Prefs.dataSaver(SettingsActivity.this));
@@ -382,7 +494,7 @@ public class SettingsActivity extends Activity {
                 "Bildir ›", new View.OnClickListener() {
                     @Override public void onClick(View v) { copyrightDialog(); }
                 });
-        TextView verRow = row("📱", "Sürüm " + version(), "UMAY Multi TV", "Ayrıntı ›",
+        TextView verRow = row("📱", de("Sürüm ") + version(), "UMAY Multi TV", "Ayrıntı ›",
                 new View.OnClickListener() {
             @Override public void onClick(View v) {
                 new AlertDialog.Builder(SettingsActivity.this)
@@ -797,21 +909,21 @@ public class SettingsActivity extends Activity {
     private void usageDialog() {
         long used = Prefs.todayBytes(this);
         new AlertDialog.Builder(this)
-                .setTitle("Bugünkü kullanım")
-                .setMessage("Bugün: " + Net.mb(used)
-                        + "\nKalite: " + QualityDialog.label(this)
-                        + "\n\nSayaç her gece otomatik sıfırlanır.")
-                .setPositiveButton("Bugünü sıfırla", new DialogInterface.OnClickListener() {
+                .setTitle(de("Bugünkü kullanım"))
+                .setMessage(de("Bugün: ") + Net.mb(used)
+                        + de("\nKalite: ") + QualityDialog.label(this)
+                        + de("\n\nSayaç her gece otomatik sıfırlanır."))
+                .setPositiveButton(de("Bugünü sıfırla"), new DialogInterface.OnClickListener() {
                     @Override public void onClick(DialogInterface d, int w) {
                         Prefs.resetToday(SettingsActivity.this);
                         render();
                     }
                 })
-                .setNeutralButton("Tüm sayaçları sıfırla", new DialogInterface.OnClickListener() {
+                .setNeutralButton(de("Tüm sayaçları sıfırla"), new DialogInterface.OnClickListener() {
                     @Override public void onClick(DialogInterface d, int w) {
                         Prefs.resetAllUsage(SettingsActivity.this);
                         render();
-                        Toast.makeText(SettingsActivity.this, "Sayaçlar sıfırlandı", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(SettingsActivity.this, de("Sayaçlar sıfırlandı"), Toast.LENGTH_SHORT).show();
                     }
                 })
                 .setNegativeButton("Kapat", null).show();
@@ -1017,7 +1129,7 @@ public class SettingsActivity extends Activity {
 
     private void section(String title) {
         TextView t = new TextView(this);
-        t.setText(title.toUpperCase(java.util.Locale.getDefault()));
+        t.setText(de(title).toUpperCase(java.util.Locale.getDefault()));
         t.setTextColor(ACCENT);
         t.setTextSize(10);
         t.setLetterSpacing(0.08f);
@@ -1029,6 +1141,10 @@ public class SettingsActivity extends Activity {
     /** Satırı ekler ve sağdaki değer TextView'ini döndürür (onResume'da tazelemek için). */
     private TextView row(String icon, String title, String desc, String value,
                      View.OnClickListener click) {
+        // v10.04 (Paket C-2): görünen metinler tek noktadan çevrilir
+        title = de(title);
+        desc = de(desc);
+        value = de(value);
         LinearLayout row = new LinearLayout(this);
         row.setOrientation(LinearLayout.HORIZONTAL);
         row.setGravity(Gravity.CENTER_VERTICAL);

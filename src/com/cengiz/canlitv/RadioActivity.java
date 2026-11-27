@@ -103,12 +103,12 @@ public class RadioActivity extends Activity {
         LinearLayout titles = new LinearLayout(this);
         titles.setOrientation(LinearLayout.VERTICAL);
         TextView t = new TextView(this);
-        t.setText("Radyo");
+        t.setText(I18n.t(this, "Radyo"));
         t.setTextColor(TEXT);
         t.setTextSize(21);
         t.setTypeface(t.getTypeface(), android.graphics.Typeface.BOLD);
         subView = new TextView(this);
-        subView.setText(NAMES.size() + " istasyon · kilit ekranında da çalar");
+        subView.setText(NAMES.size() + I18n.t(this, " istasyon · kilit ekranında da çalar"));
         subView.setTextColor(MUTED);
         subView.setTextSize(11);
         titles.addView(t);
@@ -116,7 +116,7 @@ public class RadioActivity extends Activity {
         head.addView(titles, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
 
         // Kapat: calan radyoyu durdurur ve ana sayfaya doner
-        TextView close = pill("Kapat");
+        TextView close = pill(I18n.t(this, "Kapat"));
         close.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View v) {
                 AudioService.stop(RadioActivity.this);
@@ -141,7 +141,7 @@ public class RadioActivity extends Activity {
         root.addView(head);
 
         EditText search = new EditText(this);
-        search.setHint("Radyo ara...");
+        search.setHint(I18n.t(this, "Radyo ara..."));
         search.setHintTextColor(MUTED);
         search.setTextColor(TEXT);
         search.setTextSize(14);
@@ -196,8 +196,8 @@ public class RadioActivity extends Activity {
                 ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
 
         TextView foot = new TextView(this);
-        foot.setText("İpucu: bir radyoya uzun bas → listeden gizle. Gizlediklerini "
-                + "\"🗑 Gizlenenler\" sekmesinden geri ekleyebilirsin.");
+        foot.setText(I18n.t(this, "İpucu: bir radyoya uzun bas → listeden gizle. Gizlediklerini "
+                + "\"🗑 Gizlenenler\" sekmesinden geri ekleyebilirsin."));
         foot.setTextColor(MUTED);
         foot.setTextSize(10);
         foot.setPadding(0, dp(4), 0, 0);
@@ -210,19 +210,20 @@ public class RadioActivity extends Activity {
 
         // secilen ulke icin radyo listesi yoksa indir (radio-browser.info)
         if (RadioRepo.needsDownload(this)) {
-            Toast.makeText(this, "Bu ülkenin radyoları indiriliyor…", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, I18n.t(this, "Bu ülkenin radyoları indiriliyor…"), Toast.LENGTH_SHORT).show();
             RadioRepo.download(this, new Runnable() {
                 @Override public void run() {
                     runOnUiThread(new Runnable() {
                         @Override public void run() {
                             load(RadioActivity.this);
                             if (subView != null) {
-                                subView.setText(NAMES.size() + " istasyon · kilit ekranında da çalar");
+                                subView.setText(NAMES.size()
+                                        + I18n.t(RadioActivity.this, " istasyon · kilit ekranında da çalar"));
                             }
                             if (chipsRow != null) buildChips();
                             refresh();
                             Toast.makeText(RadioActivity.this,
-                                    NAMES.size() + " radyo hazır", Toast.LENGTH_SHORT).show();
+                                    NAMES.size() + I18n.t(RadioActivity.this, " radyo hazır"), Toast.LENGTH_SHORT).show();
                         }
                     });
                 }
@@ -242,7 +243,7 @@ public class RadioActivity extends Activity {
         final String[] cats = new String[]{"Tümü", "★ Favoriler", "📰 Haber", "⚽ Spor",
                 "🎵 Müzik", "🕌 Dini", "🗑 Gizlenenler"};
         for (final String c : cats) {
-            TextView chip = pill(c);
+            TextView chip = pill(I18n.t(this, c));
             if (c.equals(cat)) {
                 GradientDrawable on = rounded(ACCENT, 16);
                 chip.setBackground(on);
@@ -270,10 +271,10 @@ public class RadioActivity extends Activity {
         final boolean fav = Prefs.favs(this).contains(URLS.get(i));
         final boolean mine = Prefs.hasCustomRadio(this, URLS.get(i));
         String[] items = new String[]{
-                fav ? "★ Favorilerden çıkar" : "★ Favorilere ekle",
-                hidden ? "➕ Listeye geri ekle" : "🗑 Listeden gizle",
-                mine ? "🗑 Kendi listemden çıkar" : "➕ Kendi listeme ekle (kalıcı)",
-                "▶ Şimdi çal"
+                fav ? I18n.t(this, "★ Favorilerden çıkar") : I18n.t(this, "★ Favorilere ekle"),
+                hidden ? I18n.t(this, "➕ Listeye geri ekle") : I18n.t(this, "🗑 Listeden gizle"),
+                mine ? I18n.t(this, "🗑 Kendi listemden çıkar") : I18n.t(this, "➕ Kendi listeme ekle (kalıcı)"),
+                I18n.t(this, "▶ Şimdi çal")
         };
         new AlertDialog.Builder(this).setTitle(NAMES.get(i)).setItems(items,
                 new DialogInterface.OnClickListener() {
@@ -282,12 +283,12 @@ public class RadioActivity extends Activity {
                         if (which == 2) {
                             if (mine) {
                                 Prefs.removeCustomRadio(RadioActivity.this, URLS.get(i));
-                                Toast.makeText(RadioActivity.this, "Kendi listemden çıkarıldı",
+                                Toast.makeText(RadioActivity.this, I18n.t(RadioActivity.this, "Kendi listemden çıkarıldı"),
                                         Toast.LENGTH_SHORT).show();
                             } else {
                                 Prefs.addCustomRadio(RadioActivity.this, NAMES.get(i), URLS.get(i));
                                 Toast.makeText(RadioActivity.this,
-                                        "★ Kendi listeme eklendi — her açılışta en üstte",
+                                        I18n.t(RadioActivity.this, "★ Kendi listeme eklendi — her açılışta en üstte"),
                                         Toast.LENGTH_LONG).show();
                             }
                             refresh();
@@ -296,7 +297,8 @@ public class RadioActivity extends Activity {
                         if (which == 0) {
                             Prefs.toggleFav(RadioActivity.this, URLS.get(i));
                             Toast.makeText(RadioActivity.this,
-                                    fav ? "Favorilerden çıkarıldı" : "★ Favorilere eklendi",
+                                    fav ? I18n.t(RadioActivity.this, "Favorilerden çıkarıldı")
+                                            : I18n.t(RadioActivity.this, "★ Favorilere eklendi"),
                                     Toast.LENGTH_SHORT).show();
                         } else {
                             if (hidden) Prefs.unhideRadio(RadioActivity.this, URLS.get(i));
@@ -357,7 +359,8 @@ public class RadioActivity extends Activity {
     private void searchOnline(final String q) {
         onlineQuery = q;
         onlineBusy = true;
-        Toast.makeText(this, "Listede yok — internette aranıyor: " + q, Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, I18n.t(this, "Listede yok — internette aranıyor: ") + q,
+                Toast.LENGTH_SHORT).show();
         new Thread(new Runnable() {
             @Override public void run() {
                 int found = 0;
@@ -418,15 +421,19 @@ public class RadioActivity extends Activity {
                                 if (im != null && f != null) im.hideSoftInputFromWindow(f.getWindowToken(), 0);
                             } catch (Throwable ignored) { }
                             Toast.makeText(RadioActivity.this,
-                                    "İnternetten " + n + " istasyon bulundu — uzun basıp \"kendi listeme ekle\"",
+                                    I18n.t(RadioActivity.this, "İnternetten ")
+                                            + n
+                                            + I18n.t(RadioActivity.this, " istasyon bulundu — uzun basıp "
+                                                    + "\"kendi listeme ekle\""),
                                     Toast.LENGTH_LONG).show();
                         } else if (e2 == null) {
                             Toast.makeText(RadioActivity.this,
-                                    "Bu istasyon zaten listende (ya da internet sonucu yok)",
+                                    I18n.t(RadioActivity.this, "Bu istasyon zaten listende (ya da internet sonucu yok)"),
                                     Toast.LENGTH_LONG).show();
                         } else {
                             Toast.makeText(RadioActivity.this,
-                                    "İnternete ulaşılamadı: " + e2, Toast.LENGTH_LONG).show();
+                                    I18n.t(RadioActivity.this, "İnternete ulaşılamadı: ") + e2,
+                                    Toast.LENGTH_LONG).show();
                             android.util.Log.w("UMAY", "online arama hatasi: " + e2);
                         }
                     }

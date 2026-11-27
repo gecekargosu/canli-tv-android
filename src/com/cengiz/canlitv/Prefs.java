@@ -586,6 +586,18 @@ public class Prefs {
     }
 
     /** IP'den ulke onerisi bir kez soruldu mu? */
+    /**
+     * v10.04: ilk açılış kurulumu (cihaz dili + cihaz ülkesi) bir kez yapıldı mı?
+     * Kullanıcı sonradan dili/ülkeyi değiştirirse bu bayrak kurulumu tekrar tetiklemez.
+     */
+    public static boolean firstRunDone(Context c) {
+        return sp(c).getBoolean("firstRunDone", false);
+    }
+
+    public static void setFirstRunDone(Context c, boolean v) {
+        sp(c).edit().putBoolean("firstRunDone", v).apply();
+    }
+
     public static boolean countryAsked(Context c) {
         return sp(c).getBoolean("countryAsked", false);
     }

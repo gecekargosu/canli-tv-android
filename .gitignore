@@ -42,3 +42,7 @@ site/.secrets/
 # --- tanitim calisma dosyalari (yerelde kalir) ---
 TANITIM/work/
 TANITIM/assets/fonts/*.ttf
+
+# --- gecici calisma dosyalari ---
+_tmp/
+__pycache__/

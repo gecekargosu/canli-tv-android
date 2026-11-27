@@ -132,26 +132,30 @@ public final class Good {
             JSONArray items = new JSONObject(json).optJSONArray("items");
             if (items == null || items.length() == 0) return false;
 
-            Map<String, Integer> rank = new HashMap<String, Integer>();
+            // v10.03: URL birebir eşleşmezse kanal ADIYLA da eşleştirilir. TR listesinde
+            // channels.m3u ile good_tr.json arasında 14 kayıt URL olarak farklı olduğu için
+            // bu kanallar "doğrulanmamış" sayılıp hak etmedikleri hâlde listenin sonuna düşüyordu.
+            final Map<String, Integer> byUrl = new HashMap<String, Integer>();
+            final Map<String, Integer> byName = new HashMap<String, Integer>();
             for (int i = 0; i < items.length(); i++) {
                 JSONObject o = items.optJSONObject(i);
                 if (o == null) continue;
                 String u = o.optString("url", "");
-                if (u.length() > 0 && !rank.containsKey(u)) rank.put(u, rank.size());
+                if (u.length() > 0 && !byUrl.containsKey(u)) byUrl.put(u, byUrl.size());
+                String nm = key(o.optString("name", ""));
+                if (nm.length() > 0 && !byName.containsKey(nm)) byName.put(nm, byName.size());
             }
-            if (rank.isEmpty()) return false;
+            if (byUrl.isEmpty() && byName.isEmpty()) return false;
 
-            final Map<String, Integer> r = rank;
             final String country = cc;
             java.util.Collections.sort(list, new java.util.Comparator<Channel>() {
                 @Override public int compare(Channel a, Channel b) {
-                    boolean va = r.containsKey(a.url);
-                    boolean vb = r.containsKey(b.url);
+                    int ra = order(a, byUrl, byName);
+                    int rb = order(b, byUrl, byName);
+                    boolean va = ra != Integer.MAX_VALUE;
+                    boolean vb = rb != Integer.MAX_VALUE;
                     if (va != vb) return va ? -1 : 1;          // çalışan önce
-                    if (va) {
-                        int ra = r.get(a.url), rb = r.get(b.url);
-                        return ra < rb ? -1 : (ra == rb ? 0 : 1);
-                    }
+                    if (va) return ra < rb ? -1 : (ra == rb ? 0 : 1);
                     int pa = Popular.rank(country, a.name);
                     int pb = Popular.rank(country, b.name);
                     return pa < pb ? -1 : (pa == pb ? 0 : 1);
@@ -165,5 +169,22 @@ public final class Good {
         } catch (Exception e) {
             return false;
         }
+    }
+
+    /** Kanal adı karşılaştırma anahtarı: "TRT 1 (1080p) [Not 24/7]" -> "trt 1". */
+    static String key(String name) {
+        if (name == null) return "";
+        String s = CountryRepo.stripCountry(name.replaceAll("\\s*\\[[^\\]]*\\]", ""));
+        return s.replaceAll("\\s*\\(\\d{3,4}p\\)", "")
+                .trim().toLowerCase(java.util.Locale.ROOT);
+    }
+
+    /** Doğrulanmış listedeki sıra: önce URL, sonra ad. Bulunamazsa MAX_VALUE. */
+    static int order(Channel c, Map<String, Integer> byUrl, Map<String, Integer> byName) {
+        if (c == null) return Integer.MAX_VALUE;
+        Integer r = byUrl.get(c.url);
+        if (r != null) return r;
+        Integer n = byName.get(key(c.name));
+        return n != null ? n : Integer.MAX_VALUE;
     }
 }

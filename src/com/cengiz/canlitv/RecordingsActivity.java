@@ -48,13 +48,13 @@ public class RecordingsActivity extends Activity {
         head.setOrientation(LinearLayout.HORIZONTAL);
         head.setGravity(Gravity.CENTER_VERTICAL);
         TextView t = new TextView(this);
-        t.setText("Kayıtlarım");
+        t.setText(I18n.t(this, "Kayıtlarım"));
         t.setTextColor(TEXT);
         t.setTextSize(20);
         t.setTypeface(t.getTypeface(), android.graphics.Typeface.BOLD);
         head.addView(t, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
         TextView close = new TextView(this);
-        close.setText("Kapat");
+        close.setText(I18n.t(this, "Kapat"));
         close.setTextColor(Color.WHITE);
         close.setPadding(dp(12), dp(8), dp(12), dp(8));
         GradientDrawable cd = new GradientDrawable();
@@ -68,7 +68,7 @@ public class RecordingsActivity extends Activity {
         root.addView(head);
 
         empty = new TextView(this);
-        empty.setText("Henüz kayıt yok.\nOynatıcıda ⏺ düğmesine bas; kayıt\nMovies / TV-Kayitlari klasörüne gider.");
+        empty.setText(I18n.t(this, "Henüz kayıt yok.\nOynatıcıda ⏺ düğmesine bas; kayıt\nMovies / TV-Kayitlari klasörüne gider."));
         empty.setTextColor(MUTED);
         empty.setTextSize(13);
         empty.setPadding(0, dp(24), 0, 0);
@@ -124,7 +124,8 @@ public class RecordingsActivity extends Activity {
                     // HATA (tur 4): .ts kayıtlarda MediaStore DURATION=0 geliyor,
                     // listede her kayıt "0 dk" görünüyordu.
                     String len = dur <= 0 ? ""
-                            : (dur < 60000 ? "<1 dk · " : (dur / 1000 / 60) + " dk · ");
+                            : (dur < 60000 ? I18n.t(RecordingsActivity.this, "<1 dk · ")
+                                    : (dur / 1000 / 60) + I18n.t(RecordingsActivity.this, " dk · "));
                     metas.add(len + Net.mb(size));
                     uris.add(Uri.withAppendedPath(q, String.valueOf(id)));
                 }
@@ -172,7 +173,7 @@ public class RecordingsActivity extends Activity {
                     i.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
                     startActivity(i);
                 } catch (Exception e) {
-                    Toast.makeText(RecordingsActivity.this, "Oynatıcı bulunamadı", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(RecordingsActivity.this, I18n.t(RecordingsActivity.this, "Oynatıcı bulunamadı"), Toast.LENGTH_SHORT).show();
                 }
             }
         });

@@ -9,11 +9,9 @@
     <base-config cleartextTrafficPermitted="false" />
 
     <domain-config cleartextTrafficPermitted="true">
-        <!-- eski HTTP radyo yayınları (streamtheworld / radyotvonline / arabeskinmerkezi) -->
-        <domain includeSubdomains="true">live.streamtheworld.com</domain>
-        <domain includeSubdomains="true">radyotvonline.net</domain>
-        <domain includeSubdomains="true">arabeskinmerkezi.com</domain>
-        <!-- listede kalan eski HTTP TV/radyo kaynakları -->
+        <!-- v10.03: streamtheworld / radyotvonline / arabeskinmerkezi HTTPS'e tasindi,
+             bu uc alan adi icin istisna KALDIRILDI. Asagidakiler yalniz HTTP yayin
+             yapiyor (HTTPS denendi: TLS yok / sertifika gecersiz). -->
         <domain includeSubdomains="true">rtmp.org</domain>
         <domain includeSubdomains="true">live.net.sa</domain>
         <domain includeSubdomains="true">46.20.3.207</domain>

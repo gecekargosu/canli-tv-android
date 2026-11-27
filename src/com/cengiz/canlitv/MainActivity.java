@@ -94,19 +94,19 @@ public class MainActivity extends android.app.Activity {
                             + "Uygulama değiştirilmiş olabilir; güvenliğin için çalıştırılmıyor.\n"
                             + "Resmi sürümü Google Play'den veya umay-multi-tv-gq3zer.freebuff.site adresinden yükle.")
                     .setCancelable(false)
-                    .setPositiveButton("Kapat", new android.content.DialogInterface.OnClickListener() {
+                    .setPositiveButton(I18n.t(this, "Kapat"), new android.content.DialogInterface.OnClickListener() {
                         @Override public void onClick(android.content.DialogInterface d, int w) { finish(); }
                     })
                     .show();
             return;
         }
         Prefs.migrateNumbers(this);   // 9.75: eski numara/sıra kayıtları bir kez temizlenir
+        setupFirstRun();              // v10.04: ilk açılışta cihaz dili + cihaz ülkesi
         Good.refreshIfNeeded(this);   // #101: doğrulanmış kanal listesi günde 1 kez tazelenir
         all = ChannelRepo.all(this);
         subState = Prefs.subActive(this);
         Billing.refresh(this);   // abonelik durumu Play'den tazelenir
         shownCountry = Prefs.country(this);
-        maybeSuggestCountry();
         shownLang = Prefs.uiLang(this);
 
         LinearLayout root = new LinearLayout(this);
@@ -278,31 +278,33 @@ public class MainActivity extends android.app.Activity {
         // Ödüllü reklam her zaman görünür bir giriş: 15 dk reklamsız.
         // Eskiden yalnız banner dolmadığında alt şeritte çıkıyordu; kullanıcı bulamıyordu.
         TextView gift = pill("🎁", SOFT);
-        gift.setContentDescription("Ödüllü reklam: 15 dakika reklamsız");
+        gift.setContentDescription(I18n.t(this, "Ödüllü reklam: 15 dakika reklamsız"));
         gift.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View v) {
                 if (Prefs.subActive(MainActivity.this)) {
                     android.widget.Toast.makeText(MainActivity.this,
-                            "Aboneliğin zaten reklamsız", android.widget.Toast.LENGTH_SHORT).show();
+                            I18n.t(MainActivity.this, "Aboneliğin zaten reklamsız"), android.widget.Toast.LENGTH_SHORT).show();
                     return;
                 }
                 int left = AdManager.adFreeMinutesLeft(MainActivity.this);
                 if (left > 0) {
                     android.widget.Toast.makeText(MainActivity.this,
-                            "Reklamsız süren: " + left + " dk",
+                            I18n.t(MainActivity.this, "Reklamsız süren") + ": " + left + " "
+                                    + I18n.t(MainActivity.this, "dk"),
                             android.widget.Toast.LENGTH_SHORT).show();
                     return;
                 }
                 AdManager.showRewarded(MainActivity.this, new Runnable() {
                     @Override public void run() {
                         android.widget.Toast.makeText(MainActivity.this,
-                                "Teşekkürler! " + Ads.REWARD_MINUTES + " dakika reklamsız.",
+                                I18n.t(MainActivity.this, "Teşekkürler!") + " " + Ads.REWARD_MINUTES
+                                        + " " + I18n.t(MainActivity.this, "dakika reklamsız."),
                                 android.widget.Toast.LENGTH_LONG).show();
                     }
                 }, new Runnable() {
                     @Override public void run() {
                         android.widget.Toast.makeText(MainActivity.this,
-                                "Reklam şu an hazır değil, biraz sonra tekrar dene",
+                                I18n.t(MainActivity.this, "Reklam şu an hazır değil, biraz sonra tekrar dene"),
                                 android.widget.Toast.LENGTH_SHORT).show();
                     }
                 });
@@ -341,7 +343,7 @@ public class MainActivity extends android.app.Activity {
             @Override public void onClick(View v) {
                 AudioService.stop(MainActivity.this);
                 radioNow.setVisibility(View.GONE);
-                Toast.makeText(MainActivity.this, "Radyo kapatıldı", Toast.LENGTH_SHORT).show();
+                Toast.makeText(MainActivity.this, I18n.t(MainActivity.this, "Radyo kapatıldı"), Toast.LENGTH_SHORT).show();
             }
         });
         radioNow.addView(radioStop);
@@ -349,7 +351,7 @@ public class MainActivity extends android.app.Activity {
             @Override public void onClick(View v) {
                 AudioService.stop(MainActivity.this);
                 radioNow.setVisibility(View.GONE);
-                Toast.makeText(MainActivity.this, "Radyo kapatıldı", Toast.LENGTH_SHORT).show();
+                Toast.makeText(MainActivity.this, I18n.t(MainActivity.this, "Radyo kapatıldı"), Toast.LENGTH_SHORT).show();
             }
         });
         root.addView(radioNow);
@@ -383,7 +385,7 @@ public class MainActivity extends android.app.Activity {
         });
 
         final EditText noInput = new EditText(this);
-        noInput.setHint("No");
+        noInput.setHint(I18n.t(this, "No"));
         noInput.setHintTextColor(MUTED);
         noInput.setTextColor(TEXT);
         noInput.setTextSize(14);
@@ -398,7 +400,7 @@ public class MainActivity extends android.app.Activity {
         noInput.setLayoutParams(nlp);
         searchRow.addView(noInput);
 
-        TextView go = pill("Git", ACCENT);
+        TextView go = pill(I18n.t(this, "Git"), ACCENT);
         go.setTextSize(14);
         go.setPadding(dp(14), 0, dp(14), 0);
         go.setLayoutParams(new LinearLayout.LayoutParams(
@@ -409,7 +411,7 @@ public class MainActivity extends android.app.Activity {
                     int no = Integer.parseInt(noInput.getText().toString().trim());
                     gotoNumber(no);
                 } catch (Exception e) {
-                    Toast.makeText(MainActivity.this, "Kanal numarası yaz", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(MainActivity.this, I18n.t(MainActivity.this, "Kanal numarası yaz"), Toast.LENGTH_SHORT).show();
                 }
             }
         });
@@ -539,12 +541,29 @@ public class MainActivity extends android.app.Activity {
      * Ilk acilista IP'den ulke tahmini yapar; desteklenen ve mevcut ulkeden farkliysa
      * "kanallari buna gore yukleyeyim mi?" diye sorar (bir kez).
      */
-    private void maybeSuggestCountry() {
-        if (Prefs.countryAsked(this)) return;
-        Prefs.setCountryAsked(this, true);
-        final String current = Prefs.country(this);
-        // M-05: IP'yi üçüncü tarafa göndermek yerine SIM/ağ ve cihaz dilinden ülke bulunur.
-        // Hiçbir ağ isteği yapılmaz, izin gerekmez.
+    /**
+     * v10.04 (ilk açılış): ülke sorulmaz, cihazdan bulunur.
+     * 1) Arayüz dili cihaz diline göre seçilir (desteklenen dillerden biri ise).
+     * 2) Ülke SIM/ağ ülkesine, olmazsa cihaz yereline göre seçilir.
+     * 3) O ülkenin listesi yoksa arka planda indirilir; inemezse Türkiye listesinde kalınır.
+     * Kullanıcı sonradan Ayarlar → Ülke/Dil ile değiştirebilir (o zaman bu blok çalışmaz).
+     */
+    private void setupFirstRun() {
+        if (Prefs.firstRunDone(this)) return;
+        Prefs.setFirstRunDone(this, true);
+
+        // --- 1) Arayüz dili (önce uygulama/cihaz yapılandırması, sonra Locale) ---
+        try {
+            String lang = getResources().getConfiguration().getLocales().get(0).getLanguage();
+            if (lang == null || lang.length() == 0) {
+                lang = java.util.Locale.getDefault().getLanguage();
+            }
+            for (String code : Lang.CODES) {
+                if (code.equals(lang)) { Prefs.setUiLang(this, code); break; }
+            }
+        } catch (Throwable ignored) { }
+
+        // --- 2) Ülke (IP kullanılmaz; SIM/ağ + cihaz yereli) ---
         String cc = null;
         try {
             android.telephony.TelephonyManager tm =
@@ -559,29 +578,38 @@ public class MainActivity extends android.app.Activity {
                 cc = getResources().getConfiguration().getLocales().get(0).getCountry();
             } catch (Throwable ignored) { }
         }
-        final String found = cc == null ? null : cc.toLowerCase(java.util.Locale.US);
-        if (found == null || found.length() != 2) return;
-        if (found.equals(current) || !Countries.supported(found)) return;
-        if (isFinishing()) return;
-        new android.app.AlertDialog.Builder(this)
-                .setTitle("Ülkeni bulduk: " + Countries.name(found, false))
-                .setMessage("Kanalları ve radyoları bu ülkeye göre yükleyeyim mi?")
-                .setPositiveButton("Evet, değiştir", new android.content.DialogInterface.OnClickListener() {
-                    @Override public void onClick(android.content.DialogInterface d, int w) {
-                        Prefs.setCountry(MainActivity.this, found);
-                        ChannelRepo.reload(MainActivity.this);
-                        recreate();
+        if (cc == null || cc.length() != 2) return;
+        final String found = cc.toLowerCase(java.util.Locale.US);
+        final String prev = Prefs.country(this);
+        if (!Countries.supported(found) || found.equals(prev)) return;
+        Prefs.setCountry(this, found);
+        // Liste hazırsa (veya TR gömülü ise) ek bir şey gerekmez: all() yeni ülkeyi okur.
+        if ("tr".equals(found) || CountryRepo.isReady(this, found)) return;
+
+        // --- 3) Liste yok: indir, sonra ekranı tazele ---
+        new Thread(new Runnable() {
+            @Override public void run() {
+                final int st = CountryRepo.downloadStatus(MainActivity.this, found);
+                if (st == CountryRepo.DL_OK) CountryRepo.fetchGood(MainActivity.this, found);
+                runOnUiThread(new Runnable() {
+                    @Override public void run() {
+                        if (st == CountryRepo.DL_OK) {
+                            ChannelRepo.reload(MainActivity.this);
+                            recreate();
+                        } else {
+                            Prefs.setCountry(MainActivity.this, prev);   // inemezse eski ülkede kal
+                        }
                     }
-                })
-                .setNegativeButton("Şimdi değil", null)
-                .show();
+                });
+            }
+        }, "first-run-country").start();
     }
 
     /** Sekme satırına sığsın diye kalite etiketini kısaltır (Otomatik → Oto). */
     private String shortQuality() {
         String l = QualityDialog.label(this);
-        if (l == null) return "Oto";
-        if (l.length() > 6) return "Oto";
+        if (l == null) return Lang.t(this, "q_auto_short");
+        if (l.length() > 6) return Lang.t(this, "q_auto_short");
         return l;
     }
 
@@ -596,7 +624,13 @@ public class MainActivity extends android.app.Activity {
         cats.add("🗑 Gizlenenler");
         // 9.82: her sekme ikon + altında küçük yazı (kutu yüksekliği 44dp kalıyor).
         String[] tabIcons = { "🗂", "★", "🕘", "🗑" };
-        String[] tabLabels = { "Tümü", "Favori", "Son", "Gizli" };
+        // v10.04 (Paket C): sekme adları arayüz diline bağlı (mantık anahtarı Türkçe kalır)
+        String[] tabLabels = {
+                Lang.tabShort(this, "Tümü"),
+                Lang.tabShort(this, "★ Favoriler"),
+                Lang.tabShort(this, "🕘 Son"),
+                Lang.tabShort(this, "🗑 Gizlenenler")
+        };
         for (int i = 0; i < cats.size(); i++) {
             final String c = cats.get(i);
             LinearLayout box = tabBox(tabIcons[i], tabLabels[i], null);
@@ -633,7 +667,7 @@ public class MainActivity extends android.app.Activity {
 
         // Düzenleme düğmesi: kalem + "Düzen" yazısı.
         TextView[] eLab = new TextView[1];
-        editBox = tabBox("✏️", editMode ? "Bitti" : "Düzen", eLab);
+        editBox = tabBox("✏️", Lang.t(this, editMode ? "ui_done" : "ui_edit"), eLab);
         editBtn = eLab[0];
         editIcon = (TextView) editBox.getChildAt(0);
         editBox.setOnClickListener(new View.OnClickListener() {
@@ -690,19 +724,20 @@ public class MainActivity extends android.app.Activity {
     private void gotoNumber(int no) {
         final Channel c = ChannelRepo.byNumber(this, no);
         if (c == null) {
-            Toast.makeText(this, "№" + no + " diye kanal yok (1-" + all.size() + ")",
+            Toast.makeText(this, "№" + no + " " + I18n.t(this, "diye kanal yok") + " (1-" + all.size() + ")",
                     Toast.LENGTH_SHORT).show();
             return;
         }
         new AlertDialog.Builder(this)
-                .setTitle("Kanal " + no)
-                .setMessage(c.name + "\n" + c.group + "\n\nAçılsın mı?")
-                .setPositiveButton("Aç", new DialogInterface.OnClickListener() {
+                .setTitle(I18n.t(this, "Kanal") + " " + no)
+                .setMessage(c.name + "\n" + Lang.group(this, c.group) + "\n\n"
+                        + I18n.t(this, "Açılsın mı?"))
+                .setPositiveButton(I18n.t(this, "Aç"), new DialogInterface.OnClickListener() {
                     @Override public void onClick(DialogInterface d, int w) {
                         open(c);
                     }
                 })
-                .setNegativeButton("Vazgeç", null)
+                .setNegativeButton(I18n.t(this, "Vazgeç"), null)
                 .show();
     }
 
@@ -735,7 +770,7 @@ public class MainActivity extends android.app.Activity {
     private void deleteSetDialog() {
         final List<String> sets = new ArrayList<String>(Prefs.multiSets(this));
         if (sets.isEmpty()) {
-            Toast.makeText(this, "Kayıtlı set yok", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, I18n.t(this, "Kayıtlı set yok"), Toast.LENGTH_SHORT).show();
             return;
         }
         String[] labels = new String[sets.size()];
@@ -747,7 +782,7 @@ public class MainActivity extends android.app.Activity {
                 new DialogInterface.OnClickListener() {
                     @Override public void onClick(DialogInterface d, int which) {
                         Prefs.removeMultiSet(MainActivity.this, sets.get(which));
-                        Toast.makeText(MainActivity.this, "Silindi", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(MainActivity.this, I18n.t(MainActivity.this, "Silindi"), Toast.LENGTH_SHORT).show();
                     }
                 }).show();
     }
@@ -763,7 +798,7 @@ public class MainActivity extends android.app.Activity {
                 editIcon.setTextColor(on ? Color.WHITE : MUTED);
             }
             if (editBtn != null) {
-                editBtn.setText(on ? "Bitti" : "Düzen");
+                editBtn.setText(Lang.t(MainActivity.this, on ? "ui_done" : "ui_edit"));
                 editBtn.setTextColor(on ? Color.WHITE : MUTED);
             }
             editBox.setBackground(rounded(on ? ACCENT : CARD, 16));
@@ -782,8 +817,8 @@ public class MainActivity extends android.app.Activity {
     private void updateSelCount() {
         if (selCount != null) {
             selCount.setText(selected.size() == 0
-                    ? "kanala dokun → seç"
-                    : selected.size() + " kanal seçili");
+                    ? I18n.t(this, "kanala dokun → seç")
+                    : selected.size() + " " + I18n.t(this, "kanal seçili"));
         }
         if (editBar != null) editBar.setVisibility(editMode ? View.VISIBLE : View.GONE);
     }
@@ -798,7 +833,7 @@ public class MainActivity extends android.app.Activity {
         if (!canReorder()) return;
         List<Channel> sel = selectedChannels();
         if (sel.isEmpty()) {
-            Toast.makeText(this, "Önce kanallara dokunup seç", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, I18n.t(this, "Önce kanallara dokunup seç"), Toast.LENGTH_SHORT).show();
             return;
         }
         if (delta < 0) {
@@ -821,7 +856,7 @@ public class MainActivity extends android.app.Activity {
         if (!canReorder()) return;
         List<Channel> sel = selectedChannels();
         if (sel.isEmpty()) {
-            Toast.makeText(this, "Önce kanallara dokunup seç", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, I18n.t(this, "Önce kanallara dokunup seç"), Toast.LENGTH_SHORT).show();
             return;
         }
         shown.removeAll(sel);
@@ -829,14 +864,14 @@ public class MainActivity extends android.app.Activity {
         else shown.addAll(sel);
         saveOrder();
         adapter.notifyDataSetChanged();
-        Toast.makeText(this, top ? "En üste alındı" : "En alta alındı", Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, I18n.t(this, top ? "En üste alındı" : "En alta alındı"), Toast.LENGTH_SHORT).show();
     }
 
     private void deleteSelected() {
         if (!canReorder()) return;
         List<Channel> sel = selectedChannels();
         if (sel.isEmpty()) {
-            Toast.makeText(this, "Silmek için kanal seç", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, I18n.t(this, "Silmek için kanal seç"), Toast.LENGTH_SHORT).show();
             return;
         }
         for (Channel c : sel) {
@@ -848,14 +883,14 @@ public class MainActivity extends android.app.Activity {
         saveOrder();
         refresh();
         Toast.makeText(this, onlyHidden
-                        ? sel.size() + " kanal listeye geri eklendi"
-                        : sel.size() + " kanal listeden silindi · 🗑 Gizlenenler'den geri alabilirsin",
+                        ? sel.size() + " " + I18n.t(this, "kanal listeye geri eklendi")
+                        : sel.size() + " " + I18n.t(this, "kanal listeden silindi · 🗑 Gizlenenler'den geri alabilirsin"),
                 Toast.LENGTH_LONG).show();
     }
 
     private boolean canReorder() {
         if (query.length() > 0) {
-            Toast.makeText(this, "Sıralamak için arama kutusunu temizle", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, I18n.t(this, "Sıralamak için arama kutusunu temizle"), Toast.LENGTH_SHORT).show();
             return false;
         }
         return true;
@@ -888,16 +923,16 @@ public class MainActivity extends android.app.Activity {
                 .setTitle("Kumanda numarası")
                 .setMessage("Yeni numara hem kumanda numarasını hem listedeki sırasını değiştirir.\n\nDolu bir numara yazarsan o kanalla numaralar yer değiştirir.")
                 .setView(et)
-                .setPositiveButton("Kaydet", new DialogInterface.OnClickListener() {
+                .setPositiveButton(I18n.t(this, "Kaydet"), new DialogInterface.OnClickListener() {
                     @Override public void onClick(DialogInterface d, int w) {
                         int no;
                         try { no = Integer.parseInt(et.getText().toString().trim()); }
                         catch (Exception e) {
-                            Toast.makeText(MainActivity.this, "Sadece sayı yaz", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(MainActivity.this, I18n.t(MainActivity.this, "Sadece sayı yaz"), Toast.LENGTH_SHORT).show();
                             return;
                         }
                         if (no < 1 || no > all.size()) {
-                            Toast.makeText(MainActivity.this, "1 ile " + all.size() + " arasında bir numara seç",
+                            Toast.makeText(MainActivity.this, "1-" + all.size() + " " + I18n.t(MainActivity.this, "arasında bir numara seç"),
                                     Toast.LENGTH_LONG).show();
                             return;
                         }
@@ -920,9 +955,9 @@ public class MainActivity extends android.app.Activity {
                         }
                         refresh();
                         Toast.makeText(MainActivity.this,
-                                c.name + " artık №" + no, Toast.LENGTH_SHORT).show();
+                                c.name + " " + I18n.t(MainActivity.this, "artık №") + no, Toast.LENGTH_SHORT).show();
                     }
-                }).setNegativeButton("Vazgeç", null).show();
+                }).setNegativeButton(I18n.t(this, "Vazgeç"), null).show();
     }
 
     private void sortDialog() {
@@ -943,7 +978,7 @@ public class MainActivity extends android.app.Activity {
                             Prefs.setOrder(MainActivity.this, group, new ArrayList<String>());
                             setEditMode(false);
                             refresh();
-                            Toast.makeText(MainActivity.this, "Varsayılan sıra geri geldi",
+                            Toast.makeText(MainActivity.this, I18n.t(MainActivity.this, "Varsayılan sıra geri geldi"),
                                     Toast.LENGTH_SHORT).show();
                             return;
                         }
@@ -976,7 +1011,7 @@ public class MainActivity extends android.app.Activity {
                         saveOrder();
                         setEditMode(false);
                         refresh();
-                        Toast.makeText(MainActivity.this, "Sıra kaydedildi", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(MainActivity.this, I18n.t(MainActivity.this, "Sıra kaydedildi"), Toast.LENGTH_SHORT).show();
                     }
                 }).show();
     }
@@ -1014,7 +1049,8 @@ public class MainActivity extends android.app.Activity {
                             Prefs.hideChannel(MainActivity.this, c.url);
                             refresh();
                             Toast.makeText(MainActivity.this,
-                                    c.name + " listeden silindi.\nGeri eklemek: 🗑 Gizlenenler",
+                                    c.name + " " + I18n.t(MainActivity.this,
+                                            "listeden silindi.\nGeri eklemek: 🗑 Gizlenenler"),
                                     Toast.LENGTH_LONG).show();
                         }
                     }
@@ -1135,12 +1171,10 @@ public class MainActivity extends android.app.Activity {
             if (base.isEmpty() && !"tr".equals(cc)) {
                 // #148: ülke listesi inmediyse/hazır değilse boş ekran yerine açıklama + tekrar dene
                 emptyView.setText("" + Countries.flag(cc) + " " + Countries.name(cc, false)
-                        + " listesi henüz hazır değil.\n\nBu ülke için kanallar sunucudan indirilemedi "
-                        + "ya da henüz doğrulanmadı.\n\nDokun → tekrar indirmeyi dene\n"
-                        + "veya Ayarlar → Ülke bölümünden Türkiye'ye dön.");
+                        + I18n.t(this, " listesi henüz hazır değil.\n\nBu ülke için kanallar sunucudan indirilemedi ya da henüz doğrulanmadı.\n\nDokun → tekrar indirmeyi dene\nveya Ayarlar → Ülke bölümünden Türkiye'ye dön."));
                 emptyView.setOnClickListener(new View.OnClickListener() {
                     @Override public void onClick(View v) {
-                        emptyView.setText("İndiriliyor…");
+                        emptyView.setText(I18n.t(MainActivity.this, "İndiriliyor…"));
                         new Thread(new Runnable() {
                             @Override public void run() {
                                 CountryRepo.download(MainActivity.this, cc);
@@ -1157,8 +1191,8 @@ public class MainActivity extends android.app.Activity {
             } else {
                 emptyView.setOnClickListener(null);
                 emptyView.setText(onlyHidden
-                        ? "Gizlenen kanal yok.\n\nBir kanala uzun basıp \"Listeden sil\" dersen burada birikir."
-                        : "Bu filtrede kanal yok.\n\nAramayı temizle veya başka bir sekme dene.");
+                        ? I18n.t(this, "Gizlenen kanal yok.\n\nBir kanala uzun basıp \"Listeden sil\" dersen burada birikir.")
+                        : I18n.t(this, "Bu filtrede kanal yok.\n\nAramayı temizle veya başka bir sekme dene."));
             }
             if (listView != null) listView.setVisibility(View.GONE);
         } else {
@@ -1171,17 +1205,18 @@ public class MainActivity extends android.app.Activity {
     private void updateDataBar() {
         long used = Prefs.todayBytes(this);
         int lim = Prefs.limitMb(this);
-        String s = "📶 Bugün kullanılan veri: " + Net.mb(used);
+        // v10.04 (Paket C): veri şeridi arayüz diline bağlı
+        String s = Lang.t(this, "usage_today") + Net.mb(used);
         if (lim > 0) {
             s += " / " + lim + " MB";
-            if (used > lim * 1048576L) s += "  ⚠ LİMİT AŞILDI";
+            if (used > lim * 1048576L) s += "  " + Lang.t(this, "limit_over");
         } else {
-            s += " · limit yok";
+            s += " · " + Lang.t(this, "limit_none");
         }
         s += "  · 🎚 " + QualityDialog.label(this);
-        s += Prefs.audioOnlyMobile(this) ? "  · 🎧 mobilde sadece ses" : "";
+        s += Prefs.audioOnlyMobile(this) ? "  · 🎧 " + Lang.t(this, "audio_only_mobile") : "";
         // 9.77: kanal sayısı artık bu sabit şeritte (ayrı satır kaldırıldı).
-        s += "  · 📺 " + shown.size() + " kanal";
+        s += "  · 📺 " + Lang.channels(this, shown.size());
         dataBar.setText(s);
         dataBar.setVisibility(Prefs.showUsage(this) ? View.VISIBLE : View.GONE);
         dataBar.setTextColor(lim > 0 && used > lim * 1048576L ? Color.parseColor("#FF5252") : MUTED);
@@ -1198,7 +1233,7 @@ public class MainActivity extends android.app.Activity {
                 return;
             }
             radioNow.setVisibility(View.VISIBLE);
-            radioNowText.setText("🎧 " + nm + " çalıyor");
+            radioNowText.setText("🎧 " + nm + " " + I18n.t(this, "çalıyor"));
         } catch (Throwable ignored) { }
     }
 
@@ -1391,7 +1426,7 @@ public class MainActivity extends android.app.Activity {
                 int us = Prefs.secs(MainActivity.this, c.url);
                 use = "  ·  " + Net.mb(ub) + (us > 0 ? " (" + us / 60 + " dk)" : "");
             }
-            meta.setText(c.group + (fav ? "  ★" : "")
+            meta.setText(Lang.group(MainActivity.this, c.group) + (fav ? "  ★" : "")
                     + (Prefs.fails(MainActivity.this, c.url) > 0 ? "  ⚠" : "") + use);
             meta.setTextColor(MUTED);
             meta.setTextSize(11);

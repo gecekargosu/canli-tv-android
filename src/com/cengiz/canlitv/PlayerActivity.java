@@ -98,7 +98,7 @@ public class PlayerActivity extends android.app.Activity {
         if (index < 0 || index >= list.size()) index = 0;
         // HATA (tur 1): liste boşsa list.get(index) çöküyordu (ülke listesi inmediyse).
         if (list.isEmpty()) {
-            Toast.makeText(this, "Kanal listesi boş. Ayarlar → Ülke bölümünden liste indir.",
+            Toast.makeText(this, I18n.t(this, "Kanal listesi boş. Ayarlar → Ülke bölümünden liste indir."),
                     Toast.LENGTH_LONG).show();
             finish();
             return;
@@ -115,7 +115,13 @@ public class PlayerActivity extends android.app.Activity {
         CountingDataSource.Sink sink = new CountingDataSource.Sink() {
             @Override public void add(long n) { sessionBytes.addAndGet(n); }
         };
-        player = new androidx.media3.exoplayer.ExoPlayer.Builder(this)
+        // v10.05: cihazın donanım çözücüsü bir kanalda çökerse Media3 yazılım çözücüye
+        // düşsün. Eskiden tek çözücü denendiği için tablette kanal açılırken uygulama
+        // kapanabiliyordu (yerel codec hatası süreci öldürüyor).
+        androidx.media3.exoplayer.DefaultRenderersFactory rf =
+                new androidx.media3.exoplayer.DefaultRenderersFactory(this)
+                        .setEnableDecoderFallback(true);
+        player = new androidx.media3.exoplayer.ExoPlayer.Builder(this, rf)
                 .setMediaSourceFactory(Tune.source(new CountingDataSource.Factory(httpFactory, sink)))
                 .setLoadControl(Tune.liveVideo())
                 .build();
@@ -251,7 +257,7 @@ public class PlayerActivity extends android.app.Activity {
         });
         barRow.addView(qualityBtn);
 
-        recButton = barButton("⏺", "Kayıt");
+        recButton = barButton("⏺", "Kaydet");   // alt barda kısa etiket (Enr./Aufn.…)
         hint(recButton, "Yayını telefona kaydet (Movies/TV-Kayitlari)");
         recButton.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View v) { toggleRecording(); }
@@ -400,7 +406,9 @@ public class PlayerActivity extends android.app.Activity {
         outer.addView(root);
         // Reklam kuralı (v9.25): kanal başına "20 dk reklamsız" şeridi kaldırıldı.
         // Banner her zaman görünür; geçiş reklamı her kanal değişiminde ve 15 dakikada bir.
-        android.view.View adBar = AdManager.banner(this);
+        // v10.00: turuncu "reklamsız" şeridi banner'ın ÜSTÜNDE ayrı durur; böylece şerit
+        // reklam yerine geçmez ve izlerken alttaki banner hep görünür kalır.
+        android.view.View adBar = AdManager.bannerWithStrip(this);
         if (adBar != null) outer.addView(adBar);
         outer.setOnApplyWindowInsetsListener(new View.OnApplyWindowInsetsListener() {
             @Override public android.view.WindowInsets onApplyWindowInsets(View v,
@@ -481,7 +489,7 @@ public class PlayerActivity extends android.app.Activity {
                 if (kalan <= 0) {
                     sleepUntil = 0;
                     Prefs.setSleepUntil(PlayerActivity.this, 0);
-                    Toast.makeText(PlayerActivity.this, "Uyku zamanlayıcısı: kapatılıyor", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(PlayerActivity.this, I18n.t(PlayerActivity.this, "Uyku zamanlayıcısı: kapatılıyor"), Toast.LENGTH_SHORT).show();
                     AudioService.stop(PlayerActivity.this);
                     finish();
                     return;
@@ -712,7 +720,7 @@ public class PlayerActivity extends android.app.Activity {
         String[] alts = ChannelRepo.fallbacks(cur);
         if (alts != null && fbTried < alts.length) {
             String alt = alts[fbTried++];
-            Toast.makeText(this, "Yedek kaynak deneniyor…", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, I18n.t(this, "Yedek kaynak deneniyor…"), Toast.LENGTH_SHORT).show();
             errorView.setVisibility(View.GONE);
             try {
                 player.stop();
@@ -750,8 +758,8 @@ public class PlayerActivity extends android.app.Activity {
         if (!Net.online(this) || isDnsError()) {
             try {
                 progress.setVisibility(View.GONE);
-                errorView.setText("İnternet bağlantısı kurulamadı.\n\n" + neden
-                        + " · Wi-Fi / mobil veriyi kontrol edip dokun → tekrar dene");
+                errorView.setText(I18n.t(this, "İnternet bağlantısı kurulamadı.") + "\n\n" + neden
+                        + I18n.t(this, " · Wi-Fi / mobil veriyi kontrol edip dokun → tekrar dene"));
                 errorView.setVisibility(View.VISIBLE);
             } catch (Exception ignored) { }
             return;
@@ -759,8 +767,8 @@ public class PlayerActivity extends android.app.Activity {
         try { Prefs.addFail(this, list.get(index).url); } catch (Exception ignored) { }
         try {
             progress.setVisibility(View.GONE);
-            errorView.setText("Bu kanal şu an açılamadı.\n\n" + neden
-                    + " · Dokun → tekrar dene\nveya ⏭ ile sonraki kanal");
+            errorView.setText(I18n.t(this, "Bu kanal şu an açılamadı.") + "\n\n" + neden
+                    + I18n.t(this, " · Dokun → tekrar dene\nveya ⏭ ile sonraki kanal"));
             errorView.setVisibility(View.VISIBLE);
         } catch (Exception ignored) { }
         autoNext();
@@ -833,16 +841,17 @@ public class PlayerActivity extends android.app.Activity {
         if (used < lim * 1048576L) return;
         limitWarned = true;
         new AlertDialog.Builder(this)
-                .setTitle("Günlük veri limiti doldu")
-                .setMessage("Limit: " + lim + " MB\nKullanılan: " + Net.mb(used)
-                        + "\n\nDevam edilsin mi?")
+                .setTitle(I18n.t(this, "Günlük veri limiti doldu"))
+                .setMessage(I18n.t(this, "Limit: ") + lim + " MB\n"
+                        + I18n.t(this, "Kullanılan: ") + Net.mb(used)
+                        + "\n\n" + I18n.t(this, "Devam edilsin mi?"))
                 .setCancelable(false)
-                .setPositiveButton("Devam et", new DialogInterface.OnClickListener() {
+                .setPositiveButton(I18n.t(this, "Devam et"), new DialogInterface.OnClickListener() {
                     @Override public void onClick(DialogInterface d, int w) { }
                 })
-                .setNegativeButton("Durdur", new DialogInterface.OnClickListener() {
+                .setNegativeButton(I18n.t(this, "Durdur"), new DialogInterface.OnClickListener() {
                     @Override public void onClick(DialogInterface d, int w) {
-                        Toast.makeText(PlayerActivity.this, "Limit doldu, yayın durduruldu",
+                        Toast.makeText(PlayerActivity.this, I18n.t(PlayerActivity.this, "Limit doldu, yayın durduruldu"),
                                 Toast.LENGTH_LONG).show();
                         finishUsage();
                         finish();
@@ -853,16 +862,18 @@ public class PlayerActivity extends android.app.Activity {
 
     // ---------- uyku zamanlayicisi ----------
     private void sleepDialog() {
-        final String[] items = {"15 dakika", "30 dakika", "45 dakika", "60 dakika", "90 dakika",
-                "120 dakika", "Saat gir (örn 23:30)", "Zamanlayıcıyı iptal et"};
+        final String[] items = {I18n.t(this, "15 dakika"), I18n.t(this, "30 dakika"),
+                I18n.t(this, "45 dakika"), I18n.t(this, "60 dakika"), I18n.t(this, "90 dakika"),
+                I18n.t(this, "120 dakika"), I18n.t(this, "Saat gir (örn 23:30)"),
+                I18n.t(this, "Zamanlayıcıyı iptal et")};
         new AlertDialog.Builder(this)
-                .setTitle("Ne zaman kapansın?")
+                .setTitle(I18n.t(this, "Ne zaman kapansın?"))
                 .setItems(items, new DialogInterface.OnClickListener() {
                     @Override public void onClick(DialogInterface d, int which) {
                         if (which == items.length - 1) {
                             sleepUntil = 0;
                             Prefs.setSleepUntil(PlayerActivity.this, 0);
-                            Toast.makeText(PlayerActivity.this, "Zamanlayıcı iptal edildi",
+                            Toast.makeText(PlayerActivity.this, I18n.t(PlayerActivity.this, "Zamanlayıcı iptal edildi"),
                                     Toast.LENGTH_SHORT).show();
                             return;
                         }
@@ -870,7 +881,8 @@ public class PlayerActivity extends android.app.Activity {
                         int[] mins = {15, 30, 45, 60, 90, 120};
                         sleepUntil = System.currentTimeMillis() + mins[which] * 60000L;
                         Prefs.setSleepUntil(PlayerActivity.this, sleepUntil);
-                        Toast.makeText(PlayerActivity.this, mins[which] + " dakika sonra kapanacak",
+                        Toast.makeText(PlayerActivity.this, mins[which]
+                                        + I18n.t(PlayerActivity.this, " dakika sonra kapanacak"),
                                 Toast.LENGTH_SHORT).show();
                     }
                 }).show();
@@ -1038,15 +1050,15 @@ public class PlayerActivity extends android.app.Activity {
         }
         msg.append("\n\nSadece ses → görüntü inmez, çok daha az veri harcar.");
         new AlertDialog.Builder(this)
-                .setTitle("Mobil veri uyarısı")
+                .setTitle(I18n.t(this, "Mobil veri uyarısı"))
                 .setMessage(msg.toString())
-                .setPositiveButton("Aç (mobil veri)", new DialogInterface.OnClickListener() {
+                .setPositiveButton(I18n.t(this, "Aç (mobil veri)"), new DialogInterface.OnClickListener() {
                     @Override public void onClick(DialogInterface d, int w) {
                         Prefs.setMobileOk(PlayerActivity.this, true);
                         playNow(c);
                     }
                 })
-                .setNeutralButton("Sadece ses 🎧", new DialogInterface.OnClickListener() {
+                .setNeutralButton(I18n.t(this, "Sadece ses 🎧"), new DialogInterface.OnClickListener() {
                     @Override public void onClick(DialogInterface d, int w) { startAudioOnly(c); }
                 })
                 .setNegativeButton("Vazgeç", new DialogInterface.OnClickListener() {
@@ -1056,15 +1068,16 @@ public class PlayerActivity extends android.app.Activity {
     }
 
     private void startAudioOnly(final Channel c) {
-        Toast.makeText(this, c.name + ": ses olarak başlatılıyor…", Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, c.name + I18n.t(this, ": ses olarak başlatılıyor…"), Toast.LENGTH_SHORT).show();
         Quality.resolveLowest(this, c.url, new Quality.UrlCallback() {
             @Override public void onUrl(final String url) {
                 runOnUiThread(new Runnable() {
                     @Override public void run() {
                         AudioService.start(PlayerActivity.this, url, c.name);
                         Toast.makeText(PlayerActivity.this, c.name
-                                + ": ses olarak çalıyor (en düşük kalite, en az veri).\n"
-                                + "Ekranı kapatabilirsin.", Toast.LENGTH_LONG).show();
+                                + I18n.t(PlayerActivity.this,
+                                        ": ses olarak çalıyor (en düşük kalite, en az veri).\n"
+                                        + "Ekranı kapatabilirsin."), Toast.LENGTH_LONG).show();
                         finish();
                     }
                 });
@@ -1230,7 +1243,8 @@ public class PlayerActivity extends android.app.Activity {
                 @Override public void run() {
                     if (isFinishing()) return;
                     Toast.makeText(PlayerActivity.this,
-                            "Kanal açılmadı, sonraki kanala geçiliyor", Toast.LENGTH_SHORT).show();
+                            I18n.t(PlayerActivity.this, "Kanal açılmadı, sonraki kanala geçiliyor"),
+                            Toast.LENGTH_SHORT).show();
                     step(1);
                 }
             }, 2200);
@@ -1245,6 +1259,8 @@ public class PlayerActivity extends android.app.Activity {
         warnedNoVariant = -1;
         // v9.25: her kanal değişiminde geçiş reklamı (varsa) gösterilir.
         final Channel next = list.get(index);
+        // v10.02: kanal degisiminde banner yuvasi yeniden denenir (bos kalmasin).
+        AdManager.refreshBanners(this);
         AdManager.maybeInterstitial(this, next.url, new Runnable() {
             @Override public void run() {
                 if (!isFinishing()) show();
@@ -1334,10 +1350,12 @@ public class PlayerActivity extends android.app.Activity {
         finish();
     }
 
+    /** v10.05: uzun basma ipucu — metin 8 dilde tablodan gelir. */
     private void hint(View v, final String text) {
         v.setOnLongClickListener(new View.OnLongClickListener() {
             @Override public boolean onLongClick(View x) {
-                Toast.makeText(PlayerActivity.this, text, Toast.LENGTH_SHORT).show();
+                Toast.makeText(PlayerActivity.this, I18n.t(PlayerActivity.this, text),
+                        Toast.LENGTH_SHORT).show();
                 return true;
             }
         });
@@ -1362,7 +1380,7 @@ public class PlayerActivity extends android.app.Activity {
         t.setTextColor(TEXT);
         t.setTextSize(10);
         t.setGravity(Gravity.CENTER);
-        setBarText(t, icon, label);
+        setBarText(t, icon, I18n.t(this, label));   // v10.05: alt bar etiketi 8 dilde
         GradientDrawable d = new GradientDrawable();
         d.setColor(Color.parseColor("#66000000"));
         d.setCornerRadius(dp(14));

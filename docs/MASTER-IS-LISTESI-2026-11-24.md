@@ -860,3 +860,365 @@ kalan P0'lar kullanıcıda (AAB yükleme, mağaza metni, 12 tester) ve P1 maddel
   adımının tamamlanmamış olmasından; kod tarafında eksik yok.
 - **Reklam seti:** Play videosunda telefon çerçevesi/ekran hizası düzeltildi (çerçeve
   980 px'e sığdırıldı), 55,02 sn olarak yeniden üretildi.
+
+
+## Oturum 2026-11-27 — v10.00: oynatıcıda kalıcı banner + ayrı reklamsız şeridi
+
+- **K-21 (yeni, kullanıcı şikâyeti):** Tek kanal oynatıcıda turuncu "Reklamsız · 15 dk"
+  şeridi banner'ın YERİNE geçiyordu; reklam dolmadığında izleyici hiç banner görmüyordu.
+  Yapıldı: `AdManager.banner(activity, withHouse)` ayrımı + `bannerWithStrip()` +
+  `adFreeStrip()`; şerit artık banner'ın ÜSTÜNDE ince bir bant, altında kalıcı 56dp reklam
+  alanı. 30 sn'de bir "kalan dakika" tazeleniyor. `PlayerActivity` ve `MultiActivity`
+  (çoklu ekran) bu düzeni kullanıyor. **Derleme:** 10.00 (109), `verify-apk` TEMİZ
+  (sınıf +3, dosya +0, +320 bayt).
+- **Doğrulama (ekran görüntüsüyle, cihazda):** Telefon (MIUI 2506BPN68G) oynatıcıda
+  şerit + gerçek banner (hepsiburada) aynı anda; çoklu ekranda şerit + banner.
+  Tablet (25040RP0AG) ATV 720p oynarken şerit + banner. 60 sn TV + 40 sn radyo:
+  `behind live window`/`PlaybackException` yok, radyo "Bağlantı iyi · çalıyor".
+- **Reklam düzeltmesi:** `withHouse=false` durumunda `house.setVisibility()` NPE'si
+  vardı (banner hiç yüklenmiyordu) — null kontrolleri eklendi, logcat'te hata kalmadı.
+- **Play:** Kapalı test **12 test kullanıcısı** şartı TAMAMLANDI (görev listesinde ✔).
+  "En az 12 kullanıcıyla 14 gün" görevi açık, "Üretime başvur" düğmesi pasif.
+- **Arşiv:** `releases/v10.00/` ve `GUNCELLEMELER/v10.00/` (APK + SURUM-NOTLARI + OZET).
+  **Yayınlanmadı** (AAB yok, Play/GitHub/site güncellenmedi).
+- **AdMob:** ödeme/banka doğrulaması kullanıcı tarafından yapıldı; app-ads.txt %100.
+  Kalan: uygulama kurulumu (Play üretim yayını gerekiyor) + kullanıcı metrikleri için
+  **Firebase Analytics SDK** entegrasyonu (Firebase projesi + `google-services.json`).
+  Şelale/mediation: adaptör olmadığı için faydasız, kurulmadı.
+
+
+---
+
+## 2026-11-27 (akşam) — v10.01: alt reklam barı kalıcı çözüm
+
+**Kullanıcı şikâyeti:** "TV ekranında sadece 'reklam izle 15 dk reklamsız' yazıyor, banner gitti;
+radyo ekranında aynı sorun; bazen ikisi vardı, şimdi yok."
+
+**Bulunan kök nedenler (4):**
+1. `houseBar()` banner ile aynı yuvadaydı (dolunca GONE / dolmayınca VISIBLE) → şerit ile banner
+   birbirinin yerine geçiyordu.
+2. Ana sayfa/ayarlar/radyo'da şerit yalnız banner dolmadığında ekleniyordu → reklam dolunca
+   "15 dk reklamsız" düğmesi kayboluyordu.
+3. Banner isteği `setContentView` öncesi yapılıyordu; görünüm pencereye bağlı olmadığı için istek
+   sessizce düşüyordu (ana sayfa dışındaki ekranlar boş).
+4. Banner tek deneme yapıyordu; AdMob `NO_FILL` döndüğünde o ekran bir daha reklam almıyordu.
+
+**Yapılan:** `AdManager.bottomBar()` (şerit üstte + banner altta, tek kurucu), `wrap()` ve
+`bannerWithStrip()` bunu kullanıyor; `loadBanner()` ekran hazır olana kadar bekliyor, 3 deneme
+(hemen/+20 sn/+45 sn); `adPlaceholder()` ile yuva hiç çökmüyor; ölü `houseBar()` kaldırıldı.
+`app/build.gradle` → 110 / 10.01.
+
+**Doğrulama:** Telefon ana sayfa şerit + gerçek banner; radyo NO_FILL → +20 sn denemede banner
+geldi; ayarlar şerit + yuva. Tablet ana sayfa şerit + banner; TV oynatıcı şerit + yuva (jest
+çubuğunun üstünde). Kapasite: 3.888.654 bayt, 393 dosya, sınıf 7036 (-1 = kaldırılan ölü kod).
+
+**Arşiv:** `releases/v10.01/`, `GUNCELLEMELER/v10.01/`. Play/GitHub/site: yüklenmedi.
+
+**Açık iş (kullanıcı seçimi bekliyor):** Radyo ekranı yeniden tasarımı — 4 seçenek
+`radyo-tasarim/mockup.html` (sağ panel). Seçilen numara uygulanacak; ekolayzır çubukları
+(60/230/910/3k/14k) o tasarımda yeniden yazılacak.
+
+
+---
+
+## 2026-11-27 (gece) — v10.02: radyo ekranı (tasarım 2) + gerçek ses tayfı + banner kalıcı
+
+**Kullanıcı:** "2. seçenek güzel, bunu yapalım; ekolayzırı genişlet, gerçekten sesle uyumlu çalışsın",
+"kanal değişme / reklam atlama / donma sonrası banner gidiyor, yerde 'reklam alanı' yazıyor".
+
+**Radyo ekranı:** seçilen 2 numaralı tasarım koda geçti — cam panel, neon halka (kanal sırası),
+ortada kanal numarası + istasyon adı + codec bilgisi, altında canlı seviye şeridi. Eski `RadioArt`
+ve 22 çubuklu sahte `EqView` kaldırıldı.
+
+**Ekolayzır:** `EqFader` (dB + Hz etiketli, görünür ray, sürüklenebilir, gerçek `Equalizer` efekti),
+`SpectrumView` (8 bant canlı tayf), `AudioService.LevelTap` (ExoPlayer ses hattına ölçüm parçası;
+PCM aynen geçer, mikrofon izni YOK, kayıt YOK). Kademeli alçak geçiren süzgeç dizisi + otomatik
+tepe normalizasyonu. Log kanıtı: `leveltap hazir ch=2 hz=44100 enc=2`, `tayf 100/90/70`.
+
+**Banner kalıcılığı:** v10.01'de 3 deneme sonrası vazgeçiyordu (NO_FILL'de ekran saatlerce boş).
+`BannerSlot` + sınırsız kademeli deneme (15→30→60→90 sn) + pencereye yeniden eklenince istek +
+tam ekran reklam kapanışında `refreshBanners()` + kanal değişiminde `refreshBanners()`.
+
+**Doğrulama:** telefon radyo (yeni tasarım, hareketli tayf, fader'lar, şerit + gerçek banner),
+telefon Show TV (şerit + banner), tablet ana sayfa (şerit + banner). Kapasite TEMİZ
+(3.891.274 bayt, 393 dosya, 7040 sınıf / +4, imza aynı).
+
+**Arşiv:** `releases/v10.02/`, `GUNCELLEMELER/v10.02/`, `releases/SON-SURUM.txt` → v10.02.
+Play/GitHub/site: yüklenmedi.
+
+**Sıradaki (kullanıcı onayına bağlı):** laptop Wi-Fi paylaşımı sorusu cevaplandı (uygulama
+gerekmiyor: Windows Mobil Erişim Noktası / USB+ICS). Play kapalı teste AAB yüklemek için
+`make-aab.sh` çalıştırılacak.
+
+---
+
+## 2026-11-27 — v10.03: banner yaşam döngüsü + radyo HTTPS + liste eşleşmesi
+
+**Bağlam:** Kullanıcı ChatGPT'ye APK inceletip bulguları getirdi; bulgular kaynak koda karşı
+ölçüldü (`docs/IS-LISTESI-2026-11-27.md`). Ölçülen ve doğru çıkanlar: `channels.m3u` ↔
+`good_tr.json` 14/13 URL farkı, `backup_tr.json` 25 kanal/94 yedek, 2 TV + 8 radyo HTTP adresi,
+banner denemesinin sınırsız ve yaşam döngüsünden bağımsız olması. Yanlış çıkanlar: "ABD/Almanya
+kataloğu yok" (sunucuda 53 ülke, `us.json` 290 kanal), "UMP sadece referans" (gerçek entegrasyon
+var), "targetSdk bilinmiyor" (36), "geçiş reklamı ayarsız" (180 sn + 3 zap).
+
+**Ağ işi (denenip geri alındı):** Windows mobil erişim noktası `UMAY-NET` açıldı, telefon+tablet
+bağlandı, ikisi de çalıştı (hotspot 2 istemci, adb çalışmaya devam etti). Kullanıcı istemedi:
+erişim noktası kapatıldı, Başlangıç klasöründeki `UMAY-hotspot.vbs` ve geçici betikler silindi,
+cihazlar kendi ağlarına döndü. Kart notu: MediaTek MT7922'de `Hosted network supported: No`
+ama Win11 mobil erişim noktası Wi-Fi Direct ile çalışıyor.
+
+**v10.03 (112) düzeltmeleri:** (1) `AdManager` `ActivityLifecycleCallbacks`: onPause/onStop →
+bekleyen deneme iptal + `paused`, onResume → tek istek, onDestroy → yuva temizliği; internet
+yoksa istek yok, `registerDefaultNetworkCallback` ile ağ gelince bir kez dene.
+(2) 6 radyo https'e taşındı, `backup_radio.json` anahtarları güncellendi, cleartext
+istisnalarından streamtheworld/radyotvonline/arabeskinmerkezi kaldırıldı (Radyo 7 + NTV Radyo
+TLS sunmadığı için HTTP kaldı). (3) `Good.java` `key()`/`order()` ile ad üzerinden eşleştirme.
+
+**Doğrulama:** `verify-apk.py` TEMİZ (3.891.866 bayt, 7042 sınıf, imza aynı); iki cihaza kuruldu;
+HOME ile arkaya alınınca 45 sn'de 0 banner isteği, geri dönüşte banner yüklendi (uiautomator'da
+`android.webkit.WebView`). Ses dinlenerek test edilmedi.
+
+**Arşiv:** `releases/v10.03/`, `GUNCELLEMELER/v10.03/`, `releases/SON-SURUM.txt` → v10.03.
+Play/GitHub/site: yüklenmedi.
+
+---
+
+## 2026-11-27 — v10.04 (113) · PAKET A: reklam geliri düzeltmeleri
+
+**Karar:** Kullanıcı A-B-C-D paketlerinin tek tek, her adımda doğrulanarak yapılmasını onayladı.
+Sıra maddi etkiye göre: A (reklam) → B (uluslararası başlangıç) → C (Almanca) → D (teknik P2).
+
+**Bulgu (tablet, canlı):** `banner dolmadi (deneme 1): No fill.` — SDK isteği gönderiyor, Google
+banner birimine stok vermiyor. Aynı logda `gecis reklami hazir` ve `odullu reklam hazir` → SDK ve
+hesap sağlam, sorun banner yuvasında. Ekranda 56dp gri "reklam alanı" kutusu kalıyordu; kullanıcı
+bunu "banner gitti" olarak görüyordu.
+
+**Yapılan (yalnız `AdManager.java`):**
+1. `BannerSlot.fails` sayacı: 2. başarısız denemeden sonra `hideSlot()` → alan `GONE`, minHeight 0.
+   Doluluk gelince `showSlot()` → 56dp + görünür (kendiliğinden geri gelir).
+2. `BannerSlot.loading` kilidi: aynı yuvaya eşzamanlı ikinci istek gitmiyor.
+3. Başarıda `fails=0` sıfırlanıyor.
+
+**Doğrulama (teknik + kullanıcı):**
+- `build.sh` → BUILD SUCCESSFUL 2m 4s; `verify-apk.py CanliTV.apk --prev releases/v10.03/... --expect-version 10.04` → **TEMİZ** (3.891.950 bayt, 393 dosya, 7042 sınıf +0, imza `f3996c67…` aynı).
+- İki cihaza `install -r -d` → Success; ikisinde de `versionName=10.04 / versionCode=113`.
+- Tablet soğuk açılış: banner **doldu**, ekranda gerçek reklam göründü (ekran görüntüsüyle doğrulandı), boş kutu yok.
+- Telefon soğuk açılış: çökme yok, `SDK hazir`, banner hatası yok.
+- Doğrulanamayan: NO_FILL gizleme yolu canlı tetiklenemedi (doluluk Google tarafında); kod yolu incelemeyle doğrulandı.
+
+**Sürüm notu:** 10.04 seri numarası A-B-C-D boyunca kullanılacak; arşiv ve Play/GitHub yüklemesi
+D bitince tek seferde yapılacak.
+
+---
+
+## 2026-11-27 — v10.04 (113) · PAKET B: gömülü uluslararası başlangıç paketi
+
+**Karar:** ABD/DE/GB'nin büyük ticari kanalları (ABC, NBC, FOX, BBC, RTL, ProSieben…)
+lisans/coğrafi kilit nedeniyle **gömülmedi** (telif → Play kaldırma + AdMob hesap riski).
+Onun yerine hakları serbest/global 8 kanal gömüldü.
+
+**Yayın doğrulaması (curl, 27 Kasım 2026, 8/8 → HTTP 200 + `#EXTM3U`):**
+DW English, France 24 English/Français/Español/العربية, TRT World, NASA TV, Red Bull TV.
+Elenenler: Al Jazeera (000), NHK World (000), Arirang (000), Euronews (404/500/000),
+Sky News (503), ABC News (404), Bloomberg (301/000), DW ES/105 (403).
+
+**Kod:** yeni `assets/intl.m3u`; `ChannelRepo.appendIntl()` ülke listesinin **sonuna** ekler
+(numara/kullanıcı sırası bozulmaz, `tvg-country="intl"` → "🌐 Yabancı" sekmesinde görünür).
+Gömülü TR listesi ve sunucu katalogları değişmedi.
+
+**Doğrulama (teknik + kullanıcı):**
+- `build.sh` → BUILD SUCCESSFUL; `verify-apk.py` → **TEMİZ** (3.892.683 bayt, 393→394 dosya, 7042 sınıf, imza aynı).
+- İki cihaza kuruldu. Tablet alt şerit: **117 → 124 kanal** (gömülü paket listeye girdi).
+- Numara ile açma testi: **Kanal 121 → "DW English · Uluslararası"** onay penceresi çıktı.
+- "Aç" → `PlayerActivity` açıldı; logcat `c2.mtk.avc.decoder` 250 kare render + `c2.android.aac.decoder`
+  → yayın **video+ses** oynuyor; ekran görüntüsünde DW canlı yayın göründü.
+- Regresyon: TR kanalı (ATV) açılışı da test edildi, oynatma çalışıyor.
+
+**Not:** Oynatıcı altındaki yer tutucu metni hâlâ "UMAY Multi TV · reklam alanı" (Türkçe) → Paket C/D'de dile bağlanacak.
+**Sıradaki:** Paket C (Almanca arayüz).
+
+---
+
+## 2026-11-27 — v10.04 (113) · PAKET C (1. bölüm): Almanca arayüz
+
+**Yapılan (`Lang.java`, `MainActivity.java`, `AdManager.java`, `QualityDialog.java`):**
+- `Lang.CODES` → `tr, en, de, ru, ar`; dil seçicide **Deutsch** görünüyor.
+- 90+ metin anahtarı için Almanca sözlük (`Lang.de()`); eksik anahtar **İngilizce'ye** düşer
+  (`pick()` içinde `de → en`), Türkçe'ye değil.
+- Ana ekran sekmeleri: Alle / Favoriten / Zuletzt / Ausgeblendet, kalite "Auto",
+  düzenleme "Bearbeiten/Fertig" (`Lang.tabShort()` + `ui_edit/ui_done`).
+- Veri şeridi, reklam şeridi ("Werbung ansehen / Werbefrei · noch N Min."), reklam yer tutucusu
+  ("Werbefläche"), kalite etiketleri (Niedrigste/Automatisch), kanal sayısı ("124 Sender") dile bağlı.
+
+**Doğrulama (teknik + kullanıcı):**
+- 3 kez `build.sh` → BUILD SUCCESSFUL; her seferinde `verify-apk.py` **TEMİZ** (imza sabit).
+- İki cihaza kuruldu; tablette Ayarlar → Dil → **Deutsch** seçildi.
+- Ekran görüntüsü: "Alle / Favoriten / Zuletzt / Ausgeblendet / Auto / Bearbeiten",
+  "Sender suchen…", "Heute verbraucht: 1,51 GB · kein Limit · Niedrigste · 124 Sender",
+  "Werbefrei · noch 9 Min.", "UMAY Multi TV · Werbefläche" → **hepsi Almanca**.
+- Regresyon: kanal listesi yükleniyor, banner/şerit çalışıyor, çökme yok.
+
+**KALAN (Paket C 2. bölüm):** `SettingsActivity` (~100 gömülü metin), `AboutActivity`,
+`RadioActivity`/`RadioPlayerActivity`, `RecordingsActivity`, oynatıcı HUD etiketleri.
+Bunlar `Lang`'a bağlı değil; çevrilmeden Almanca "tam" sayılmaz.
+
+**Play test kullanıcısı:** `senellkerem@gmail.com` — Play Console'a bu oturumda erişim yok
+(tarayıcı/hesap yok), e-posta **Console → Kapalı test → Test kullanıcıları** ekranından
+eklenmeli. Test linki: `https://play.google.com/apps/testing/com.cengiz.canlitv`
+
+---
+
+## 2026-11-27 — v10.04 (113) · PAKET C-2: Ayarlar ekranı Almanca + iki denetim sorusu
+
+**1) Reklamlar ülkeye göre mi dağıtılıyor? (DOĞRULANDI)**
+- Kodda **tek global AdMob birimi** var: banner `…/6107956695`, geçiş `…/6126022588`,
+  ödüllü `…/4812940915` (`Ads.java`). `AdManager` içinde `Prefs.country` / ülke koşulu **yok**
+  (grep: 0 eşleşme), `AdRequest`'e ülke/dil parametresi eklenmiyor.
+- AdMob isteği **kullanıcının IP'sine göre kendi coğrafi talebini** döndürür: ABD'deki kullanıcıya
+  ABD talebi, TR'deki kullanıcıya TR talebi. Yani TR reklamı ABD'liye gösterilmez; ayrı bir
+  "ülke birimi" açmak gerekmez. (Konsolda ülke engelleme/mediation ile ülke bazlı ağ seçimi
+  yapılabilir; ikisi de şu an kullanılmıyor.)
+- Tek istisna: dünya geneli çalışan marka kampanyaları her ülkede çıkabilir — bu normal.
+- Risk: ülke başına **doluluk (fill) farklı**; `NO_FILL` ülkeye göre değişir. Gelir artışı için
+  asıl kaldıraç Play yayını + mediation.
+
+**2) Uygulamada kişisel bilgi var mı? (DOĞRULANDI)**
+- **E-posta var:** `Ads.SUPPORT_EMAIL`, `AboutActivity.MAIL`, `SettingsActivity.LEGAL_MAIL`
+  → hepsi `cengizkilic1980@gmail.com`.
+- **Telefon yok:** `AboutActivity.WHATSAPP = ""` (boş; düğme "numara eklenmedi" uyarısı verir).
+- **Ad/soyad yok:** arayüzde geçmiyor. Yalnız imza sertifikasında `O=Cengiz Kilic`
+  (APK imzasında görünür, uygulama içinde değil) ve paket adı `com.cengiz.canlitv`.
+- Sonuç: arkadaş test kullanıcısı toplayabilir; eklenecek adresler **Google hesabı** olmalı.
+
+**3) Paket C-2 (Ayarlar Almanca):**
+- `SettingsActivity`'ye `DE` sözlüğü + `de(String)` eklendi; `section()` ve `row()` **tek noktadan**
+  çeviriyor (30+ satır tek tek değiştirilmedi).
+- Bölümler: WERBEFREIES ANSEHEN / ALLGEMEIN / STREAMING UND INTERNET / SENDERLISTE / ENTWICKLER /
+  AUFNAHME / RADIO / ÜBER DIE APP. Satırlar: Werbefreies Abo, Datenanzeige, Stream-Qualität,
+  Sparmodus, Nur Ton im Mobilnetz, Tägliches Datenlimit, Heutiger Verbrauch, Liste bearbeiten,
+  Defekte Sender reparieren, Mein Werbezähler, Werbe-Diagnose, Eigene Stream-Adresse, Meine
+  Aufnahmen, Speicherort, App-Info, Urheberrecht melden, Fehlerprotokoll, Bewerte uns, App teilen…
+- Veri kartı: "Heute 1,53 GB verbraucht · Qualität: Niedrigste · kein Limit · Geschätzt: 360p…".
+  "Bugünkü kullanım / Bugünü sıfırla" diyalogu da çevrildi.
+
+**Doğrulama:** 2 derleme BUILD SUCCESSFUL, `verify-apk.py` **TEMİZ** (3.900.599 bayt, 7042 sınıf +0,
+imza sabit); iki cihaza kuruldu; tablette Ayarlar ekranı ekran görüntüsüyle Almanca doğrulandı.
+
+**KALAN (C-3):** AboutActivity, RadioActivity/RadioPlayerActivity, RecordingsActivity,
+CountryActivity dışı küçük ekranlar ve oynatıcı HUD etiketleri.
+
+---
+
+## 2026-11-27 — v10.04 (113) · İlk açılış: cihaz dili + cihaz ülkesi (otomatik)
+
+**Eski davranış (sorunlu):** `maybeSuggestCountry()` ilk açılışta **Türkçe bir diyalog** gösteriyor,
+"Evet" denince ülkeyi değiştiriyor ama **listeyi indirmiyordu** → yurt dışında liste boş kalıyordu.
+Arayüz dili ise her zaman `tr` başlıyordu (`Prefs.uiLang` varsayılanı).
+
+**Yeni davranış (`MainActivity.setupFirstRun()`, `Prefs.firstRunDone`):**
+1. Arayüz dili cihaz/uygulama yerelinden seçilir (desteklenen dilde ise) → `Prefs.setUiLang`.
+2. Ülke SIM/ağ ülkesinden, yoksa cihaz yerelinden bulunur (IP kullanılmaz, ağ isteği yok).
+3. Ülke destekli ve TR değilse: liste hazırsa doğrudan, değilse **arka planda indirilir**;
+   inerse `ChannelRepo.reload()` + `recreate()`, inemezse eski ülkeye (TR) geri döner.
+4. Kullanıcı sonradan Ayarlar → Ülke/Dil ile değiştirirse bu blok bir daha çalışmaz (bayrak).
+
+**Doğrulama (gerçek cihaz, tablet):**
+- `pm clear` + `cmd locale set-app-locales com.cengiz.canlitv --locales de-DE` + soğuk açılış.
+- Sonuç: arayüz **Almanca** (Alle/Favoriten/Zuletzt/Ausgeblendet, "Sender suchen…",
+  "Heute verbraucht: 0 KB · kein Limit · 360p · 121 Sender", "Werbung ansehen · 15 Min. werbefrei"),
+  ülke bayrağı **Almanya**, liste **Almanya kanalları** (3sat, Alex Berlin, Allgäu TV… 121 kanal).
+  Yani dil ve ülke **bağımsız** çalışıyor: dil cihazdan, kanallar ülkeden.
+- `pm clear` ile sıfırlanınca cihaz yereli TR olduğu için Türkçe + TR listesi (127 kanal) geri geldi.
+- Derleme BUILD SUCCESSFUL, iki cihaza kuruldu, çökme yok.
+
+**Kalan (C-3):** Hakkında / Radyo / Kayıtlar / oynatıcı HUD metinleri ve **kategori adları**
+("Haber", "Belgesel", "Müzik", "Genel" — `CountryRepo.niceGroup` Türkçe üretiyor).
+
+## Paket C-3 — 8 dilde arayüz (27 Kasım 2026)
+
+**Yeni altyapı:** `assets/i18n.tsv` (290 satır × 8 sütun: tr · en · de · fr · es · ru · ar · pt) + `I18n.java`.
+Anahtar **Türkçe metin**; böylece `Lang.t(...)`, `SettingsActivity.de(...)`, `I18n.t(ctx, "...")` çağrı yerleri
+değişmeden 8 dilde çeviri yapılır. Eksik satır → İngilizce; o da yoksa Türkçe kalır (çökme yok).
+`
+` kaçışı tabloda tek/çift ters bölü ile yazılsa da `I18n.unesc()` gerçek satır sonuna çevirir.
+
+**Diller:** `Lang.CODES` = tr, en, de, fr, es, ru, ar, pt. `Lang.name()` → Français / Español / Português eklendi;
+`channels()`, `subtitle()` 8 dilde.
+
+**Çevrilen ekranlar:** ana ekran sekmeleri + kısa etiketler, arama, tüm diyalog/Toast metinleri (Lang anahtarları),
+**Ayarlar'ın tamamı** (bölüm + satır + açıklama + değer, `de()` artık 8 dili tablodan okuyor, DE sözlüğü yedek),
+kalite/veri kartı, reklam şeridi + yer tutucu, oynatıcı HUD mesajları (tv_*/multi_*), hesap bölümü,
+Radyo listesi + radyo oynatıcı (ekolayzır dahil), Kayıtlarım, Durum ekranı başlıkları,
+Hakkında (TR tam metin; diğer 7 dilde çevrilmiş özet), **kategori adları** (`Lang.group()` → Haber/News/Nachrichten…).
+
+**Doğrulama:** BUILD SUCCESSFUL · `verify-apk.py` TEMİZ (3.938.732 bayt, 395 dosya, 7044 sınıf, imza
+f3996c67…b8d5 sabit) · iki cihaza kuruldu.
+- FR Ayarlar (ekran görüntüsü): "Réglages · Version 10.04 · touchez une ligne", "SANS PUBLICITÉ",
+  "Aujourd'hui 0 KB de données utilisées", "Estimation : 360p ≈300 Mo/h, 720p ≈1,2 Go/h…", "Désactivé".
+- AR ana ekran (ekran görüntüsü): الكل / المفضلة / الأخيرة / المخفية / تعديل, "ابحث عن قناة…", "رقم",
+  "البيانات المستخدمة اليوم: 0 KB · بلا حد", "شاهد إعلانًا · 15 د بدون إعلانات" (RTL düzen bozulmuyor).
+- TR geri dönüş: 127 kanal, sekmeler Tümü / Favoriler / Son / Gizlenenler, "Kanalları yenile" metinleri.
+- Tablet (2560×1600): açılış + liste + reklamlar, logcat'te FATAL yok.
+
+**Kalan (C-3b) — kod değil, yalnız tablo satırı işi:** PlayerActivity alt bar/Toast metinleri (~50),
+MultiActivity (~30), ana ekran bilgi Toast'ları (~90), Durum listesi satırları (~50). Bunlar tabloya
+eklendiği anda `I18n.t(...)` ile otomatik çevrilir.
+
+## 2026-11-27 — v10.04 (113) · PAKET C-3 devamı: 8 dil + kanal adı temizliği + tablet dayanıklılığı
+
+**Ne yapıldı**
+
+- `assets/i18n.tsv` 290 → **424 anahtar** (8 sütun: tr·en·de·fr·es·ru·ar·pt).
+  Bu turda eklenenler: oynatıcı alt bar + oynatıcı diyalogları, çoklu ekran çipleri,
+  ana ekran toast/açıklamaları (26) ve **Durum listesinin 24 başlık + 21 açıklaması**.
+- `MainActivity`: 24 kadar `Toast`/`setContentDescription`/`emptyView.setText` metni
+  `I18n.t(...)` ile sarıldı (iç sınıflarda `MainActivity.this` kullanıldı).
+- `StatusActivity`: `DATA` tablosu artık çizim sırasında çevriliyor
+  (`I18n.t(StatusActivity.this, d[1]/d[3])`) — tablo aynı kaldı, veri değişmedi.
+- Oynatıcı alt bar etiketi `Kaydet` anahtarına taşındı (FR "Enr.", DE "Aufn." — "Enregistrement"
+  iki satıra kırılıyordu); `Lang.tabShort()` 8 dilde artık tam tablo etiketini kullanıyor
+  (kısa etiket satırları kaldırıldı, TR "Tümü/Favori/Son/Gizli" korunuyor).
+- **Kanal adı temizliği iki katmanda:**
+  1. Veri: `site/public/good/*.json` içindeki 3.416 kanaldan **2.516** adet son ek temizlendi
+     (`ATV (Turkiye)` → `ATV`, `TRT 1 (1080p)` → `TRT 1`); `assets/good_tr.json` yenilendi.
+  2. Kod: `CountryRepo.stripCountry()` artık `Good.key()` içinde de çalışıyor; böylece
+     indirilen yeni listelerde etiket geri gelmiyor. `Lang.fold()` sayesinde "Turkiye" ile
+     "Türkiye" aynı kabul ediliyor.
+- Tablet/telefon dayanıklılığı: `DefaultRenderersFactory.setEnableDecoderFallback(true)`
+  (Player + Multi) ve `android:largeHeap="true"` korundu.
+
+**Doğrulama (cihaz)**
+
+- Telefon (TR, 127 kanal): liste **ülkesiz** — ATV / TV8 / Show TV / Kanal D / TRT Haber.
+- Telefon (FR): oynatıcı alt bar "Fermer · Accueil · Favori · Multi · Enr."; TV8 oynuyor.
+- Telefon (DE): ana ekran "Alle · ★ Favoriten · Zuletzt · Ausgeblen… · Bearbeiten",
+  "Sender suchen…", "Heute verbraucht: 0 KB · kein Limit · 360p · 127 Sender";
+  Ayarlar tamamen Almanca ("Einstellungen · Version 10.04", "Land", "Sprache", "Stream-Qualität").
+- Tablet: TV8 40 sn kesintisiz oynadı, `logcat` içinde FATAL/ANR yok; ağ kesme testinde
+  uygulama kapanmıyor, "İnternet bağlantısı yok / Bağlanınca dokun" ekranı geliyor.
+- `verify-apk.py CanliTV.apk --prev releases/v10.03/... --expect-version 10.04` → **TEMİZ**
+  (3.958.448 bayt, 395 dosya, 7044 sınıf, imza `f3996c67…b8d5`).
+
+**Açık kalanlar (bilinçli olarak sonraya bırakıldı)**
+
+- Durum listesi ve ana ekran dışındaki birkaç yardımcı ekran metni (Radyo/Hakkında alt
+  paragrafları) hâlâ TR — kod değişikliği gerektirmeyen tablo satırları eklenebilir.
+- Eski listelerden devreden teknik borç: RecyclerView, R8 küçültme, otomatik test,
+  MainActivity bölme, TV/leanback + D-pad desteği, `good_tr.json` otomatik eşleşme.
+- Sürüm numarası **10.04 / 113** kaldı; arşiv (releases/), GUNCELLEMELER kaydı, GitHub ve
+  Play yüklemesi toplu olarak son adımda yapılacak.
+
+**Play yorumları:** Play Console erişimi yok; Gmail'de (cengizkilic1980@gmail.com) son 60 günde
+Play yorum/puan bildirimi **yok** (yalnız Hizmet Şartları e-postası). Kapalı testte yıldız/yorum
+herkese açık görünmez; yalnız Console → Değerlendirmeler → Test geri bildirimi ekranında görünür.
+
+## 2026-11-27 — PAKET C-3 KAPANIŞ: v10.05 (114) arşivlendi
+
+- `app/build.gradle`: versionCode **113 → 114**, versionName **10.04 → 10.05**.
+- `bash build.sh` → BUILD SUCCESSFUL; `bash make-aab.sh` → BUILD SUCCESSFUL.
+- `verify-apk.py CanliTV.apk --prev releases/v10.03/CanliTV.apk --expect-version 10.05` → **TEMİZ**
+  (3.958.448 bayt, 395 dosya, 7044 sınıf, imza `f3996c67…b8d5` aynı).
+- Arşiv: `releases/v10.05/` (CanliTV.apk + CanliTV.aab + SURUM-NOTLARI.md),
+  kopya `GUNCELLEMELER/v10.05/` (+ OZET.md), `releases/SON-SURUM.txt` güncellendi.
+- İki cihaza kuruldu: telefonda TV8 oynuyor, tablet 10.05 ile açılıyor.
+- Play yüklemesi: AAB hazır ama Play Console erişimi kullanıcıda (2FA) — yükleme adımı onun tarafında.

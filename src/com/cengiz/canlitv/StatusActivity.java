@@ -85,12 +85,12 @@ public class StatusActivity extends Activity {
         LinearLayout titles = new LinearLayout(this);
         titles.setOrientation(LinearLayout.VERTICAL);
         TextView t = new TextView(this);
-        t.setText("Ne var, ne yok?");
+        t.setText(I18n.t(this, "Ne var, ne yok?"));
         t.setTextColor(TEXT);
         t.setTextSize(20);
         t.setTypeface(t.getTypeface(), android.graphics.Typeface.BOLD);
         TextView sub = new TextView(this);
-        sub.setText("İstediklerin · oldu / olmadı / nedeni");
+        sub.setText(I18n.t(this, "İstediklerin · oldu / olmadı / nedeni"));
         sub.setTextColor(MUTED);
         sub.setTextSize(11);
         titles.addView(t);
@@ -98,7 +98,7 @@ public class StatusActivity extends Activity {
         head.addView(titles, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
 
         TextView close = new TextView(this);
-        close.setText("Kapat");
+        close.setText(I18n.t(this, "Kapat"));
         close.setTextColor(Color.WHITE);
         close.setTextSize(12);
         close.setGravity(Gravity.CENTER);
@@ -146,13 +146,13 @@ public class StatusActivity extends Activity {
                 LinearLayout col = new LinearLayout(StatusActivity.this);
                 col.setOrientation(LinearLayout.VERTICAL);
                 TextView n = new TextView(StatusActivity.this);
-                n.setText(d[1]);
+                n.setText(I18n.t(StatusActivity.this, d[1]));
                 n.setTextColor(TEXT);
                 n.setTextSize(13);
                 col.addView(n);
                 if (d[3].length() > 0) {
                     TextView m = new TextView(StatusActivity.this);
-                    m.setText(d[3]);
+                    m.setText(I18n.t(StatusActivity.this, d[3]));
                     m.setTextColor(MUTED);
                     m.setTextSize(11);
                     m.setPadding(0, dp(2), 0, 0);

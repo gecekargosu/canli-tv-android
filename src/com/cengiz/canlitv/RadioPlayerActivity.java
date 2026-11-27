@@ -34,8 +34,10 @@ public class RadioPlayerActivity extends Activity {
     private static boolean loaded = false;
 
     private int index = 0;
-    private TextView nameView, metaView, statusView, sleepLabel;
-    private EqView eqView;
+    private TextView nameView, metaView, statusView, sleepLabel, numView;
+    private RingGauge ringGauge;
+    private SpectrumView eqView;
+    private EqFader[] faders = new EqFader[5];
     private final Handler ui = new Handler();
     private boolean playing = true;
 
@@ -133,76 +135,103 @@ public class RadioPlayerActivity extends Activity {
         head.addView(stopBtn);
         root.addView(head);
 
-        // --- radyo paneli: bos cerceve yerine istasyon bilgisi + canli yayin etiketi ---
-        android.widget.FrameLayout panel = new android.widget.FrameLayout(this);
-        RadioArt art = new RadioArt(this);
-        panel.addView(art, new ViewGroup.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
-
-        LinearLayout overlay = new LinearLayout(this);
-        overlay.setOrientation(LinearLayout.VERTICAL);
-        overlay.setGravity(Gravity.CENTER);
-        overlay.setPadding(dp(26), dp(30), dp(26), dp(18));
+        // ---------- v10.02: radyo paneli (tasarım 2 — cam + neon halka) ----------
+        LinearLayout glass = new LinearLayout(this);
+        glass.setOrientation(LinearLayout.VERTICAL);
+        glass.setGravity(Gravity.CENTER_HORIZONTAL);
+        GradientDrawable glassBg = new GradientDrawable(
+                GradientDrawable.Orientation.TOP_BOTTOM,
+                new int[]{Color.parseColor("#16243A"), Color.parseColor("#0B1422")});
+        glassBg.setCornerRadius(dp(22));
+        glassBg.setStroke(dp(1), Color.parseColor("#22314A"));
+        glass.setBackground(glassBg);
+        glass.setPadding(dp(14), dp(14), dp(14), dp(12));
 
         TextView live = new TextView(this);
-        live.setText("● CANLI YAYIN");
+        live.setText(I18n.t(this, "● CANLI YAYIN"));
         live.setTextColor(ORANGE);
-        live.setTextSize(10);
+        live.setTextSize(9);
+        live.setLetterSpacing(0.18f);
         live.setTypeface(live.getTypeface(), android.graphics.Typeface.BOLD);
-        live.setLetterSpacing(0.12f);
         live.setGravity(Gravity.CENTER);
-        overlay.addView(live);
+        glass.addView(live);
+
+        android.widget.FrameLayout ringBox = new android.widget.FrameLayout(this);
+        ringGauge = new RingGauge(this);
+        ringBox.addView(ringGauge, new android.widget.FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+
+        LinearLayout ringTexts = new LinearLayout(this);
+        ringTexts.setOrientation(LinearLayout.VERTICAL);
+        ringTexts.setGravity(Gravity.CENTER);
+        ringTexts.setPadding(dp(34), 0, dp(34), 0);
+
+        numView = new TextView(this);
+        numView.setTextColor(TEXT);
+        numView.setTextSize(36);
+        numView.setGravity(Gravity.CENTER);
+        numView.setTypeface(numView.getTypeface(), android.graphics.Typeface.BOLD);
+        numView.setShadowLayer(10f, 0f, 2f, Color.parseColor("#000000"));
+        ringTexts.addView(numView);
+
+        TextView numCap = new TextView(this);
+        numCap.setText(I18n.t(this, "KANAL"));
+        numCap.setTextColor(MUTED);
+        numCap.setTextSize(8);
+        numCap.setLetterSpacing(0.3f);
+        numCap.setGravity(Gravity.CENTER);
+        ringTexts.addView(numCap);
 
         nameView = new TextView(this);
         nameView.setTextColor(TEXT);
-        nameView.setTextSize(21);
+        nameView.setTextSize(19);
         nameView.setGravity(Gravity.CENTER);
         nameView.setTypeface(nameView.getTypeface(), android.graphics.Typeface.BOLD);
-        nameView.setPadding(0, dp(6), 0, dp(2));
-        nameView.setShadowLayer(8f, 0f, 2f, Color.parseColor("#000000"));
-        overlay.addView(nameView);
+        nameView.setPadding(0, dp(6), 0, 0);
+        nameView.setSingleLine(true);
+        nameView.setEllipsize(android.text.TextUtils.TruncateAt.END);
+        ringTexts.addView(nameView);
 
         metaView = new TextView(this);
-        metaView.setTextColor(Color.parseColor("#C7D2E0"));
-        metaView.setTextSize(11);
+        metaView.setTextColor(Color.parseColor("#8FA0B5"));
+        metaView.setTextSize(10);
         metaView.setGravity(Gravity.CENTER);
-        overlay.addView(metaView);
+        metaView.setSingleLine(true);
+        metaView.setEllipsize(android.text.TextUtils.TruncateAt.END);
+        ringTexts.addView(metaView);
 
-        TextView freq = new TextView(this);
-        freq.setText("UMAY RADYO · canlı akış");
-        freq.setTextColor(MUTED);
-        freq.setTextSize(9);
-        freq.setGravity(Gravity.CENTER);
-        freq.setPadding(0, dp(10), 0, 0);
-        overlay.addView(freq);
-
-        panel.addView(overlay, new android.widget.FrameLayout.LayoutParams(
+        ringBox.addView(ringTexts, new android.widget.FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
-        root.addView(panel, new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, dp(210)));
+        glass.addView(ringBox, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, dp(214)));
+
+        // canlı ses seviyesi (halkanın altında ince şerit)
+        SpectrumView vu = new SpectrumView(this);
+        LinearLayout.LayoutParams vulp = new LinearLayout.LayoutParams(dp(132), dp(30));
+        vulp.gravity = Gravity.CENTER_HORIZONTAL;
+        vulp.topMargin = dp(2);
+        glass.addView(vu, vulp);
 
         statusView = new TextView(this);
-        statusView.setTextColor(ORANGE);
-        statusView.setTextSize(11);
+        statusView.setTextColor(Color.parseColor("#4ADE80"));
+        statusView.setTextSize(10.5f);
         statusView.setGravity(Gravity.CENTER);
-        statusView.setPadding(0, dp(2), 0, dp(6));
-        root.addView(statusView);
+        statusView.setPadding(0, dp(8), 0, dp(2));
+        glass.addView(statusView);
+        root.addView(glass);
 
-        // Baglanti sorunu icin elle mudahale: tekrar dene / sonraki kanal
         LinearLayout fixRow = new LinearLayout(this);
         fixRow.setGravity(Gravity.CENTER);
-        TextView retryBtn = chip("🔄 Tekrar dene");
+        fixRow.setPadding(0, dp(8), 0, 0);
+        TextView retryBtn = chip(I18n.t(this, "🔄 Tekrar dene"));
         retryBtn.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View v) {
-                statusView.setText("🔄 Yeniden bağlanıyorum…");
-                customStatus = true;
-                stationRetries = 0;
                 AudioService.start(RadioPlayerActivity.this, urls.get(index), names.get(index));
                 ui.removeCallbacks(radioWatchdog);
                 ui.postDelayed(radioWatchdog, 15000);
             }
         });
-        TextView nextBtn = chip("⏭ Sonraki kanal");
+        TextView nextBtn = chip(I18n.t(this, "⏭ Sonraki kanal"));
         nextBtn.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View v) { changeStation(1); }
         });
@@ -210,96 +239,101 @@ public class RadioPlayerActivity extends Activity {
         fixRow.addView(nextBtn);
         root.addView(fixRow);
 
-        eqView = new EqView(this);
-        root.addView(eqView, new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, dp(60)));
-
-        // --- bant ayarlari (gercek Equalizer) ---
+        // ---------- genişletilmiş ekolayzır ----------
+        LinearLayout eqHead = new LinearLayout(this);
+        eqHead.setGravity(Gravity.CENTER_VERTICAL);
+        eqHead.setPadding(0, dp(14), 0, dp(6));
         TextView eqTitle = new TextView(this);
-        eqTitle.setText("Ekolayzır ayarları");
+        eqTitle.setText(I18n.t(this, "SES DENGESİ"));
         eqTitle.setTextColor(TEXT);
-        eqTitle.setTextSize(13);
-        eqTitle.setPadding(0, dp(10), 0, dp(4));
-        root.addView(eqTitle);
+        eqTitle.setTextSize(11);
+        eqTitle.setLetterSpacing(0.16f);
+        eqTitle.setTypeface(eqTitle.getTypeface(), android.graphics.Typeface.BOLD);
+        eqTitle.setLayoutParams(new LinearLayout.LayoutParams(0,
+                ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+        eqHead.addView(eqTitle);
+        TextView eqLive = new TextView(this);
+        eqLive.setText(I18n.t(this, "● canlı ölçüm"));
+        eqLive.setTextColor(Color.parseColor("#4ADE80"));
+        eqLive.setTextSize(9);
+        eqHead.addView(eqLive);
+        root.addView(eqHead);
+
+        LinearLayout eqCard = new LinearLayout(this);
+        eqCard.setOrientation(LinearLayout.VERTICAL);
+        GradientDrawable eqBg = new GradientDrawable();
+        eqBg.setColor(CARD);
+        eqBg.setCornerRadius(dp(18));
+        eqBg.setStroke(dp(1), Color.parseColor("#1B2942"));
+        eqCard.setBackground(eqBg);
+        eqCard.setPadding(dp(12), dp(12), dp(12), dp(10));
+
+        eqView = new SpectrumView(this);
+        eqCard.addView(eqView, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, dp(96)));
 
         LinearLayout bands = new LinearLayout(this);
         bands.setOrientation(LinearLayout.HORIZONTAL);
         bands.setGravity(Gravity.CENTER);
-        root.addView(bands, new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, dp(170)));
+        LinearLayout.LayoutParams blp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, dp(150));
+        blp.topMargin = dp(8);
+        eqCard.addView(bands, blp);
 
-        final int bandCount = 5;
-        final SeekBar[] bars = new SeekBar[bandCount];
-        final TextView[] labels = new TextView[bandCount];
         int[] range = AudioService.eqRange();
         short[] freqs = AudioService.eqFreqs();
         short[] cur = AudioService.eqLevels();
-        for (int i = 0; i < bandCount; i++) {
-            LinearLayout col = new LinearLayout(this);
-            col.setOrientation(LinearLayout.VERTICAL);
-            col.setGravity(Gravity.CENTER_HORIZONTAL);
-            TextView f = new TextView(this);
+        String[] hzNames = {"60 Hz", "230 Hz", "910 Hz", "3 kHz", "14 kHz"};
+        for (int i = 0; i < 5; i++) {
             int hz = (freqs != null && i < freqs.length) ? freqs[i] : (60 + i * 500);
-            f.setText(hz >= 1000 ? (hz / 1000) + "k" : String.valueOf(hz));
-            f.setTextColor(MUTED);
-            f.setTextSize(10);
-            f.setGravity(Gravity.CENTER);
-            labels[i] = f;
-            col.addView(f);
-
-            SeekBar sb = new SeekBar(this);
-            sb.setMax(range[1] - range[0]);
-            int level = (cur != null && i < cur.length) ? cur[i] : 0;
-            sb.setProgress(level - range[0]);
-            sb.setRotation(270);
-            sb.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-                @Override public void onProgressChanged(SeekBar s, int p, boolean fromUser) {
-                    if (!fromUser) return;
-                    int band = indexOf(s, bars);
-                    if (band >= 0) AudioService.eqSet(band, (short) (p + AudioService.eqRange()[0]));
+            String label = i < hzNames.length ? hzNames[i]
+                    : (hz >= 1000 ? (hz / 1000) + " kHz" : hz + " Hz");
+            short lv = (cur != null && i < cur.length) ? cur[i] : 0;
+            EqFader f = new EqFader(this, i, range[0], range[1], lv, label);
+            f.setOnChange(new EqFader.OnChange() {
+                @Override public void onChanged(int band, short level) {
+                    AudioService.eqSet(band, level);
                 }
-                @Override public void onStartTrackingTouch(SeekBar s) { }
-                @Override public void onStopTrackingTouch(SeekBar s) { }
             });
-            LinearLayout.LayoutParams slp = new LinearLayout.LayoutParams(dp(46), dp(120));
-            col.addView(sb, slp);
-            bars[i] = sb;
-            bands.addView(col, new LinearLayout.LayoutParams(0,
-                    ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+            faders[i] = f;
+            bands.addView(f, new LinearLayout.LayoutParams(0,
+                    ViewGroup.LayoutParams.MATCH_PARENT, 1f));
         }
 
-        TextView presets = new TextView(this);
-        presets.setText("Hazır ayarlar:  Konuşma · Müzik · Bas · Düz");
-        presets.setTextColor(MUTED);
-        presets.setTextSize(10);
-        presets.setGravity(Gravity.CENTER);
-        presets.setPadding(0, dp(4), 0, dp(10));
-        root.addView(presets);
+        TextView eqNote = new TextView(this);
+        eqNote.setText(I18n.t(this, "Tut ve sürükle · kalın ses ← → ince ses · ölçüm yayının kendi sesinden"));
+        eqNote.setTextColor(Color.parseColor("#5A6B80"));
+        eqNote.setTextSize(8.5f);
+        eqNote.setGravity(Gravity.CENTER);
+        eqNote.setPadding(0, dp(6), 0, 0);
+        eqCard.addView(eqNote);
+        root.addView(eqCard);
 
         LinearLayout row = new LinearLayout(this);
         row.setGravity(Gravity.CENTER);
-        TextView speech = chip("🎙 Konuşma");
+        row.setPadding(0, dp(8), 0, 0);
+        TextView speech = chip(I18n.t(this, "🎙 Konuşma"));
         speech.setOnClickListener(new View.OnClickListener() {
-            @Override public void onClick(View v) { applyPreset(bars, "speech"); }
+            @Override public void onClick(View v) { applyPreset(faders, "speech"); }
         });
-        TextView music = chip("🎵 Müzik");
+        TextView music = chip(I18n.t(this, "🎵 Müzik"));
         music.setOnClickListener(new View.OnClickListener() {
-            @Override public void onClick(View v) { applyPreset(bars, "music"); }
+            @Override public void onClick(View v) { applyPreset(faders, "music"); }
         });
-        TextView bass = chip("🔊 Bas");
+        TextView bass = chip(I18n.t(this, "🔊 Bas"));
         bass.setOnClickListener(new View.OnClickListener() {
-            @Override public void onClick(View v) { applyPreset(bars, "bass"); }
+            @Override public void onClick(View v) { applyPreset(faders, "bass"); }
         });
-        TextView flat = chip("➖ Düz");
+        TextView flat = chip(I18n.t(this, "➖ Düz"));
         flat.setOnClickListener(new View.OnClickListener() {
-            @Override public void onClick(View v) { applyPreset(bars, "flat"); }
+            @Override public void onClick(View v) { applyPreset(faders, "flat"); }
         });
         row.addView(speech); row.addView(music); row.addView(bass); row.addView(flat);
         root.addView(row);
 
         LinearLayout nav = new LinearLayout(this);
         nav.setGravity(Gravity.CENTER);
-        nav.setPadding(0, dp(14), 0, 0);
+        nav.setPadding(0, dp(12), 0, dp(4));
         TextView prev = bigButton("⏮");
         prev.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View v) { changeStation(-1); }
@@ -381,12 +415,7 @@ public class RadioPlayerActivity extends Activity {
                 .show();
     }
 
-    private int indexOf(SeekBar s, SeekBar[] arr) {
-        for (int i = 0; i < arr.length; i++) if (arr[i] == s) return i;
-        return -1;
-    }
-
-    private void applyPreset(SeekBar[] bars, String kind) {
+    private void applyPreset(EqFader[] bars, String kind) {
         int[] range = AudioService.eqRange();
         short[] target;
         if ("speech".equals(kind)) target = new short[]{-300, 300, 500, 300, -200};
@@ -397,7 +426,7 @@ public class RadioPlayerActivity extends Activity {
             short lv = target[i];
             if (lv < range[0]) lv = (short) range[0];
             if (lv > range[1]) lv = (short) range[1];
-            bars[i].setProgress(lv - range[0]);
+            if (bars[i] != null) bars[i].setLevel(lv);
             AudioService.eqSet(i, lv);
         }
         Toast.makeText(this, "Ekolayzır ayarı uygulandı", Toast.LENGTH_SHORT).show();
@@ -416,6 +445,10 @@ public class RadioPlayerActivity extends Activity {
     private int stationRetries = 0;
 
     private void show() {
+        if (numView != null) numView.setText(String.valueOf(index + 1));
+        if (ringGauge != null) {
+            ringGauge.setProgress(names.isEmpty() ? 0f : (index + 1f) / names.size());
+        }
         nameView.setText(names.get(index));
         metaView.setText(metas.get(index));
         statusView.setText("bağlanıyor…");
@@ -485,10 +518,7 @@ public class RadioPlayerActivity extends Activity {
     private final Runnable anim = new Runnable() {
         @Override public void run() {
             boolean playing = AudioService.isPlayingStatic();
-            if (eqView != null) {
-                eqView.setActive(playing);   // cubuklar sadece ses varken hareket eder
-                eqView.invalidate();
-            }
+            if (ringGauge != null) ringGauge.setLive(playing);
             if (statusView != null && !customStatus) {
                 if (AudioService.stateStatic() == AudioService.S_PAUSED) {
                     statusView.setText("⏸ Başka uygulama ses çalıyor · kapanınca devam eder");
@@ -501,95 +531,6 @@ public class RadioPlayerActivity extends Activity {
             ui.postDelayed(this, 150);
         }
     };
-
-    // ---------- animasyonlu ekolayzir ----------
-    private static class EqView extends View {
-        private final Paint p = new Paint(Paint.ANTI_ALIAS_FLAG);
-        private final float[] h = new float[22];
-        private final float[] v = new float[22];
-        private boolean active = false;
-        void setActive(boolean a) { active = a; }
-        EqView(Context c) {
-            super(c);
-            for (int i = 0; i < h.length; i++) { h[i] = (float) Math.random(); v[i] = 0.02f; }
-        }
-        @Override protected void onDraw(Canvas canvas) {
-            float w = getWidth(), ht = getHeight();
-            int n = h.length;
-            float bw = w / (n * 1.8f);
-            for (int i = 0; i < n; i++) {
-                float target = active
-                        ? 0.15f + (float) Math.abs(Math.sin(System.currentTimeMillis() / 380.0 + i * 0.7)) * 0.8f
-                        : 0.04f;
-                v[i] += (target - v[i]) * 0.15f;
-                float bh = ht * 0.9f * v[i];
-                float x = i * (w / n) + bw / 2;
-                p.setColor(i % 3 == 0 ? Color.parseColor("#FF7A18")
-                        : (i % 3 == 1 ? Color.parseColor("#1F3A93") : Color.parseColor("#F5F7FA")));
-                p.setAlpha(230);
-                RectF r = new RectF(x, ht - bh, x + bw, ht);
-                canvas.drawRoundRect(r, bw / 2, bw / 2, p);
-            }
-        }
-    }
-
-    // ---------- analog radyo cizimi ----------
-    private static class RadioArt extends View {
-        private final Paint p = new Paint(Paint.ANTI_ALIAS_FLAG);
-        RadioArt(Context c) { super(c); }
-        @Override protected void onDraw(Canvas canvas) {
-            float w = getWidth(), h = getHeight();
-            float m = w * 0.04f;
-            p.setColor(BG);
-            canvas.drawRect(0, 0, w, h, p);
-            RectF body = new RectF(m, h * 0.06f, w - m, h * 0.96f);
-            p.setColor(Color.parseColor("#1B2230"));
-            canvas.drawRoundRect(body, 26, 26, p);
-            p.setStyle(Paint.Style.STROKE);
-            p.setStrokeWidth(3);
-            p.setColor(NAVY);
-            canvas.drawRoundRect(body, 26, 26, p);
-            p.setStyle(Paint.Style.FILL);
-
-            // hoparlor izgarasi
-            float gx = body.left + body.width() * 0.07f, gy = body.top + body.height() * 0.18f;
-            p.setColor(Color.parseColor("#2A3444"));
-            for (int r = 0; r < 6; r++)
-                for (int c = 0; c < 5; c++)
-                    canvas.drawCircle(gx + c * 13, gy + r * 13, 3.4f, p);
-
-            // kadran
-            RectF dial = new RectF(body.left + body.width() * 0.34f, body.top + body.height() * 0.16f,
-                    body.right - body.width() * 0.08f, body.top + body.height() * 0.46f);
-            // kadran: koyu zemin + ince olcek cizgileri + turuncu ibre
-            p.setColor(Color.parseColor("#0E1319"));
-            canvas.drawRoundRect(dial, 10, 10, p);
-            p.setStyle(Paint.Style.STROKE);
-            p.setStrokeWidth(2);
-            p.setColor(Color.parseColor("#2A3444"));
-            canvas.drawRoundRect(dial, 10, 10, p);
-            p.setColor(Color.parseColor("#8C98A8"));
-            for (int i = 0; i <= 20; i++) {
-                float x = dial.left + 6 + (dial.width() - 12) * i / 20f;
-                float len = (i % 5 == 0) ? 12 : 6;
-                canvas.drawLine(x, dial.top + 7, x, dial.top + 7 + len, p);
-            }
-            p.setStrokeWidth(3);
-            p.setColor(ORANGE);
-            float nx = dial.left + 6 + (dial.width() - 12) * 0.62f;
-            canvas.drawLine(nx, dial.top + 5, nx, dial.bottom - 5, p);
-            p.setStyle(Paint.Style.FILL);
-            p.setStrokeWidth(1);
-
-            // iki dugme
-            p.setColor(ORANGE);
-            canvas.drawCircle(body.left + body.width() * 0.18f, body.bottom - body.height() * 0.22f, 20, p);
-            p.setColor(NAVY);
-            canvas.drawCircle(body.left + body.width() * 0.40f, body.bottom - body.height() * 0.22f, 20, p);
-
-            // marka adı panelde yazıyor; çizimde tekrar etmiyoruz.
-        }
-    }
 
     private TextView chip(String s) {
         TextView t = new TextView(this);

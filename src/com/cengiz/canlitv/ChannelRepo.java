@@ -161,6 +161,7 @@ public class ChannelRepo {
             // once gercekten acilan kanallar (sunucudan gelen dogrulanmis liste), sonra populerlik sirasi
             if (!Good.apply(ctx, cc, CHANNELS)) Popular.arrange(cc, CHANNELS);
             if ("tr".equals(cc)) pinTop();
+            appendIntl(ctx, CHANNELS);   // v10.04 (Paket B): gömülü uluslararası başlangıç paketi
             // #102: kullanicinin kendi ekledigi kanallar listenin en basinda durur
             List<Channel> mine = new ArrayList<Channel>();
             for (String[] r : Prefs.customTv(ctx)) {
@@ -204,6 +205,26 @@ public class ChannelRepo {
     public static Channel byNumber(Context ctx, int no) {
         for (Channel c : all(ctx)) if (c.no == no) return c;
         return null;
+    }
+
+    /**
+     * v10.04 (Paket B): assets/intl.m3u içindeki gömülü uluslararası kanalları listeye ekler.
+     * Ülke listesinin SONUNA eklenir (kanal numaraları ve kullanıcı sırası bozulmaz),
+     * "🌐 Yabancı" sekmesinde ve "Uluslararası" kategorisinde görünür.
+     * Yalnız hakları serbest/global yayınlar; lisanslı büyük kanallar bilinçli olarak yok.
+     */
+    private static void appendIntl(Context ctx, List<Channel> list) {
+        java.io.InputStream in = null;
+        try {
+            in = ctx.getAssets().open("intl.m3u");
+            List<Channel> add = CountryRepo.parse(new java.io.BufferedReader(
+                    new java.io.InputStreamReader(in, "UTF-8")));
+            for (Channel c : add) if (!hasUrl(list, c.url)) list.add(c);
+        } catch (Throwable ignored) {
+            // dosya yoksa/bozuksa hiçbir şey değişmez (çevrimdışı güvenli)
+        } finally {
+            try { if (in != null) in.close(); } catch (Throwable ignored) { }
+        }
     }
 
     private static boolean hasUrl(List<Channel> l, String url) {

@@ -75,6 +75,10 @@ public final class AdManager {
     private static String lastInterstitialError = "";
     private static String lastRewardedError = "";
     private static String lastBannerError = "";
+    /** Banner yeniden denemeleri tek elden: ekran arkaya gidince iptal edilebilsin. */
+    private static final Handler retryHandler = new Handler(Looper.getMainLooper());
+    /** Yaşam döngüsü kancası yalnız bir kez kurulur. */
+    private static boolean lifecycleHooked = false;
     /** Ekranda duran banner'lar: "reklamları kapat" açılınca hemen kaldırılır. */
     private static final java.util.List<java.lang.ref.WeakReference<View>> liveBanners =
             new java.util.ArrayList<java.lang.ref.WeakReference<View>>();
@@ -108,6 +112,7 @@ public final class AdManager {
     public static void resetForTestMode() { inited = false; }
 
     public static void init(final Activity activity) {
+        hookLifecycle(activity);
         if (!Ads.SDK_READY) return;
         // Sahip modunda reklamlar kapatıldıysa SDK'ya hiç istek gitmez.
         adsOffFlag = Prefs.adsOff(activity);
@@ -271,6 +276,15 @@ public final class AdManager {
      */
     public static void wrap(final Activity activity, View content, final String key,
                             final boolean usage) {
+        wrap(activity, content, key, usage, false);
+    }
+
+    /**
+     * withStrip: v10.01'den itibaren yok sayılır — serit + banner HER ekranda ayni
+     * bicimde eklenir (bottomBar). Eski cagrilar bozulmasin diye parametre duruyor.
+     */
+    public static void wrap(final Activity activity, View content, final String key,
+                            final boolean usage, final boolean withStrip) {
         try {
             LinearLayout holder = new LinearLayout(activity);
             holder.setOrientation(LinearLayout.VERTICAL);
@@ -279,8 +293,12 @@ public final class AdManager {
                     ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
             holder.addView(content);
             if (usage) holder.addView(usageBar(activity));
-            View ad = banner(activity);
-            if (ad != null) holder.addView(ad);
+            // v10.01 — KALICI COZUM: "reklam izle" seridi ile banner artik AYNI yuvada degil.
+            // v10.00'a kadar serit, banner dolmadiginda onun YERINE geciyordu; banner dolunca
+            // da serit gizleniyordu. Kullanici ayni ekranda bazen serit, bazen banner goruyordu.
+            // Artik: serit her zaman en ustte, banner alani her zaman onun ALTINDA ve ayri.
+            View bottom = bottomBar(activity);
+            if (bottom != null) holder.addView(bottom);
             // sistem gezinme cubugu (jest cubugu) banner'in uzerine binmesin:
             // ekranin altina cubuk yuksekligi kadar bosluk birak
             holder.setOnApplyWindowInsetsListener(new View.OnApplyWindowInsetsListener() {
@@ -327,12 +345,12 @@ public final class AdManager {
         t.setTextSize(11f);
         t.setTextColor(Color.parseColor("#8FA0B5"));
         t.setPadding(dp(a, 10), dp(a, 4), dp(a, 10), dp(a, 4));
-        t.setText("📶 Bugün kullanılan veri: " + human(Prefs.todayBytes(a)));
+        t.setText(Lang.t(a, "usage_today") + human(Prefs.todayBytes(a)));
         final Handler h = new Handler(Looper.getMainLooper());
         final Runnable r = new Runnable() {
             @Override public void run() {
                 if (!t.isAttachedToWindow()) return;
-                t.setText("📶 Bugün kullanılan veri: " + human(Prefs.todayBytes(a)));
+                t.setText(Lang.t(a, "usage_today") + human(Prefs.todayBytes(a)));
                 h.postDelayed(this, 5000);
             }
         };
@@ -346,7 +364,15 @@ public final class AdManager {
      * boylece ekranin altinda bosluk kalmaz.
      */
     public static View banner(final Activity activity) {
-        // Banner her zaman gosterilir: 20 dk reklamsiz sure yalnizca video (gecis) reklamini kaldirir.
+        return banner(activity, true);
+    }
+
+    /**
+     * withHouse=false: turuncu "reklamsiz" seridi EKLENMEZ; yalnizca reklam alani doner.
+     * Oynatici ekranlari bunu kullanir (serit banner'in USTUNDE ayri durur, v10.00).
+     */
+    public static View banner(final Activity activity, final boolean withHouse) {
+        // Banner her zaman gosterilir: reklamsiz sure yalnizca video (gecis) reklamini kaldirir.
         if (!Ads.SDK_READY) return null;
         adsOffFlag = Prefs.adsOff(activity);
         if (adsOffFlag) return null;
@@ -356,69 +382,44 @@ public final class AdManager {
             final android.widget.FrameLayout holder = new android.widget.FrameLayout(activity);
             holder.setLayoutParams(new LinearLayout.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
-            // Yükseklik her zaman dursun: reklam yüklenirken/yüklenemezken bar kaybolmasın.
+            // Yukseklik her zaman dursun: reklam yuklenirken/yuklenemezken bar kaybolmasin.
             holder.setMinimumHeight(dp(activity, 56));
             holder.setBackgroundColor(Color.parseColor("#0B1220"));
             liveBanners.add(new java.lang.ref.WeakReference<View>(holder));
 
-            final TextView house = houseBar(activity);
-            // M-43: şerit banner alanına yapışıktı; banner yüklenirken/başarısızken
-            // kullanıcı banner yerine şeride dokunup farkında olmadan reklam açıyordu.
-            android.widget.FrameLayout.LayoutParams houseLp =
-                    new android.widget.FrameLayout.LayoutParams(
-                            ViewGroup.LayoutParams.MATCH_PARENT,
-                            ViewGroup.LayoutParams.WRAP_CONTENT);
-            houseLp.topMargin = dp(activity, 6);
-            holder.addView(house, houseLp);
+            // v10.01: Bu alan artik "reklam izle" seridine DONUSMEZ. Reklam dolmazsa
+            // sessiz bir yer tutucu kalir; serit ise her zaman bunun USTUNDE ayri durur.
+            final View placeholder = adPlaceholder(activity);
+            holder.addView(placeholder, new android.widget.FrameLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
 
-            // M-03: rıza yoksa reklam isteği GÖNDERİLMEZ. Yerine kendi tanıtım barımız kalır;
-            // rıza sonradan gelirse AdManager bekleyen banner'ı yükler.
+            final BannerSlot slot = new BannerSlot(activity, holder, placeholder);
+            synchronized (slots) {
+                for (int i = slots.size() - 1; i >= 0; i--) {
+                    Activity a = slots.get(i).activity.get();
+                    if (a == null || a.isFinishing()) slots.remove(i);
+                }
+                slots.add(slot);
+            }
+
+            // v10.02: ekran geri geldiginde (baska uygulama, tam ekran reklam, donma sonrasi)
+            // reklam yoksa yeniden istenir. Kullanici "bir sure sonra banner gitti, bir daha
+            // gelmedi" diyordu; tek seferlik deneme yetmiyor.
+            holder.addOnAttachStateChangeListener(new View.OnAttachStateChangeListener() {
+                @Override public void onViewAttachedToWindow(View v) {
+                    if (!slot.loaded) loadBanner(slot, 0, 0);
+                }
+
+                @Override public void onViewDetachedFromWindow(View v) { }
+            });
+
+            // M-03: riza yoksa reklam istegi GONDERILMEZ. Riza sonra gelirse bekleyen
+            // banner yuklenir (flushPendingBanners).
             final Runnable loader = new Runnable() {
                 @Override public void run() {
-                    if (!adsAllowed || holder.getChildCount() == 0) return;
-                    try {
-                        final AdView view = new AdView(activity);
-                        view.setAdUnitId(Ads.BANNER);
-                        float density = activity.getResources().getDisplayMetrics().density;
-                        int widthDp = (int) (activity.getResources()
-                                .getDisplayMetrics().widthPixels / density);
-                        AdSize size = AdSize
-                                .getCurrentOrientationAnchoredAdaptiveBannerAdSize(activity, widthDp);
-                        view.setAdSize(size != null ? size : AdSize.BANNER);
-                        holder.addView(view, 0, new android.widget.FrameLayout.LayoutParams(
-                                ViewGroup.LayoutParams.MATCH_PARENT,
-                                size != null ? size.getHeightInPixels(activity) : dp(activity, 56)));
-                        // Kendi barımız reklam GERÇEKTEN yükleninceye kadar kalsın.
-                        house.setVisibility(View.VISIBLE);
-                        view.setAdListener(new com.google.android.gms.ads.AdListener() {
-                            @Override public void onAdLoaded() {
-                                house.setVisibility(View.GONE);
-                                view.setVisibility(View.VISIBLE);
-                            }
-
-                            @Override public void onAdImpression() {
-                                AdStats.note(activity, "banner");
-                            }
-
-                            @Override public void onAdFailedToLoad(LoadAdError error) {
-                                // Etiket yanlıştı: banner hatası "geçiş reklamı" diye yazılıyordu.
-                                lastBannerError = reason(error);
-                                // Aynı hata her ekranda tekrar yazılmasın: 30 dakikada bir kaydet.
-                                CrashLog.eventThrottled(activity, "ad", "banner",
-                                        "banner yüklenemedi: " + reason(error), 30L * 60L * 1000L);
-                                Log.w(TAG, "banner dolmadi, kendi barimiz: " + error.getMessage());
-                                view.setVisibility(View.GONE);
-                                house.setVisibility(View.VISIBLE);
-                            }
-                        });
-                        view.loadAd(new AdRequest.Builder().build());
-                    } catch (Throwable t) {
-                        Log.w(TAG, "banner yuklenemedi: " + t);
-                        house.setVisibility(View.VISIBLE);
-                    }
+                    loadBanner(slot, 0, 0);
                 }
             };
-
             if (adsAllowed) {
                 loader.run();
             } else {
@@ -433,36 +434,372 @@ public final class AdManager {
         }
     }
 
-    /** Reklam dolmadiginda gosterilen kendi barimiz (bos yer birakmamak icin). */
-    private static TextView houseBar(final Activity a) {
+    /**
+     * Bir ekrandaki banner yuvasi. Yuva acik kaldigi surece reklam periyodik olarak
+     * yeniden istenir; "NO_FILL" yuzunden ekran bir daha reklam gormez hale gelmez.
+     */
+    private static final class BannerSlot {
+        final java.lang.ref.WeakReference<Activity> activity;
+        final android.widget.FrameLayout holder;
+        final View placeholder;
+        volatile boolean loaded = false;
+        /** Bu yuvada istek uçuyor mu? Aynı yuvaya ikinci istek gitmesin. */
+        volatile boolean loading = false;
+        /** Üst üste başarısız deneme sayısı (NO_FILL sayacı). */
+        int fails = 0;
+        /** v10.04: NO_FILL sonrası alan gizlendi mi? */
+        boolean hidden = false;
+        /** Bekleyen yeniden deneme (ekran arkaya gidince iptal edilir). */
+        Runnable retry = null;
+        /** Ekran arkada (onPause/onStop) — bu sirada reklam istenmez. */
+        boolean paused = false;
+        BannerSlot(Activity a, android.widget.FrameLayout h, View p) {
+            activity = new java.lang.ref.WeakReference<Activity>(a);
+            holder = h;
+            placeholder = p;
+        }
+    }
+
+    private static final java.util.List<BannerSlot> slots =
+            new java.util.ArrayList<BannerSlot>();
+
+    /**
+     * Banner'i yukler. Ekran henuz pencereye bagli degilse kisa sure bekler (banner
+     * `setContentView` oncesi kuruluyor), dolmazsa tekrar dener.
+     */
+    private static void loadBanner(final BannerSlot slot, final int attempt, final int wait) {
+        final Activity activity = slot == null ? null : slot.activity.get();
+        if (activity == null || activity.isFinishing() || activity.isDestroyed()) return;
+        if (!adsAllowed) return;
+        if (slot.paused) return;                    // ekran arkada: istek yok
+        if (!Net.online(activity)) {                // internet yok: ag gelince TEK istek
+            whenOnline(slot);
+            return;
+        }
+        if (slot.loading) return;                   // ayni yuvaya ikinci istek gitmesin
+        final android.widget.FrameLayout holder = slot.holder;
+        if (!holder.isAttachedToWindow()) {
+            if (wait >= 20) return;      // ~2,5 saniye bekledik
+            try {
+                holder.postDelayed(new Runnable() {
+                    @Override public void run() { loadBanner(slot, attempt, wait + 1); }
+                }, 120L);
+            } catch (Throwable ignored) { }
+            return;
+        }
+        try {
+            // Ayni yuvada ust uste reklam birikmesin.
+            for (int i = holder.getChildCount() - 1; i >= 0; i--) {
+                View c = holder.getChildAt(i);
+                if (c instanceof AdView) {
+                    holder.removeView(c);
+                    try { ((AdView) c).destroy(); } catch (Throwable ignored) { }
+                }
+            }
+            final AdView view = new AdView(activity);
+            view.setAdUnitId(Ads.BANNER);
+            float density = activity.getResources().getDisplayMetrics().density;
+            int widthDp = (int) (activity.getResources()
+                    .getDisplayMetrics().widthPixels / density);
+            AdSize size = AdSize
+                    .getCurrentOrientationAnchoredAdaptiveBannerAdSize(activity, widthDp);
+            view.setAdSize(size != null ? size : AdSize.BANNER);
+            int h = size != null ? size.getHeightInPixels(activity) : dp(activity, 56);
+            view.setVisibility(View.GONE);
+            slot.loading = true;
+            holder.addView(view, 0, new android.widget.FrameLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, h));
+            view.setAdListener(new com.google.android.gms.ads.AdListener() {
+                @Override public void onAdLoaded() {
+                    slot.loaded = true;
+                    slot.loading = false;
+                    slot.fails = 0;                 // v10.04: doluluk geri geldi
+                    showSlot(slot, activity);       // gizlenmiş alan geri açılır
+                    slot.placeholder.setVisibility(View.GONE);
+                    view.setVisibility(View.VISIBLE);
+                }
+
+                @Override public void onAdImpression() {
+                    AdStats.note(activity, "banner");
+                }
+
+                @Override public void onAdFailedToLoad(LoadAdError error) {
+                    slot.loaded = false;
+                    slot.loading = false;
+                    slot.fails++;
+                    lastBannerError = reason(error);
+                    // Ayni hata her ekranda tekrar yazilmasin: 30 dakikada bir kaydet.
+                    CrashLog.eventThrottled(activity, "ad", "banner",
+                            "banner yuklenemedi: " + reason(error), 30L * 60L * 1000L);
+                    Log.w(TAG, "banner dolmadi (deneme " + (attempt + 1) + "): " + error.getMessage());
+                    try {
+                        holder.removeView(view);
+                        view.destroy();
+                    } catch (Throwable ignored) { }
+                    // v10.04 (A-01): NO_FILL'de 56dp'lik bos gri kutu BIRAKMA.
+                    // Ilk denemede yer tutucu kalsin (reklam geliyor olabilir); ikinci
+                    // başarısızlıktan sonra alan tamamen gizlenir, doluluk gelince geri acilir.
+                    // Sebep: kullanici "banner gitti / bosluk var" goruyordu.
+                    if (slot.fails >= 2) {
+                        hideSlot(slot);
+                    } else {
+                        slot.placeholder.setVisibility(View.VISIBLE);
+                    }
+                    retryBanner(slot, attempt + 1);
+                }
+            });
+            view.loadAd(new AdRequest.Builder().build());
+        } catch (Throwable t) {
+            slot.loading = false;
+            Log.w(TAG, "banner yuklenemedi: " + t);
+            retryBanner(slot, attempt + 1);
+        }
+    }
+
+    /** v10.04 (A-01): doluluk yokken reklam alanını tamamen gizle (boş kutu kalmasın). */
+    private static void hideSlot(final BannerSlot slot) {
+        if (slot == null) return;
+        slot.hidden = true;
+        try {
+            slot.holder.setMinimumHeight(0);
+            slot.holder.setVisibility(View.GONE);
+        } catch (Throwable ignored) { }
+    }
+
+    /** v10.04: reklam gelince gizlenmiş alanı eski yüksekliğiyle geri aç. */
+    private static void showSlot(final BannerSlot slot, final Activity activity) {
+        if (slot == null || !slot.hidden) return;
+        slot.hidden = false;
+        try {
+            slot.holder.setMinimumHeight(dp(activity, 56));
+            slot.holder.setVisibility(View.VISIBLE);
+        } catch (Throwable ignored) { }
+    }
+
+    /**
+     * Reklam dolmadiysa tekrar dener. Deneme sayisi SINIRSIZ ama aralik buyur
+     * (15 sn -> 30 sn -> 60 sn -> 90 sn): uygulama acik kaldigi surece banner
+     * sansini tekrar elde eder, pil/istek firtinasi da olmaz.
+     */
+    private static void retryBanner(final BannerSlot slot, final int attempt) {
+        if (slot == null) return;
+        cancelRetry(slot);
+        if (slot.paused) return;                     // onResume'da yeniden denenecek
+        final Activity a0 = slot.activity.get();
+        if (a0 == null || a0.isFinishing() || a0.isDestroyed()) return;
+        if (!adsAllowed) return;
+        if (!Net.online(a0)) { whenOnline(slot); return; }
+        long delay;
+        if (attempt <= 1) delay = 15000L;
+        else if (attempt == 2) delay = 30000L;
+        else if (attempt == 3) delay = 60000L;
+        else delay = 90000L;
+        Runnable r = new Runnable() {
+            @Override public void run() {
+                if (slot.retry != this) return;      // iptal edilmis
+                slot.retry = null;
+                try {
+                    Activity a = slot.activity.get();
+                    if (a == null || a.isFinishing() || a.isDestroyed()) return;
+                    if (slot.paused || !adsAllowed()) return;
+                    loadBanner(slot, attempt, 0);
+                } catch (Throwable ignored) { }
+            }
+        };
+        slot.retry = r;
+        try { retryHandler.postDelayed(r, delay); } catch (Throwable ignored) { }
+    }
+
+    private static void cancelRetry(BannerSlot slot) {
+        if (slot == null || slot.retry == null) return;
+        try { retryHandler.removeCallbacks(slot.retry); } catch (Throwable ignored) { }
+        slot.retry = null;
+    }
+
+    /** Internet yokken ağ gelince TEK kez dener (sürekli yoklama yapmaz). */
+    private static void whenOnline(final BannerSlot slot) {
+        final Activity a = slot.activity.get();
+        if (a == null) return;
+        try {
+            final android.net.ConnectivityManager cm =
+                    (android.net.ConnectivityManager) a.getApplicationContext()
+                            .getSystemService(Context.CONNECTIVITY_SERVICE);
+            if (cm == null) return;
+            cm.registerDefaultNetworkCallback(new android.net.ConnectivityManager.NetworkCallback() {
+                @Override public void onAvailable(android.net.Network n) {
+                    try { cm.unregisterNetworkCallback(this); } catch (Throwable ignored) { }
+                    retryHandler.post(new Runnable() {
+                        @Override public void run() {
+                            Activity act = slot.activity.get();
+                            if (act == null || act.isFinishing() || act.isDestroyed()) return;
+                            if (slot.paused || !adsAllowed()) return;
+                            loadBanner(slot, 0, 0);
+                        }
+                    });
+                }
+            });
+        } catch (Throwable ignored) { }
+    }
+
+    /** Ekran arkaya gitti: bekleyen denemeler iptal, yuva işaretlenir. */
+    private static void pauseBanners(Activity a) {
+        synchronized (slots) {
+            for (BannerSlot s : slots) {
+                if (s.activity.get() != a) continue;
+                s.paused = true;
+                cancelRetry(s);
+            }
+        }
+    }
+
+    /** Ekran öne geldi: reklam yoksa hemen yeniden dene. */
+    private static void resumeBanners(Activity a) {
+        synchronized (slots) {
+            for (BannerSlot s : slots) {
+                if (s.activity.get() != a) continue;
+                s.paused = false;
+                if (!s.loaded) loadBanner(s, 0, 0);
+            }
+        }
+    }
+
+    /** Ekran kapandı: yuvalar ve bekleyen denemeler temizlenir. */
+    private static void dropSlots(Activity a) {
+        synchronized (slots) {
+            for (int i = slots.size() - 1; i >= 0; i--) {
+                Activity x = slots.get(i).activity.get();
+                if (x == null || x == a) { cancelRetry(slots.get(i)); slots.remove(i); }
+            }
+        }
+    }
+
+    /** v10.03: banner istekleri ekranın yaşam döngüsüne bağlanır (onPause = istek yok). */
+    private static void hookLifecycle(Activity activity) {
+        if (lifecycleHooked || activity == null) return;
+        try {
+            android.app.Application app = activity.getApplication();
+            if (app == null) return;
+            lifecycleHooked = true;
+            app.registerActivityLifecycleCallbacks(
+                    new android.app.Application.ActivityLifecycleCallbacks() {
+                @Override public void onActivityCreated(Activity a, android.os.Bundle b) { }
+                @Override public void onActivityStarted(Activity a) { }
+                @Override public void onActivityResumed(Activity a) { resumeBanners(a); }
+                @Override public void onActivityPaused(Activity a) { pauseBanners(a); }
+                @Override public void onActivityStopped(Activity a) { pauseBanners(a); }
+                @Override public void onActivitySaveInstanceState(Activity a, android.os.Bundle b) { }
+                @Override public void onActivityDestroyed(Activity a) { dropSlots(a); }
+            });
+        } catch (Throwable t) {
+            Log.w(TAG, "yasam dongusu kancasi kurulamadi: " + t);
+        }
+    }
+
+    /**
+     * Ekranin banner'i varsa hemen tazele (tam ekran reklam kapandi, kanal degisti,
+     * uygulama one geldi). Reklam zaten duruyorsa dokunulmaz.
+     */
+    public static void refreshBanners(final Activity activity) {
+        if (activity == null || !Ads.SDK_READY || !adsAllowed()) return;
+        synchronized (slots) {
+            for (BannerSlot s : new java.util.ArrayList<BannerSlot>(slots)) {
+                Activity a = s.activity.get();
+                if (a != activity) continue;
+                if (s.loaded || s.paused) continue;
+                try { loadBanner(s, 0, 0); } catch (Throwable ignored) { }
+            }
+        }
+    }
+
+    /** Reklam alani yer tutucusu: alan asla cokmesin, seritle karismasin. */
+    private static View adPlaceholder(final Activity a) {
         TextView t = new TextView(a);
-        t.setTextSize(12f);
-        // 9.77: şerit sarıydı, uygulamanın geri kalanı turuncu (ACCENT).
+        t.setTextSize(10.5f);
+        t.setTextColor(Color.parseColor("#5A6B80"));
+        t.setGravity(android.view.Gravity.CENTER);
+        t.setMinHeight(dp(a, 56));
+        t.setPadding(dp(a, 12), dp(a, 8), dp(a, 12), dp(a, 8));
+        t.setBackgroundColor(Color.parseColor("#0B1220"));
+        t.setText(Lang.t(a, "ad_space"));   // v10.04 (Paket C): arayüz diline bağlı
+        return t;
+    }
+
+    /**
+     * Izleme ekranlari icin alt bar (v10.00 -> v10.01):
+     *   en ustte kalici "reklam izle" seridi, ALTINDA kalici banner alani.
+     * Ayni yapi butun ekranlarda kullanilir (ana sayfa, ayarlar, radyo, coklu ekran...):
+     * serit ile banner birbirinin yerine GECMEZ.
+     */
+    public static View bannerWithStrip(final Activity activity) {
+        return bottomBar(activity);
+    }
+
+    /** Serit + banner'in tek kurucusu. Reklam yoksa null (yer kaplamaz). */
+    public static View bottomBar(final Activity activity) {
+        if (!Ads.SDK_READY) return null;
+        adsOffFlag = Prefs.adsOff(activity);
+        if (adsOffFlag) return null;
+        if (Prefs.subActive(activity)) return null;   // abone: ne serit ne banner
+        try {
+            LinearLayout col = new LinearLayout(activity);
+            col.setOrientation(LinearLayout.VERTICAL);
+            col.setBackgroundColor(Color.parseColor("#060B14"));
+            TextView strip = adFreeStrip(activity);
+            if (strip != null) col.addView(strip);
+            View ad = banner(activity, false);
+            if (ad != null) col.addView(ad);
+            return col;
+        } catch (Throwable t) {
+            Log.w(TAG, "serit+banner hatasi: " + t);
+            return null;
+        }
+    }
+
+    /** Ince turuncu serit: "Reklam izle · 15 dk reklamsiz" / "Reklamsız · N dk kaldı". */
+    private static TextView adFreeStrip(final Activity a) {
+        final TextView t = new TextView(a);
+        t.setTextSize(11.5f);
         t.setTextColor(Color.WHITE);
         t.setBackgroundColor(Color.parseColor("#FF7A18"));
-        t.setPadding(dp(a, 12), dp(a, 10), dp(a, 12), dp(a, 10));
+        t.setPadding(dp(a, 12), dp(a, 5), dp(a, 12), dp(a, 5));
         t.setGravity(android.view.Gravity.CENTER);
-        t.setText("▶  Reklam izle · " + Ads.REWARD_MINUTES + " dk reklamsız");
+        stripText(t, a);
         t.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View v) {
                 showRewarded(a, new Runnable() {
                     @Override public void run() {
-                        // M-42: recreate() yayını/ekranı baştan başlatıyordu; şerit yerinde güncellenir.
-                        t.setText("✅ Reklamsız · " + adFreeMinutesLeft(a) + " dk");
+                        stripText(t, a);
                         android.widget.Toast.makeText(a,
-                                "Teşekkürler! " + Ads.REWARD_MINUTES + " dakika reklamsız.",
+                                String.format(Lang.t(a, "ad_thanks"), Ads.REWARD_MINUTES),
                                 android.widget.Toast.LENGTH_LONG).show();
                     }
                 }, new Runnable() {
                     @Override public void run() {
-                        android.widget.Toast.makeText(a,
-                                "Reklam şu an hazır değil, biraz sonra tekrar dene",
+                        android.widget.Toast.makeText(a, Lang.t(a, "ad_not_ready"),
                                 android.widget.Toast.LENGTH_SHORT).show();
                     }
                 });
             }
         });
+        // Kalan dakika sessizce guncellensin (akan yayinda kullanici bir sey yapmiyor).
+        final Handler h = new Handler(Looper.getMainLooper());
+        final Runnable tick = new Runnable() {
+            @Override public void run() {
+                if (!t.isAttachedToWindow()) return;
+                stripText(t, a);
+                h.postDelayed(this, 30000);
+            }
+        };
+        h.postDelayed(tick, 30000);
         return t;
+    }
+
+    private static void stripText(TextView t, Activity a) {
+        int left = adFreeMinutesLeft(a);
+        // v10.04 (Paket C): şerit metni arayüz diline bağlı
+        t.setText(left > 0
+                ? String.format(Lang.t(a, "ad_free_left"), left)
+                : String.format(Lang.t(a, "ad_watch"), Ads.REWARD_MINUTES));
     }
 
     /**
@@ -517,6 +854,7 @@ public final class AdManager {
             @Override public void onAdDismissedFullScreenContent() {
                 showingAd = false;
                 loadInterstitial(activity);
+                refreshBanners(activity);   // tam ekran reklam banner'i bosaltmasin (v10.02)
                 then.run();
             }
 
@@ -579,6 +917,7 @@ public final class AdManager {
         ad.setFullScreenContentCallback(new FullScreenContentCallback() {
             @Override public void onAdDismissedFullScreenContent() {
                 loadRewarded(activity);
+                refreshBanners(activity);   // odullu reklam sonrasi banner geri gelsin (v10.02)
             }
 
             @Override public void onAdFailedToShowFullScreenContent(AdError error) {

@@ -1,0 +1,22 @@
+#EXTM3U
+# UMAY Multi TV — gömülü uluslararası başlangıç paketi (v10.04 / Paket B)
+# Kural: yalnızca hakları serbest/global yayın yapan, coğrafi kilit uygulamayan
+# kamu yayıncıları ve ücretsiz FAST kanalları. Ticari/lisanslı büyük kanallar
+# (BBC, RTL, ABC, NBC, FOX vb.) TELİF nedeniyle buraya EKLENMEZ.
+# Son ölçüm: 27 Kasım 2026 — 8/8 adres HTTP 200 + #EXTM3U döndü.
+#EXTINF:-1 tvg-country="intl" group-title="Uluslararası",DW English
+https://dwamdstream102.akamaized.net/hls/live/2015525/dwstream102/index.m3u8
+#EXTINF:-1 tvg-country="intl" group-title="Uluslararası",France 24 English
+https://static.france24.com/live/F24_EN_LO_HLS/live_web.m3u8
+#EXTINF:-1 tvg-country="intl" group-title="Uluslararası",France 24 Français
+https://static.france24.com/live/F24_FR_HI_HLS/live_web.m3u8
+#EXTINF:-1 tvg-country="intl" group-title="Uluslararası",France 24 Español
+https://static.france24.com/live/F24_ES_HI_HLS/live_web.m3u8
+#EXTINF:-1 tvg-country="intl" group-title="Uluslararası",France 24 العربية
+https://static.france24.com/live/F24_AR_HI_HLS/live_web.m3u8
+#EXTINF:-1 tvg-country="intl" group-title="Uluslararası",TRT World
+https://tv-trtworld.medya.trt.com.tr/master.m3u8
+#EXTINF:-1 tvg-country="intl" group-title="Uluslararası",NASA TV
+https://ntv1.akamaized.net/hls/live/2014075/NASA-NTV1-HLS/master.m3u8
+#EXTINF:-1 tvg-country="intl" group-title="Uluslararası",Red Bull TV
+https://rbmn-live.akamaized.net/hls/live/590964/BoRB-AT/master.m3u8

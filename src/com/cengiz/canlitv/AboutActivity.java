@@ -77,7 +77,16 @@ public class AboutActivity extends Activity {
         head.addView(close);
         body.addView(head);
 
-        p(body, "Sürüm " + version() + " · Yabanarısı tarafından geliştirildi", MUTED, 12);
+        p(body, I18n.t(this, "Sürüm ") + version()
+                + I18n.t(this, " · Yabanarısı tarafından geliştirildi"), MUTED, 12);
+
+        // v10.04 (Paket C-3): Türkçe dışındaki 7 dilde kısa, çevrilmiş tanıtım gösterilir.
+        if (!"tr".equals(Prefs.uiLang(this))) {
+            worldBody(body);
+            addButtons(body);
+            AdManager.wrap(this, scroll);
+            return;
+        }
 
         final String cc = Prefs.country(this);
         final boolean tr = "tr".equals(cc);
@@ -180,7 +189,7 @@ public class AboutActivity extends Activity {
                 + "Mesajında telefon modelini ve hangi kanalda sorun olduğunu yazarsan daha hızlı çözeriz.", TEXT, 13);
 
         Button mail = new Button(this);
-        mail.setText("✉  E-posta gönder\n" + MAIL);
+        mail.setText(I18n.t(this, "✉  E-posta gönder\n") + MAIL);
         mail.setAllCaps(false);
         mail.setTextColor(Color.parseColor("#0B1220"));
         GradientDrawable mbg = new GradientDrawable();
@@ -210,16 +219,18 @@ public class AboutActivity extends Activity {
         wa.setBackground(wbg);
         {
             if (WHATSAPP == null || WHATSAPP.length() < 10) {
-                wa.setText("💬  WhatsApp (numara henüz eklenmedi)\nŞimdilik e-posta kullanabilirsin");
+                wa.setText(I18n.t(this, "💬  WhatsApp (numara henüz eklenmedi)\n"
+                        + "Şimdilik e-posta kullanabilirsin"));
                 wa.setOnClickListener(new View.OnClickListener() {
                     @Override public void onClick(View v) {
                         Toast.makeText(AboutActivity.this,
-                                "WhatsApp numarası eklendiğinde buradan tek dokunuşla yazabileceksin.",
+                                I18n.t(AboutActivity.this,
+                                        "WhatsApp numarası eklendiğinde buradan tek dokunuşla yazabileceksin."),
                                 Toast.LENGTH_LONG).show();
                     }
                 });
             } else {
-                wa.setText("💬  WhatsApp'tan yaz");
+                wa.setText(I18n.t(this, "💬  WhatsApp'tan yaz"));
                 wa.setOnClickListener(new View.OnClickListener() {
                     @Override public void onClick(View v) {
                         try {
@@ -227,7 +238,7 @@ public class AboutActivity extends Activity {
                                     Uri.parse("https://wa.me/" + WHATSAPP)));
                         } catch (Exception e) {
                             Toast.makeText(AboutActivity.this,
-                                    "WhatsApp kurulu değil", Toast.LENGTH_SHORT).show();
+                                    I18n.t(AboutActivity.this, "WhatsApp kurulu değil"), Toast.LENGTH_SHORT).show();
                         }
                     }
                 });
@@ -236,7 +247,7 @@ public class AboutActivity extends Activity {
         body.addView(wa, lp());
 
         Button close2 = new Button(this);
-        close2.setText("Kapat");
+        close2.setText(I18n.t(this, "Kapat"));
         close2.setAllCaps(false);
         close2.setTextColor(TEXT);
         GradientDrawable c2 = new GradientDrawable();
@@ -249,6 +260,74 @@ public class AboutActivity extends Activity {
         body.addView(close2, lp());
 
         AdManager.wrap(this, scroll);
+    }
+
+    /**
+     * v10.04 (Paket C-3): Türkçe dışındaki diller için çevrilmiş tanıtım gövdesi.
+     * Metinler assets/i18n.tsv'den gelir; anahtar Türkçe cümledir.
+     */
+    private void worldBody(LinearLayout body) {
+        h(body, I18n.t(this, "Bu program ne yapar?"));
+        p(body, I18n.t(this, "UMAY Multi TV, internet üzerinden canlı televizyon ve radyo izlemek için yapılmış bir Android uygulamasıdır. Üyelik istemez, kredi kartı istemez; açtığın anda yayın başlar."), TEXT, 13);
+
+        h(body, I18n.t(this, "Ülke ve dil"));
+        p(body, I18n.t(this, "Ülke listesi sunucudan indirilir ve telefonda saklanır; ilk açılışta birkaç saniye sürebilir. Aynı anda tek ülkenin listesi yüklenir; ülke değişince liste değişir. Favoriler ve kendi eklediğin kanallar silinmez. Türk kanalları için Ayarlar → Ülke → Türkiye seç."), TEXT, 13);
+
+        h(body, I18n.t(this, "Öne çıkan özellikler"));
+        bullet(body, I18n.t(this, "Canlı TV: tek dokunuşla yayın, kalite seçimi (240p–1080p), 360p varsayılan."));
+        bullet(body, I18n.t(this, "Radyo: ekran kapalıyken çalar, kilit ekranından durdur/kanal değiştir."));
+        bullet(body, I18n.t(this, "3'lü izleme: aynı ekranda üç kanalı birden aç. Kayıt: izlediğin yayını telefona kaydet."));
+        bullet(body, I18n.t(this, "Favoriler, kanal düzenleme, numara değiştirme, kendi kanalını/M3U dosyanı ekleme. Veri sayacı ve ekonomi modu."));
+
+        h(body, I18n.t(this, "Kanal açılmıyor mu?"));
+        p(body, I18n.t(this, "İnternet yayınları bazen durur: reklam kuşağı, adres (IP) değişikliği veya kanalın kapanması. 10-20 saniye bekleyip yeniden dene, başka kanal seç veya Ayarlar → Ölü kanalları onar. Bu bir arıza değildir."), TEXT, 13);
+
+        h(body, I18n.t(this, "Gizlilik ve reklamlar"));
+        p(body, I18n.t(this, "Uygulama hesap açmaz, ad/e-posta istemez, izleme geçmişini sunucuya göndermez. Tercihler yalnız telefonunda saklanır. Reklamlar Google AdMob üzerinden gösterilir; AB/İngiltere/İsviçre'de ilk açılışta rıza ekranı çıkar. Uygulama 13 yaş altına yönelik değildir."), TEXT, 13);
+
+        h(body, I18n.t(this, "Telif ve yayın kaynakları"));
+        p(body, I18n.t(this, "Kanal yayınları ilgili yayıncı kuruluşlara aittir. Uygulama yayınları yeniden yayınlamaz; yalnızca yayıncıların herkese açık internet adreslerini oynatır. Kaldırılmasını istiyorsan e-posta ile yaz; 24–48 saat içinde değerlendirilir."), TEXT, 13);
+
+        h(body, I18n.t(this, "Bize ulaş"));
+        p(body, I18n.t(this, "Öneri, şikâyet, hata bildirimi ve telif talepleri için doğrudan yazabilirsin. Telefon modelini ve hangi kanalda sorun olduğunu yazarsan daha hızlı çözeriz."), TEXT, 13);
+    }
+
+    /** v10.04 (Paket C-3): çevrilmiş gövdenin altındaki iletişim düğmeleri. */
+    private void addButtons(LinearLayout body) {
+        Button mail = new Button(this);
+        mail.setText(I18n.t(this, "✉  E-posta gönder\n") + MAIL);
+        mail.setAllCaps(false);
+        mail.setTextColor(Color.parseColor("#0B1220"));
+        GradientDrawable mbg = new GradientDrawable();
+        mbg.setColor(ACCENT);
+        mbg.setCornerRadius(dp(14));
+        mail.setBackground(mbg);
+        mail.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) {
+                try {
+                    Intent i = new Intent(Intent.ACTION_SENDTO);
+                    i.setData(Uri.parse("mailto:" + MAIL));
+                    i.putExtra(Intent.EXTRA_SUBJECT, "UMAY Multi TV · geri bildirim");
+                    startActivity(i);
+                } catch (Exception e) {
+                    Toast.makeText(AboutActivity.this, MAIL, Toast.LENGTH_LONG).show();
+                }
+            }
+        });
+        body.addView(mail, lp());
+
+        Button close = new Button(this);
+        close.setText(I18n.t(this, "Kapat"));
+        close.setAllCaps(false);
+        close.setTextColor(TEXT);
+        GradientDrawable c2 = new GradientDrawable();
+        c2.setColor(CARD);
+        c2.setCornerRadius(dp(14));
+        close.setBackground(c2);
+        close.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) { finish(); }
+        });
+        body.addView(close, lp());
     }
 
     private LinearLayout.LayoutParams lp() {

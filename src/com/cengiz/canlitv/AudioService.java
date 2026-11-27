@@ -53,6 +53,15 @@ public class AudioService extends Service {
     // --- gercek ekolayzir (AudioEffect) ---
     private static android.media.audiofx.Equalizer eq;
     private static final short[] LEVELS = new short[8];
+
+    /**
+     * v10.02 — gerçek zamanlı ses tayfı (0..1, 8 bant).
+     * Radyonun KENDİ çözdüğü PCM örneklerinden hesaplanır; mikrofon izni gerekmez,
+     * ses kaydedilmez. Ses yokken sıfıra iner, çalarken sesle birlikte hareket eder.
+     */
+    private static final float[] SPECTRUM = new float[8];
+
+    public static float[] spectrum() { return SPECTRUM; }
     private static AudioService INSTANCE;
 
     public static int[] eqRange() {
@@ -607,8 +616,26 @@ public class AudioService extends Service {
         CrashLog.event(this, "radio", "baglaniyor: " + candidate);
         try {
             // 9.97: zayıf Wi-Fi'de radyo takılması — sabırlı soket + büyük ses tamponu.
+            // v10.02: sesin gerçek seviyesini okumak için kendi ses hattımıza ölçüm
+            // parçası (LevelTap) ekliyoruz. PCM aynen geçer; sadece enerji hesaplanır.
+            final androidx.media3.exoplayer.DefaultRenderersFactory rf =
+                    new androidx.media3.exoplayer.DefaultRenderersFactory(this) {
+                        @Override protected androidx.media3.exoplayer.audio.AudioSink buildAudioSink(
+                                android.content.Context context, boolean enableFloatOutput,
+                                boolean enableAudioTrackPlaybackParams) {
+                            try {
+                                return new androidx.media3.exoplayer.audio.DefaultAudioSink.Builder(context)
+                                        .setAudioProcessorChain(new LevelChain())
+                                        .build();
+                            } catch (Throwable t) {
+                                android.util.Log.w("UmayRadio", "ses olcum hatti kurulamadi: " + t);
+                                return super.buildAudioSink(context, enableFloatOutput,
+                                        enableAudioTrackPlaybackParams);
+                            }
+                        }
+                    };
             final androidx.media3.exoplayer.ExoPlayer ex =
-                    new androidx.media3.exoplayer.ExoPlayer.Builder(this)
+                    new androidx.media3.exoplayer.ExoPlayer.Builder(this, rf)
                             .setMediaSourceFactory(Tune.source(Tune.http()))
                             .setLoadControl(Tune.liveAudio())
                             .build();
@@ -790,12 +817,17 @@ public class AudioService extends Service {
     private void attachEq() {
         try {
             if (eq != null) { eq.release(); eq = null; }
-            eq = new android.media.audiofx.Equalizer(0, 0);
+            // v10.02: oturum 0 (cihaz miksi) yerine KENDI yayinimizin oturumuna bagla;
+            // boylece fader'lar gercekten radyonun sesini degistirir.
+            int session = 0;
+            try { if (player != null) session = player.getAudioSessionId(); } catch (Throwable ignored) { }
+            eq = new android.media.audiofx.Equalizer(0, session);
             eq.setEnabled(true);
             short n = eq.getNumberOfBands();
             for (short i = 0; i < n && i < LEVELS.length; i++) {
                 if (LEVELS[i] != 0) eq.setBandLevel(i, LEVELS[i]);
             }
+            android.util.Log.i("UmayRadio", "eq baglandi oturum=" + session + " bant=" + n);
         } catch (Throwable ignored) { }
     }
 
@@ -825,4 +857,116 @@ public class AudioService extends Service {
 
     @Override
     public IBinder onBind(Intent intent) { return null; }
+
+    // ------------------- v10.02: ses seviyesi ölçümü -------------------
+
+    /** PCM'i aynen geçirir, bu arada 8 bantta enerji ölçer (mikrofon yok, kayıt yok). */
+    private static final class LevelTap
+            extends androidx.media3.common.audio.BaseAudioProcessor {
+
+        private static final float[] ALPHA =
+                {0.003f, 0.010f, 0.028f, 0.070f, 0.16f, 0.34f, 0.58f, 0.82f};
+        private final float[] lp = new float[8];
+        private final float[] peak = new float[8];
+        private final float[] acc = new float[8];
+        private int channels = 2;
+        private int frames = 0;
+        private boolean pcm = false;
+
+        @Override public AudioFormat onConfigure(AudioFormat input)
+                throws UnhandledAudioFormatException {
+            if (input.encoding != androidx.media3.common.C.ENCODING_PCM_16BIT) {
+                pcm = false;
+                throw new UnhandledAudioFormatException(input);
+            }
+            pcm = true;
+            channels = Math.max(1, input.channelCount);
+            return input;
+        }
+
+        @Override public void queueInput(java.nio.ByteBuffer inputBuffer) {
+            int remaining = inputBuffer.remaining();
+            if (remaining <= 0) return;
+            if (pcm) {
+                java.nio.ShortBuffer sb = inputBuffer.asShortBuffer();
+                int n = sb.remaining();
+                int ch = channels;
+                for (int i = 0; i + ch <= n; i += ch) {
+                    float x = 0f;
+                    for (int c = 0; c < ch; c++) x += sb.get(i + c);
+                    x /= (ch * 32768f);
+                    // 8 kademeli alçak geçiren süzgeç dizisi: komşu çıkışların farkı
+                    // o bandın enerjisini verir (bas -> tiz).
+                    for (int b = 0; b < 8; b++) lp[b] += (x - lp[b]) * ALPHA[b];
+                    acc[0] += lp[0] * lp[0];
+                    for (int b = 1; b < 7; b++) {
+                        float bandv = lp[b] - lp[b - 1];
+                        acc[b] += bandv * bandv;
+                    }
+                    float high = x - lp[7];
+                    acc[7] += high * high;
+                    frames++;
+                }
+            }
+            java.nio.ByteBuffer out = replaceOutputBuffer(remaining);
+            out.put(inputBuffer);
+            out.flip();
+            if (pcm && frames >= 1024) publish();
+        }
+
+        private void publish() {
+            for (int b = 0; b < 8; b++) {
+                float rms = (float) Math.sqrt(acc[b] / Math.max(1, frames));
+                // Otomatik ölçek: yayının kendi ses seviyesine göre normalize edilir,
+                // böylece sessiz kanalda da çubuklar görünür, yüksek seste taşmaz.
+                if (rms > peak[b]) peak[b] = rms;
+                else peak[b] = peak[b] * 0.985f;
+                float v = peak[b] <= 1e-7f ? 0f : Math.min(1f, rms / peak[b]);
+                v = (float) Math.pow(v, 0.55f);
+                SPECTRUM[b] = Math.max(SPECTRUM[b] * 0.55f, v);
+                acc[b] = 0f;
+            }
+            frames = 0;
+        }
+
+        @Override protected void onReset() {
+            for (int b = 0; b < 8; b++) { lp[b] = 0f; peak[b] = 0f; acc[b] = 0f; }
+            frames = 0;
+        }
+    }
+
+    /** Varsayılan ses işleyicileri korunur; başa ölçüm parçası eklenir. */
+    private static final class LevelChain
+            implements androidx.media3.exoplayer.audio.DefaultAudioSink.AudioProcessorChain {
+
+        private final androidx.media3.exoplayer.audio.DefaultAudioSink.AudioProcessorChain base =
+                new androidx.media3.exoplayer.audio.DefaultAudioSink.DefaultAudioProcessorChain();
+        private final LevelTap tap = new LevelTap();
+
+        @Override public androidx.media3.common.audio.AudioProcessor[] getAudioProcessors() {
+            androidx.media3.common.audio.AudioProcessor[] b = base.getAudioProcessors();
+            androidx.media3.common.audio.AudioProcessor[] all =
+                    new androidx.media3.common.audio.AudioProcessor[b.length + 1];
+            all[0] = tap;
+            System.arraycopy(b, 0, all, 1, b.length);
+            return all;
+        }
+
+        @Override public long getSkippedOutputFrameCount() {
+            return base.getSkippedOutputFrameCount();
+        }
+
+        @Override public long getMediaDuration(long playoutPositionUs) {
+            return base.getMediaDuration(playoutPositionUs);
+        }
+
+        @Override public androidx.media3.common.PlaybackParameters applyPlaybackParameters(
+                androidx.media3.common.PlaybackParameters p) {
+            return base.applyPlaybackParameters(p);
+        }
+
+        @Override public boolean applySkipSilenceEnabled(boolean enabled) {
+            return base.applySkipSilenceEnabled(enabled);
+        }
+    }
 }

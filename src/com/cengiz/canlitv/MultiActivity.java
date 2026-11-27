@@ -62,7 +62,7 @@ public class MultiActivity extends android.app.Activity {
         list = new ArrayList<Channel>(ChannelRepo.all(this));   // ülke değişse de bu ekran etkilenmesin
         // HATA (tur 1): boş listede idx % list.size() ArithmeticException veriyordu.
         if (list.isEmpty()) {
-            Toast.makeText(this, "Kanal listesi boş. Ayarlar → Ülke bölümünden liste indir.",
+            Toast.makeText(this, I18n.t(this, "Kanal listesi boş. Ayarlar → Ülke bölümünden liste indir."),
                     Toast.LENGTH_LONG).show();
             finish();
             return;
@@ -202,7 +202,8 @@ public class MultiActivity extends android.app.Activity {
                 ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
         panel.addView(clock, clp);
 
-        AdManager.wrap(this, root);
+        // v10.00: çoklu ekranda da en altta ince "reklamsız" şeridi + banner.
+        AdManager.wrap(this, root, null, Prefs.showUsage(this), true);
 
         for (int i = 0; i < 4; i++) slots[i].setChannel(idx[i] % list.size());
         applyAudio();
@@ -421,7 +422,7 @@ public class MultiActivity extends android.app.Activity {
         p.addView(brand);
 
         TextView sub = new TextView(this);
-        sub.setText("3 EKRAN · SES KONTROLÜ");
+        sub.setText(I18n.t(this, "3 EKRAN · SES KONTROLÜ"));
         sub.setTextColor(Color.parseColor("#C5CEDA"));
         sub.setTextSize(10);
         sub.setGravity(Gravity.CENTER);
@@ -459,7 +460,7 @@ public class MultiActivity extends android.app.Activity {
         }
 
         TextView hint = new TextView(this);
-        hint.setText("Pencereye dokun → kanal seç");
+        hint.setText(I18n.t(this, "Pencereye dokun → kanal seç"));
         hint.setTextColor(Color.parseColor("#8FA0B5"));
         hint.setTextSize(10);
         hint.setGravity(Gravity.CENTER);
@@ -489,12 +490,12 @@ public class MultiActivity extends android.app.Activity {
         }
         int s = Math.max(0, Math.min(3, slotNo - 1));
         if (slots[s].chan < 0 || slots[s].chan >= list.size()) {
-            Toast.makeText(this, "Bu ekranda kanal yok", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, I18n.t(this, "Bu ekranda kanal yok"), Toast.LENGTH_SHORT).show();
             return;
         }
         Channel c = list.get(slots[s].chan);
         if (!ChannelRepo.canRecord(c.name)) {
-            Toast.makeText(this, "Kayıt yalnız kamu kanallarında açık (TRT, TBMM, Diyanet)",
+            Toast.makeText(this, I18n.t(this, "Kayıt yalnız kamu kanallarında açık (TRT, TBMM, Diyanet)"),
                     Toast.LENGTH_LONG).show();
             return;
         }
@@ -519,7 +520,8 @@ public class MultiActivity extends android.app.Activity {
                 });
             }
         });
-        Toast.makeText(this, (s + 1) + ". ekran kaydediliyor (ses dahil)", Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, (s + 1) + I18n.t(this, ". ekran kaydediliyor (ses dahil)"),
+                Toast.LENGTH_SHORT).show();
     }
 
     private void saveSetDialog() {
@@ -536,7 +538,8 @@ public class MultiActivity extends android.app.Activity {
                         for (int i = 0; i < 4; i++) b.append(audible[i] ? "1" : "0");
                         b.append("|").append(paneCount).append("|").append(encodeUrls());
                         Prefs.saveMultiSet(MultiActivity.this, b.toString());
-                        Toast.makeText(MultiActivity.this, "Kaydedildi: " + name, Toast.LENGTH_SHORT).show();
+                        Toast.makeText(MultiActivity.this, I18n.t(MultiActivity.this, "Kaydedildi: ") + name,
+                                Toast.LENGTH_SHORT).show();
                     }
                 }).setNegativeButton("Vazgeç", null).show();
     }
@@ -769,8 +772,12 @@ public class MultiActivity extends android.app.Activity {
                 CountingDataSource.Sink sink = new CountingDataSource.Sink() {
                     @Override public void add(long n) { bytes.addAndGet(n); }
                 };
+                // v10.05: donanım çözücü çökerse yazılım çözücüye düş (üç pencere aynı anda açarken).
+                androidx.media3.exoplayer.DefaultRenderersFactory rfx =
+                        new androidx.media3.exoplayer.DefaultRenderersFactory(MultiActivity.this)
+                                .setEnableDecoderFallback(true);
                 final androidx.media3.exoplayer.ExoPlayer player =
-                        new androidx.media3.exoplayer.ExoPlayer.Builder(MultiActivity.this)
+                        new androidx.media3.exoplayer.ExoPlayer.Builder(MultiActivity.this, rfx)
                                 .setMediaSourceFactory(Tune.source(new CountingDataSource.Factory(http, sink)))
                                 .setLoadControl(Tune.liveVideo())
                                 .build();
@@ -815,7 +822,7 @@ public class MultiActivity extends android.app.Activity {
                 }
                 gen++;
                 attempt = 0;
-                label.setText("internet geri geldi · bağlanıyor…");
+                label.setText(I18n.t(MultiActivity.this, "internet geri geldi · bağlanıyor…"));
                 label.setVisibility(View.VISIBLE);
                 startAttempt();
             } catch (Throwable ignored) { }
@@ -952,7 +959,7 @@ public class MultiActivity extends android.app.Activity {
                             && !c.name.toLowerCase().contains(q)
                             && !c.group.toLowerCase().contains(q)
                             && !String.valueOf(c.no).equals(q)) continue;
-                    rows.add("№" + c.no + "  " + c.name + "   ·  " + c.group);
+                                                rows.add("№" + c.no + "  " + c.name + "   ·  " + Lang.group(MultiActivity.this, c.group));
                     idxx.add(i);
                 }
                 ad.notifyDataSetChanged();
@@ -1018,7 +1025,7 @@ public class MultiActivity extends android.app.Activity {
 
     private TextView chip(String s) {
         TextView t = new TextView(this);
-        t.setText(s);
+        t.setText(I18n.t(this, s));   // v10.05: çoklu ekran düğme etiketleri 8 dilde
         t.setTextColor(TEXT);
         t.setTextSize(12);
         t.setGravity(Gravity.CENTER);

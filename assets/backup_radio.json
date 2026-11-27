@@ -10,18 +10,18 @@
  "https://live.radyositesihazir.com:10997/;": [
   "https://live.radyositesihazir.com:10997/"
  ],
- "http://22343.live.streamtheworld.com:3690/SUPER_FMAAC_SC": [
+ "https://22343.live.streamtheworld.com/SUPER_FMAAC_SC": [
   "https://playerservices.streamtheworld.com/api/livestream-redirect/SUPER2_SC",
   "https://yayin.superfmradyo.com.tr/superfm/stream"
  ],
  "https://sslyayin.netyayin.net:6065/;": [
   "https://sslyayin.netyayin.net:6065/"
  ],
- "http://29341.live.streamtheworld.com:3690/METRO_FMAAC_SC": [
+ "https://29341.live.streamtheworld.com/METRO_FMAAC_SC": [
   "https://playerservices.streamtheworld.com/api/livestream-redirect/METRO_FM_SC?",
   "https://playerservices.streamtheworld.com/api/livestream-redirect/METROFMAAC.aac"
  ],
- "http://25443.live.streamtheworld.com:3690/JOY_FMAAC_SC": [
+ "https://25443.live.streamtheworld.com/JOY_FMAAC_SC": [
   "https://mmg.streamguys1.com/JoyFM-mp3?key=8689cc761932e3151f94ddbdbfdf4aa0f4000234b5caeaaa179a2fc0d59a4be9b8b774c3653cb14d1fd76f5cbf80e482&awparams=playerid%3ASGplayer%3B&amsparams=playerid%3ASGplayer%3Bskey%3A1609840716923%3B&aw_0_req.gdpr=true&us_privacy=1YNN",
   "https://rtn.cdnstream1.com/2579_96.aac?rand=10817"
  ],
@@ -29,7 +29,7 @@
   "https://live.radyofenomen.com/fenomenclubbin/128/icecast.audio",
   "https://live.radyofenomen.com/fenomendans/abr/playlist.m3u8"
  ],
- "http://showradyo.radyotvonline.net/showradyoaac/": [
+ "https://showradyo.radyotvonline.net/showradyoaac/": [
   "https://sslyayin.netyayin.net:6065/"
  ],
  "https://radio-trtfm.live.trt.com.tr/master.m3u8": [

@@ -15,8 +15,8 @@ public class QualityDialog {
 
     public static String label(Context c) {
         int h = Prefs.maxHeight(c);
-        if (h < 0) return "En düşük";
-        if (h == 0) return "Otomatik";
+        if (h < 0) return Lang.t(c, "q_lowest");
+        if (h == 0) return Lang.t(c, "q_auto");
         return h + "p";
     }
 

@@ -8,7 +8,8 @@ import android.content.Context;
  */
 public class Lang {
 
-    public static final String[] CODES = {"tr", "en", "ru", "ar"};
+    /** v10.04 (Paket C-3): 8 dil. Sıra dil seçim ekranında göründüğü gibidir. */
+    public static final String[] CODES = {"tr", "en", "de", "fr", "es", "ru", "ar", "pt"};
 
     /**
      * Arama için Türkçe karakterleri sadeleştir: "super" yazınca "Süper FM" bulunur.
@@ -26,6 +27,10 @@ public class Lang {
 
     public static String name(String code) {
         if ("en".equals(code)) return "English";
+        if ("de".equals(code)) return "Deutsch";
+        if ("fr".equals(code)) return "Français";
+        if ("es".equals(code)) return "Español";
+        if ("pt".equals(code)) return "Português";
         if ("ru".equals(code)) return "Русский";
         if ("ar".equals(code)) return "العربية";
         return "Türkçe";
@@ -33,13 +38,24 @@ public class Lang {
 
     private static String pick(Context c, String tr, String en, String ru, String ar) {
         String l = Prefs.uiLang(c);
+        if ("tr".equals(l)) return tr;
+        // v10.04 (Paket C-3): 8 dilin tamamı assets/i18n.tsv tablosundan okunur.
+        String v = I18n.s(c, tr);
+        if (v != null) return v;
         if ("en".equals(l)) return en;
+        // v10.04 (Paket C): Almanca'da eksik anahtar TÜRKÇE'ye değil İNGİLİZCE'ye düşsün.
+        if ("de".equals(l)) return en;
         if ("ru".equals(l)) return ru;
         if ("ar".equals(l)) return ar;
         return tr;
     }
 
     public static String t(Context c, String key) {
+        // v10.04 (Paket C): Almanca sözlük önce denenir; eksik anahtar pick() ile İngilizce'ye düşer.
+        if ("de".equals(Prefs.uiLang(c))) {
+            String d = de(key);
+            if (d != null) return d;
+        }
         if ("search".equals(key)) return pick(c, "Kanal ara...", "Search channels...", "Поиск каналов...", "ابحث عن قناة...");
         if ("edit".equals(key)) return pick(c, "✏️ Düzenle", "✏️ Edit", "✏️ Изменить", "✏️ تعديل");
         if ("sort".equals(key)) return pick(c, "⇅ Sırala", "⇅ Sort", "⇅ Сортировать", "⇅ ترتيب");
@@ -73,6 +89,22 @@ public class Lang {
                 "Это нормально, приложение не сломано:\n• Реклама: поток может замереть на 10-60 секунд, затем продолжится.\n• Смена адреса (IP): при переключении сервера связь обрывается, приложение переподключается.\n• Закрытие канала: некоторые потоки прекращаются навсегда, список устаревает.\nРешение: подождите 10-20 секунд и откройте снова, выберите другой канал или Настройки → Починить мёртвые каналы. Списки стран обновляются с сервера, новые каналы появляются сами.",
                 "هذا طبيعي، التطبيق غير معطّل:\n• فاصل إعلاني: قد يتوقف البث 10-60 ثانية ثم يكمل.\n• تغيّر العنوان (IP): عند تبديل الخادم ينقطع الاتصال ويعيد التطبيق المحاولة.\n• إغلاق القناة: بعض البثوث تنتهي نهائيًا وتصبح القائمة قديمة.\nالحل: انتظر 10-20 ثانية وأعد الفتح، أو جرّب قناة أخرى، أو الإعدادات ← إصلاح القنوات الميتة. قوائم الدول تُحدَّث من الخادم فتظهر القنوات الجديدة تلقائيًا.");
         if ("general".equals(key)) return pick(c, "Genel", "General", "Общие", "عام");
+
+        // --- reklam alanı / veri şeridi (v10.04 Paket C: artık dile bağlı) ---
+        if ("ad_space".equals(key)) return pick(c, "UMAY Multi TV · reklam alanı", "UMAY Multi TV · ad space", "UMAY Multi TV · место для рекламы", "UMAY Multi TV · مساحة إعلانية");
+        if ("ad_watch".equals(key)) return pick(c, "▶ Reklam izle · %d dk reklamsız", "▶ Watch an ad · %d min ad-free", "▶ Смотреть рекламу · %d мин без рекламы", "▶ شاهد إعلانًا · %d د بدون إعلانات");
+        if ("ad_free_left".equals(key)) return pick(c, "✅ Reklamsız · %d dk kaldı", "✅ Ad-free · %d min left", "✅ Без рекламы · осталось %d мин", "✅ بدون إعلانات · بقي %d د");
+        if ("ad_thanks".equals(key)) return pick(c, "Teşekkürler! %d dakika reklamsız.", "Thanks! %d minutes ad-free.", "Спасибо! %d минут без рекламы.", "شكرًا! %d دقيقة بدون إعلانات.");
+        if ("ad_not_ready".equals(key)) return pick(c, "Reklam şu an hazır değil, biraz sonra tekrar dene", "Ad not ready right now, try again shortly", "Реклама пока не готова, попробуйте позже", "الإعلان غير جاهز الآن، حاول بعد قليل");
+        if ("q_lowest".equals(key)) return pick(c, "En düşük", "Lowest", "Низкое", "أدنى");
+        if ("q_auto".equals(key)) return pick(c, "Otomatik", "Automatic", "Авто", "تلقائي");
+        if ("q_auto_short".equals(key)) return pick(c, "Oto", "Auto", "Авто", "تلقائي");
+        if ("ui_edit".equals(key)) return pick(c, "Düzen", "Edit", "Изм.", "تعديل");
+        if ("ui_done".equals(key)) return pick(c, "Bitti", "Done", "Готово", "تم");
+        if ("limit_none".equals(key)) return pick(c, "limit yok", "no limit", "без лимита", "بلا حد");
+        if ("limit_over".equals(key)) return pick(c, "⚠ LİMİT AŞILDI", "⚠ LIMIT EXCEEDED", "⚠ ЛИМИТ ПРЕВЫШЕН", "⚠ تم تجاوز الحد");
+        if ("audio_only_mobile".equals(key)) return pick(c, "mobilde sadece ses", "audio only on mobile", "только звук в моб. сети", "صوت فقط على الجوال");
+        if ("usage_today".equals(key)) return pick(c, "📶 Bugün kullanılan veri: ", "📶 Data used today: ", "📶 Трафик за сегодня: ", "📶 البيانات المستخدمة اليوم: ");
 
         // --- oynatıcı / çoklu ekran (9.88 / K-10) ---
         if ("tv_no_net".equals(key)) return pick(c, "İnternet bağlantısı yok.\n\nBağlanınca dokun → tekrar dene", "No internet connection.\n\nTap to retry when you are online", "Нет интернета.\n\nПодключитесь и нажмите, чтобы повторить", "لا يوجد اتصال بالإنترنت.\n\nاضغط لإعادة المحاولة بعد الاتصال");
@@ -130,12 +162,125 @@ public class Lang {
         return key;
     }
 
+    /**
+     * v10.04 (Paket C): Almanca sözlük. Yalnız GÖRÜNEN metinler; kanal adları çevrilmez.
+     * Eksik anahtar null döner → pick() İngilizce'ye düşer (Türkçe'ye değil).
+     */
+    private static String de(String key) {
+        if (key == null) return null;
+        switch (key) {
+            case "search": return "Sender suchen…";
+            case "edit": return "✏️ Bearbeiten";
+            case "sort": return "⇅ Sortieren";
+            case "tools_hint": return "verschieben · löschen · Nummer ändern";
+            case "settings": return "Einstellungen";
+            case "country": return "Land";
+            case "language": return "Sprache";
+            case "countries_title": return "Land wählen";
+            case "countries_sub": return "Die Sender des gewählten Landes werden in die Liste geladen";
+            case "downloading": return "Sender werden geladen…";
+            case "download_failed": return "Download fehlgeschlagen. Prüfe die Verbindung und versuche es erneut.";
+            case "ready": return "bereit";
+            case "download": return "laden";
+            case "reloading": return "Senderliste aktualisiert";
+            case "refresh_list": return "Sender aktualisieren";
+            case "country_sub": return "Land, aus dem die Sender kommen";
+            case "app_language": return "App-Sprache";
+            case "back": return "‹ Zurück";
+            case "soon_no_list": return "bald · noch keine Liste";
+            case "no_list_toast": return "Für dieses Land gibt es noch keine Liste; sie erscheint hier, sobald sie verfügbar ist.";
+            case "info_title": return "Sender öffnet nicht?";
+            case "info_short": return "Internet-Sender stoppen manchmal: Werbepause, geänderte Stream-Adresse (IP) oder der Sender wurde eingestellt. Das heißt nicht, dass die App defekt ist. Tippen → Grund und Lösung.";
+            case "info_full": return "Das ist normal; die App ist nicht defekt:\n• Werbepause: der Stream kann 10-60 Sekunden einfrieren und läuft dann weiter.\n• Adressänderung (IP): wechselt der Sender den Server, bricht die Verbindung ab; die App versucht es erneut.\n• Sender eingestellt: manche Streams enden dauerhaft, die Liste wird alt.\nLösung: 10-20 Sekunden warten und den Sender neu öffnen, einen anderen Sender testen oder Einstellungen → Defekte Sender reparieren. Die Länderlisten werden vom Server aktualisiert, neue Sender kommen automatisch.";
+            case "general": return "Allgemein";
+            case "ad_space": return "UMAY Multi TV · Werbefläche";
+            case "ad_watch": return "▶ Werbung ansehen · %d Min. werbefrei";
+            case "ad_free_left": return "✅ Werbefrei · noch %d Min.";
+            case "ad_thanks": return "Danke! %d Minuten werbefrei.";
+            case "ad_not_ready": return "Werbung ist gerade nicht verfügbar, bitte gleich erneut versuchen";
+            case "q_lowest": return "Niedrigste";
+            case "q_auto": return "Automatisch";
+            case "q_auto_short": return "Auto";
+            case "ui_edit": return "Bearbeiten";
+            case "ui_done": return "Fertig";
+            case "limit_none": return "kein Limit";
+            case "limit_over": return "⚠ LIMIT ÜBERSCHRITTEN";
+            case "audio_only_mobile": return "nur Ton im Mobilnetz";
+            case "usage_today": return "📶 Heute verbraucht: ";
+            case "tv_no_net": return "Keine Internetverbindung.\n\nTippen zum Wiederholen, sobald du online bist";
+            case "tv_net_fail": return "Verbindung fehlgeschlagen.\n\nPrüfe WLAN / mobile Daten,\ndann tippen zum Wiederholen";
+            case "tv_channel_fail": return "Dieser Sender konnte nicht geöffnet werden.\n\nTippen → erneut versuchen\noder ⏭ für den nächsten Sender";
+            case "tv_slow": return "⏳ Stream startet langsam · noch ein paar Sekunden";
+            case "tv_backup": return "🔁 Backup-Quelle wird versucht…";
+            case "tv_live_resync": return "⏭ Zurück zum Live-Bild…";
+            case "tv_net_retry": return "📶 Verbindungsproblem · neuer Versuch in %d s (%d/3)";
+            case "tv_stall": return "⏳ Stream hängt · verbinde neu (%d/2)";
+            case "tv_ad_break": return "📺 Der Sender hat evtl. eine Werbepause · der Stream kommt automatisch zurück";
+            case "tv_ad_done": return "✅ Werbung beendet · zurück zum Stream";
+            case "multi_reconnect": return "verbinde neu…";
+            case "multi_stall": return "Stream hängt · verbinde neu…";
+            case "multi_ad": return "Sender evtl. in Werbepause · warten";
+            case "multi_fail": return "⚠ Öffnen fehlgeschlagen · tippen → erneut · lange drücken → anderer Sender";
+            case "account_why": return "Mit einem Konto werden Favoriten und Einstellungen daran gebunden und du erfährst Neues zuerst. Nicht erforderlich.";
+            case "account_intro": return "Kein Konto? Nutze die App als Gast: Sender, Aufnahme und Favoriten funktionieren gleich.";
+            case "signin": return "Anmelden";
+            case "signup": return "Konto erstellen";
+            case "fullname": return "Vor- und Nachname";
+            case "email": return "E-Mail";
+            case "password": return "Passwort (mind. 6 Zeichen)";
+            case "pass_hint": return "Das Passwort wird auf dem Gerät mit PBKDF2 gehasht; Klartext wird nie gespeichert.";
+            case "forgot_hint": return "Passwort vergessen? Du kannst mit einem neuen Konto fortfahren; der Gastmodus ist immer verfügbar.";
+            case "verified": return "E-Mail bestätigt";
+            case "unverified": return "E-Mail nicht bestätigt";
+            case "verified_note": return "Die Bestätigung ist optional; alle Funktionen gehen auch ohne.";
+            case "signout": return "Abmelden";
+            case "signout_q": return "Vom Konto abmelden? Favoriten und Einstellungen bleiben auf diesem Gerät.";
+            case "cancel": return "Abbrechen";
+            case "google": return "Mit Google fortfahren";
+            case "have_code": return "Ich habe einen Code von Google";
+            case "no_browser": return "Browser konnte nicht geöffnet werden.";
+            case "guest_go": return "Nicht jetzt, als Gast fortfahren";
+            case "code_title": return "Gib den Code aus deiner E-Mail ein";
+            case "code": return "Code (6 Ziffern)";
+            case "verify": return "✔ Bestätigen";
+            case "resend": return "Erneut senden";
+            case "back_to_form": return "‹ Zurück zum Formular";
+            case "working": return "Wird verarbeitet…";
+            case "err_email": return "Gib eine gültige E-Mail-Adresse ein.";
+            case "err_pass": return "Das Passwort muss mindestens 6 Zeichen haben.";
+            case "err_code": return "Code falsch oder abgelaufen.";
+            case "err_generic": return "Vorgang fehlgeschlagen, bitte später erneut versuchen.";
+            case "err_login": return "E-Mail oder Passwort falsch.";
+            case "code_sent": return "Code an deine E-Mail gesendet.";
+            case "offline_saved": return "Server nicht erreichbar: Konto auf diesem Gerät erstellt, bitte online bestätigen.";
+            case "offline_login": return "Offline angemeldet.";
+            case "offline_only": return "Server nicht erreichbar und kein Konto auf diesem Gerät gespeichert.";
+            case "login_ok": return "Angemeldet";
+            case "verified_thanks": return "E-Mail bestätigt, danke!";
+            default: return null;
+        }
+    }
+
+    /**
+     * v10.04 (Paket C-3): kanal türü adı (Haber / Spor / Müzik ...) seçili dilde.
+     * Liste ve filtreler Türkçe adla çalışmaya devam eder; yalnız GÖRÜNEN metin çevrilir.
+     */
+    public static String group(Context c, String g) {
+        if (g == null || g.length() == 0) return t(c, "Genel");
+        String v = I18n.s(c, g);
+        return (v == null || v.length() == 0) ? g : v;
+    }
+
     /** "145 kanal" / "145 channels" gibi sayım metni. */
     public static String channels(Context c, int n) {
         String l = Prefs.uiLang(c);
         if ("en".equals(l)) return n + (n == 1 ? " channel" : " channels");
         if ("ru".equals(l)) return n + " каналов";
         if ("ar".equals(l)) return n + " قناة";
+        if ("de".equals(l)) return n + " Sender";
+        if ("fr".equals(l)) return n + " chaînes";
+        if ("es".equals(l)) return n + " canales";
+        if ("pt".equals(l)) return n + " canais";
         return n + " kanal";
     }
 
@@ -145,17 +290,59 @@ public class Lang {
         if ("en".equals(l)) return "open by number, watch 3 at once, record";
         if ("ru".equals(l)) return "по номеру, 3 экрана, запись";
         if ("ar".equals(l)) return "بالرقم، ٣ شاشات، تسجيل";
+        if ("de".equals(l)) return "per Nummer öffnen, 3 Screens, Aufnahme";
+        if ("fr".equals(l)) return "ouvrir par numéro, 3 écrans, enregistrer";
+        if ("es".equals(l)) return "abrir por número, 3 pantallas, grabar";
+        if ("pt".equals(l)) return "abrir por número, 3 ecrãs, gravar";
         return "no ile aç, 3'lü izle, kayıt";
     }
 
     /** Sekme etiketi. Sekme ici anahtar Turkce sabit kalir (mantik onunla calisiyor), sadece gorunen ad cevrilir. */
     public static String tab(Context c, String key) {
+        if (!"tr".equals(Prefs.uiLang(c))) {
+            String v = I18n.s(c, key);
+            if (v != null) return v;
+        }
         if ("Tümü".equals(key)) return pick(c, "Tümü", "All", "Все", "الكل");
         if ("★ Favoriler".equals(key)) return pick(c, "★ Favoriler", "★ Favourites", "★ Избранное", "★ المفضلة");
         if ("🕘 Son".equals(key)) return pick(c, "🕘 Son", "🕘 Recent", "🕘 Недавние", "🕘 الأخيرة");
         if ("🗑 Gizlenenler".equals(key)) return pick(c, "🗑 Gizlenenler", "🗑 Hidden", "🗑 Скрытые", "🗑 المخفية");
         if ("🇹🇷 Türkçe".equals(key)) return pick(c, "🇹🇷 Türkçe", "🇹🇷 Turkish", "🇹🇷 Турецкие", "🇹🇷 تركية");
         if ("🌐 Yabancı".equals(key)) return pick(c, "🌐 Yabancı", "🌐 Foreign", "🌐 Зарубежные", "🌐 أجنبية");
+        return key;
+    }
+
+    /**
+     * v10.04 (Paket C): ana ekran sekme kısa etiketleri. Anahtar (mantık) Türkçe kalır,
+     * yalnız görünen ad çevrilir; Almanca/İngilizce dışındaki dillerde Türkçe döner.
+     */
+    public static String tabShort(Context c, String key) {
+        String l = Prefs.uiLang(c);
+        if ("tr".equals(l)) {
+            if ("★ Favoriler".equals(key)) return "Favori";
+            if ("🕘 Son".equals(key)) return "Son";
+            if ("🗑 Gizlenenler".equals(key)) return "Gizli";
+            return key;
+        }
+        // v10.05: 8 dilde sekme etiketi doğrudan tablodan (Tümü / Alle / All …).
+        String v = I18n.s(c, key);
+        if (v != null) return v;
+        boolean de = "de".equals(l), en = "en".equals(l);
+        if ("Tümü".equals(key)) return de ? "Alle" : (en ? "All" : key);
+        if ("★ Favoriler".equals(key)) return de ? "Favoriten" : (en ? "Favourites" : "Favori");
+        if ("🕘 Son".equals(key)) return de ? "Zuletzt" : (en ? "Recent" : "Son");
+        if ("🗑 Gizlenenler".equals(key)) return de ? "Ausgeblendet" : (en ? "Hidden" : "Gizli");
+        return key;
+    }
+
+    /** v10.04 (Paket C): sekme etiketlerinin Almanca karşılığı (anahtar Türkçe kalır). */
+    private static String tabDe(String key) {
+        if ("Tümü".equals(key)) return "Alle";
+        if ("★ Favoriler".equals(key)) return "★ Favoriten";
+        if ("🕘 Son".equals(key)) return "🕘 Zuletzt";
+        if ("🗑 Gizlenenler".equals(key)) return "🗑 Ausgeblendet";
+        if ("🇹🇷 Türkçe".equals(key)) return "🇹🇷 Türkisch";
+        if ("🌐 Yabancı".equals(key)) return "🌐 Ausland";
         return key;
     }
 }
